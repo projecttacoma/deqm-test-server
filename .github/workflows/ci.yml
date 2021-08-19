@@ -2,12 +2,12 @@ name: Continuous Integration
 on: [pull_request]
 
 jobs:
-  build:
+  build-lint-prettier:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [14.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -19,11 +19,11 @@ jobs:
       - run: npm run build --if-present
       - run: npm run check
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: artiomtr/jest-coverage-report-action@v1.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          threshold: 60
+  # coverage:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #     - uses: artiomtr/jest-coverage-report-action@v1.1
+  #       with:
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #         threshold: 60
