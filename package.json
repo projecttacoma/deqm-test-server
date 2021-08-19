@@ -1,0 +1,25 @@
+{
+  "name": "deqm-test-server",
+  "version": "1.0.0",
+  "description": "A test server for quality measure operations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint \"**/*.js\"",
+    "lint:fix": "eslint \"**/*.js\" --quiet --fix",
+    "prettier": "prettier --check \"**/*.js\"",
+    "prettier:fix": "prettier --write \"**/*.js\"",
+    "check": "npm run lint && npm run prettier",
+    "start": "node src/index.js"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@asymmetrik/node-fhir-server-core": "^2.2.3"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^2.3.2"
+  }
+}
