@@ -5,7 +5,7 @@ const { VERSIONS } = constants;
 let config = {
   profiles: {
     patient: {
-      service: './src/services/patient.service.js',
+      service: './services/patient.service.js',
       versions: [VERSIONS['4_0_0']]
     }
   }
