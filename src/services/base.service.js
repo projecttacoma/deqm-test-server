@@ -1,15 +1,15 @@
 const { findResourceById, createResource, removeResource, updateResource } = require('../util/mongo.controller');
 
-const baseCreate = async (data, resourceType) => {
-  return await createResource(data, resourceType);
+const baseCreate = async ({ req }, resourceType) => {
+  return await createResource(req.body, resourceType);
 };
-const baseSearchById = async (id, resourceType) => {
-  return await findResourceById(id, resourceType);
+const baseSearchById = async (args, resourceType) => {
+  return await findResourceById(args.id, resourceType);
 };
-const baseUpdate = async (id, data, resourceType) => {
-  return await updateResource(id, data, resourceType);
+const baseUpdate = async (args, { req }, resourceType) => {
+  return await updateResource(args.id, req.body, resourceType);
 };
-const baseRemove = async (id, resourceType) => {
-  return await removeResource(id, resourceType);
+const baseRemove = async (args, resourceType) => {
+  return await removeResource(args.id, resourceType);
 };
 module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove };
