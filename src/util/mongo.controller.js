@@ -1,5 +1,4 @@
 const { db } = require('./mongo');
-const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 
 const findResourceById = async (id, resourceType) => {
   const collection = db.collection(resourceType);
