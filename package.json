@@ -16,7 +16,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@asymmetrik/node-fhir-server-core": "^2.2.3",
-    "mongodb": "^4.1.0"
+    "mongodb": "^4.1.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
