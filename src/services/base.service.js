@@ -80,7 +80,10 @@ const baseRemove = async (args, resourceType) => {
  * @param {*} requestBody the body of the request
  */
 const checkHeaders = requestHeaders => {
-  if (requestHeaders['content-type'] !== 'application/json+fhir') {
+  if (
+    requestHeaders['content-type'] !== 'application/json+fhir' &&
+    requestHeaders['content-type'] !== 'application/fhir+json'
+  ) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -88,7 +91,7 @@ const checkHeaders = requestHeaders => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: 'Ensure Content-Type is set to application/json+fhir in headers'
+            text: 'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
           }
         }
       ]

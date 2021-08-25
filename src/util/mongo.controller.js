@@ -20,7 +20,7 @@ const createResource = async (data, resourceType) => {
  */
 const findResourceById = async (id, resourceType) => {
   const collection = db.collection(resourceType);
-  return await collection.findOne({ id: id });
+  return collection.findOne({ id: id });
 };
 
 /**
@@ -51,7 +51,7 @@ const updateResource = async (id, data, resourceType) => {
  */
 const removeResource = async (id, resourceType) => {
   const collection = db.collection(resourceType);
-  return await collection.deleteOne({ id: id });
+  return collection.deleteOne({ id: id });
 };
 
 module.exports = { findResourceById, createResource, removeResource, updateResource };

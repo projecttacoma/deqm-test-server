@@ -8,7 +8,7 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.s
  * @returns an object with the created patient's id
  */
 const create = async (_, data) => {
-  return await baseCreate(data, 'Patient');
+  return baseCreate(data, 'Patient');
 };
 
 /**
@@ -18,7 +18,7 @@ const create = async (_, data) => {
  * @returns
  */
 const searchById = async args => {
-  return await baseSearchById(args, 'Patient');
+  return baseSearchById(args, 'Patient');
 };
 
 /**
@@ -29,7 +29,7 @@ const searchById = async args => {
  * @returns
  */
 const update = async (args, data) => {
-  return await baseUpdate(args, data, 'Patient');
+  return baseUpdate(args, data, 'Patient');
 };
 
 /**
@@ -39,7 +39,7 @@ const update = async (args, data) => {
  * @returns
  */
 const remove = async args => {
-  return await baseRemove(args, 'Patient');
+  return baseRemove(args, 'Patient');
 };
 
 module.exports = { create, searchById, remove, update };
