@@ -13,7 +13,7 @@ const baseCreate = async ({ req }, resourceType) => {
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
-  data['_id'] = data.id;
+
   return createResource(data, resourceType);
 };
 
@@ -60,8 +60,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-  //set the _id to id in case we need to create this document
-  data['_id'] = data.id;
+
   return updateResource(args.id, data, resourceType);
 };
 
