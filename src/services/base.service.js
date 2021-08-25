@@ -9,9 +9,9 @@ const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-cor
  * @returns the id of the created object
  */
 const baseCreate = async ({ req }, resourceType) => {
-  //Create a new id regardless of whether one is passed
+  checkHeaders(req.headers);
   const data = req.body;
-  checkEmptyRequest(data);
+  //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
   data['_id'] = data.id;
   return createResource(data, resourceType);
@@ -42,9 +42,8 @@ const baseSearchById = async (args, resourceType) => {
  * @returns the id of the updated/created document
  */
 const baseUpdate = async (args, { req }, resourceType) => {
+  checkHeaders(req.headers);
   const data = req.body;
-
-  checkEmptyRequest(data);
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
@@ -77,11 +76,11 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * checks if the request body is empty and throws and error with guidance if so
+ * checks if the headers are incorect and throws and error with guidance if so
  * @param {*} requestBody the body of the request
  */
-const checkEmptyRequest = requestBody => {
-  if (requestBody && Object.keys(requestBody).length === 0) {
+const checkHeaders = requestHeaders => {
+  if (requestHeaders['content-type'] !== 'application/json+fhir') {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -89,7 +88,7 @@ const checkEmptyRequest = requestBody => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: 'Received empty request body. Ensure Content-Type is set to application/json+fhir in headers'
+            text: 'Ensure Content-Type is set to application/json+fhir in headers'
           }
         }
       ]
