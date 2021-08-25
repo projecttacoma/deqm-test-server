@@ -5,12 +5,13 @@ const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-cor
 /**
  * creates an object and generates an id for it regardless of the id passed in
  * @param {*} req an object containing the request body
- * @param {*} resourceType string which dsignifies which collection to add the data to
+ * @param {*} resourceType string which signifies which collection to add the data to
  * @returns the id of the created object
  */
 const baseCreate = async ({ req }, resourceType) => {
   //Create a new id regardless of whether one is passed
   const data = req.body;
+  checkEmptyRequest(data);
   data['id'] = uuidv4();
   data['_id'] = data.id;
   return createResource(data, resourceType);
@@ -36,16 +37,17 @@ const baseSearchById = async (args, resourceType) => {
  * updates the document of the specified resource type with the passed in id or creates a new
  * document if no document with passed id is found
  * @param {*} args the args added to the end of the url, contains id of desired resource
- * @param {*} req the
- * @param {*} resourceType string which dsignifies which collection to add the data to
+ * @param {*} req an object containing the request body
+ * @param {*} resourceType string which signifies which collection to add the data to
  * @returns the id of the updated/created document
  */
 const baseUpdate = async (args, { req }, resourceType) => {
-  const body = req.body;
+  const data = req.body;
 
+  checkEmptyRequest(data);
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
-  if (body.id !== args.id) {
+  if (data.id !== args.id) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -59,8 +61,9 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-  body['_id'] = body.id;
-  return updateResource(args.id, req.body, resourceType);
+  //set the _id to id in case we need to create this document
+  data['_id'] = data.id;
+  return updateResource(args.id, data, resourceType);
 };
 
 /**
@@ -72,4 +75,26 @@ const baseUpdate = async (args, { req }, resourceType) => {
 const baseRemove = async (args, resourceType) => {
   return removeResource(args.id, resourceType);
 };
+
+/**
+ * checks if the request body is empty and throws and error with guidance if so
+ * @param {*} requestBody the body of the request
+ */
+const checkEmptyRequest = requestBody => {
+  if (requestBody && Object.keys(requestBody).length === 0) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: 'Received empty request body. Ensure Content-Type is set to application/json+fhir in headers'
+          }
+        }
+      ]
+    });
+  }
+};
+
 module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove };
