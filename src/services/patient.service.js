@@ -22,16 +22,6 @@ const searchById = async args => {
 };
 
 /**
- * result of sending a DELETE request to {BASE_URL}/4_0_0/patient/{id}
- * removes the patient with the passed in id from the database
- * @param {*} args passed in arguments including the id of the sought after patient
- * @returns
- */
-const remove = async args => {
-  return await baseRemove(args, 'Patient');
-};
-
-/**
  * result of sending a PUT request to {BASE_URL}/4_0_0/patient/{id}
  * updates the patient with the passed in id using the passed in data
  * @param {*} args passed in arguments including the id of the sought after patient
@@ -40,6 +30,16 @@ const remove = async args => {
  */
 const update = async (args, data) => {
   return await baseUpdate(args, data, 'Patient');
+};
+
+/**
+ * result of sending a DELETE request to {BASE_URL}/4_0_0/patient/{id}
+ * removes the patient with the passed in id from the database
+ * @param {*} args passed in arguments including the id of the sought after patient
+ * @returns
+ */
+const remove = async args => {
+  return await baseRemove(args, 'Patient');
 };
 
 module.exports = { create, searchById, remove, update };
