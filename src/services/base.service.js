@@ -28,7 +28,18 @@ const baseSearchById = async (args, resourceType) => {
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
   if (!result) {
-    return {};
+    throw new ServerError(null, {
+      statusCode: 404,
+      issue: [
+        {
+          severity: 'error',
+          code: 'ResourceNotFound',
+          details: {
+            text: `No resource found in collection: ${resourceType}, with: id ${args.id}`
+          }
+        }
+      ]
+    });
   }
   return new dataType(result);
 };

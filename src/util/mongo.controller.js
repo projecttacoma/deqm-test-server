@@ -8,8 +8,8 @@ const { db } = require('./mongo');
  */
 const createResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
-  const results = await collection.insertOne(data);
-  return { id: results.insertedId };
+  await collection.insertOne(data);
+  return { id: data.id };
 };
 
 /**
