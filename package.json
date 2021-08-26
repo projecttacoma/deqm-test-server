@@ -10,7 +10,10 @@
     "prettier": "prettier --check \"**/*.js\"",
     "prettier:fix": "prettier --write \"**/*.js\"",
     "check": "npm run lint && npm run prettier",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "db:setup": "node src/scripts/createCollections.js",
+    "db:delete": "node src/scripts/deleteCollections.js",
+    "db:reset": "npm run db:delete && npm run db:setup"
   },
   "author": "",
   "license": "Apache-2.0",

@@ -1,20 +1,8 @@
-const { initialize, loggers, constants } = require('@asymmetrik/node-fhir-server-core');
+const { initialize, loggers } = require('@asymmetrik/node-fhir-server-core');
 const mongoUtil = require('./util/mongo');
-const { VERSIONS } = constants;
-const { buildServiceModule } = require('./services/base.service');
+const { buildConfig } = require('./util/config');
 
-let config = {
-  profiles: {
-    patient: {
-      service: buildServiceModule('Patient'),
-      versions: [VERSIONS['4_0_0']]
-    },
-    observation: {
-      service: buildServiceModule('Observation'),
-      versions: [VERSIONS['4_0_0']]
-    }
-  }
-};
+let config = buildConfig();
 let server = initialize(config);
 let logger = loggers.get('default');
 

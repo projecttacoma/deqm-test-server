@@ -111,17 +111,17 @@ const checkHeaders = requestHeaders => {
 
 /**
  * Build a basic service module for a given resource type. Supports basic CRUD operations.
- * 
+ *
  * @param {string} resourceType Name of the resource to make a basic resource for.
  * @returns The resource service module.
  */
 const buildServiceModule = resourceType => {
   return {
     create: async (_, data) => baseCreate(data, resourceType),
-    searchById: async (args) => baseSearchById(args, resourceType),
+    searchById: async args => baseSearchById(args, resourceType),
     update: async (args, data) => baseUpdate(args, data, resourceType),
-    remove: async (args) => baseRemove(args, resourceType)
-  }
-}
+    remove: async args => baseRemove(args, resourceType)
+  };
+};
 
 module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule };
