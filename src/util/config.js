@@ -3,6 +3,7 @@ const { VERSIONS } = constants;
 const supportedResources = require('./supportedResources');
 const { buildServiceModule } = require('../services/base.service');
 const path = require('path');
+const configTransaction = require('../services/bundle.controller');
 
 /**
  * Build configuration object to pass to the Asymmetrik core FHIR server
@@ -11,7 +12,18 @@ const path = require('path');
  */
 const buildConfig = () => {
   const config = {
-    profiles: {}
+    profiles: {},
+    routes: [
+      {
+        type: 'post',
+        path: '/:base_version/',
+        corsOptions: {
+          methods: ['POST']
+        },
+        args: [],
+        controller: configTransaction.transaction
+      }
+    ]
   };
   supportedResources.forEach(resourceType => {
     switch (resourceType) {
