@@ -1,3 +1,4 @@
+const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
 /**
@@ -42,4 +43,45 @@ const remove = async args => {
   return baseRemove(args, 'Measure');
 };
 
-module.exports = { create, searchById, remove, update };
+const submitData = async (_, { req }) => {
+  if (req.body.resourceType !== 'Parameters') {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Invalid resourceType, received: ${req.body.resourceType}, expected: Parameters`
+          }
+        }
+      ]
+    });
+  }
+  const report = req.body.parameter[0];
+  const resourceWrapper = {
+    req: { headers: req.headers, body: report.resource }
+  };
+
+  baseCreate(resourceWrapper, 'MeasureReport');
+  const resources = req.body.parameter.slice(1);
+
+  resources.forEach(res => {
+    resourceWrapper.req.body = res.resource;
+    baseCreate(resourceWrapper, res.resource.resourceType);
+  });
+  // const params = req.body.parameter;
+  // const report = req.body.report;
+  // const resources = req.body.resources;
+
+  /**
+   * define a new transaction bundle, t
+   * params.forEach(resource => add resource to t)
+   *
+   * functions needed: createTransactionBundle, createTransactionEntry, transactionBundle.addEntry
+   *
+   * execute add transaction bundle function on t
+   */
+};
+
+module.exports = { create, searchById, remove, update, submitData };
