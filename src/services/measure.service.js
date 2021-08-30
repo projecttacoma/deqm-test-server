@@ -1,4 +1,4 @@
-const { ServerError, ServerResponse } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
 const { TransactionBundle } = require('../transactionBundle.js');
