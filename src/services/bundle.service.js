@@ -1,16 +1,46 @@
 const path = require('path');
-//const request = require('superagent');
-const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const axios = require('axios').default;
+const { ServerError, loggers, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
+const { v4: uuidv4 } = require('uuid');
 let logger = loggers.get('default');
 
 /**
- * Support upload of a Bundle to the server using transaction.
- * @param {*} req - an object containing the request body
+ * Creates transaction-response Bundle
+ * @param {*} results - request results
+ * @param {*} res - an object containing the response
+ * @param {*} type - bundle type
+ * @returns transaction-response Bundle
  */
-async function uploadTransactionBundle(req) {
-  console.log('are we here');
-  console.log(req.body);
-  console.log(req.params);
+const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
+  const Bundle = resolveSchema(baseVersion, 'bundle');
+  let bundle = new Bundle({ type: type, id: uuidv4() });
+  bundle.link = {
+    url: `${res.req.protocol}://${path.join(res.req.get('host'), res.req.baseUrl)}`,
+    relation: 'self'
+  };
+
+  let entries = [];
+  results.forEach(result => {
+    entries.push(
+      new Bundle({
+        response: {
+          status: `${result.status} ${result.statusText}`,
+          location: result.headers.location
+        }
+      })
+    );
+  });
+  bundle.entry = entries;
+  return bundle;
+};
+
+/**
+ * Supports Bundle upload to the server using transaction
+ * @param {*} req - an object containing the request body
+ * @param {*} res - an object containing the response
+ * @returns transaction-response bundle
+ */
+async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   let { resourceType, type, entry: entries } = req.body;
   let { base_version: baseVersion } = req.params;
@@ -44,28 +74,16 @@ async function uploadTransactionBundle(req) {
   }
   let { protocol, baseUrl } = req;
 
-  let results = [];
-
   let requestsArray = entries.map(async entry => {
     let { url, method } = entry.request;
-    //let resource = entry.resource;
     let destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    results.push({
-      method: method,
-      url: destinationUrl
+    return await axios[method.toLowerCase()](destinationUrl, entry.resource, {
+      headers: { 'Content-Type': 'application/json+fhir' }
     });
-    // note - change request import to something else
-    // want to send to base url with no resource type
-    // want to send ind requests to the resource types
-    // method - POST/PUT
-    // might need to change destinationUrl assembly
-    console.log(destinationUrl);
-    return []; //request[method.toLowerCase()](destinationUrl).send(resource).set('Content-Type', 'application/json+fhir');
   });
-
   const requestResults = await Promise.all(requestsArray);
-
-  return requestResults;
+  let resultsBundle = makeTransactionResponseBundle(requestResults, res, baseVersion, 'transaction-response');
+  return resultsBundle;
 }
 
 module.exports = { uploadTransactionBundle };
