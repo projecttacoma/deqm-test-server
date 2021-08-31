@@ -11,14 +11,6 @@ let config = buildConfig();
 let server = initialize(config, app);
 let logger = loggers.get('default');
 
-server.configureMiddleware().configureSession().configureHelmet().configurePassport().setPublicDirectory();
-
-server.app.post('/:base_version/', configTransaction.transaction);
-
-server.setProfileRoutes().setErrorRoutes();
-
-// set up custom route with base version as url
-
 server.listen(3000, async () => {
   logger.info('Starting the FHIR Server at localhost:3000');
   await mongoUtil.client.connect();
