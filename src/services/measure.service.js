@@ -1,6 +1,7 @@
 const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
+const { TransactionBundle } = require('../transactionBundle.js');
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
  * creates a new measure in the database
@@ -43,45 +44,26 @@ const remove = async args => {
   return baseRemove(args, 'Measure');
 };
 
-const submitData = async (_, { req }) => {
-  if (req.body.resourceType !== 'Parameters') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Invalid resourceType, received: ${req.body.resourceType}, expected: Parameters`
-          }
-        }
-      ]
-    });
-  }
-  const report = req.body.parameter[0];
-  const resourceWrapper = {
-    req: { headers: req.headers, body: report.resource }
-  };
+/**
+ * takes a measureReport and a set of required data with which to calculate the measure and
+ * creates new documents for the measureReport and requirements in the appropriate collections
+ * @param {*} args the args object passed in by the user
+ * @param {*} req the request object passed in by the user
+ */
+const submitData = async (args, { req }) => {
+  //Create new transaction bundle
+  const tb = new TransactionBundle();
 
-  baseCreate(resourceWrapper, 'MeasureReport');
-  const resources = req.body.parameter.slice(1);
+  const resources = req.body.parameter;
 
   resources.forEach(res => {
-    resourceWrapper.req.body = res.resource;
-    baseCreate(resourceWrapper, res.resource.resourceType);
+    //TODOMAYBE: add functionality for if res is a bundle
+    if (res.name === 'measureReport' && args.id) {
+      res.resource.measure = `Measure/${args.id}`;
+    }
+    tb.addEntryFromResource(res.resource);
   });
-  // const params = req.body.parameter;
-  // const report = req.body.report;
-  // const resources = req.body.resources;
-
-  /**
-   * define a new transaction bundle, t
-   * params.forEach(resource => add resource to t)
-   *
-   * functions needed: createTransactionBundle, createTransactionEntry, transactionBundle.addEntry
-   *
-   * execute add transaction bundle function on t
-   */
+  //process transactionBundle
 };
 
 module.exports = { create, searchById, remove, update, submitData };
