@@ -1,13 +1,34 @@
 const { v4: uuidv4 } = require('uuid');
 const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-core');
 const {
-  findResourcesWithQuery,
   findResourceById,
   createResource,
   removeResource,
-  updateResource
+  updateResource,
+  findResourcesWithFilter
 } = require('../util/mongo.controller');
-const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
+const QueryBuilder = require('@asymmetrik/fhir-qb');
+
+const globalParameterDefinitions = {
+  _content: {
+    type: 'string',
+    fhirtype: 'string',
+    xpath: '',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-content',
+    description: 'Search on the entire content of the resource',
+    modifier: 'missing,exact,contains'
+  },
+  _id: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.id',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-id',
+    description: 'Logical id of this artifact',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  }
+};
+
+const qb = new QueryBuilder({ globalParameterDefinitions });
 
 /**
  * creates an object and generates an id for it regardless of the id passed in
@@ -49,6 +70,19 @@ const baseSearchById = async (args, resourceType) => {
     });
   }
   return new dataType(result);
+};
+
+const baseSearch = async (args, context, resourceType) => {
+  console.log(context.req);
+  const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
+  const Bundle = resolveSchema(args.base_version, 'bundle');
+  const BundleEntry = resolveSchema(args.base_version, 'bundleentry');
+  const filter = qb.buildSearchQuery(context);
+  console.log(filter);
+  const results = await (await findResourcesWithFilter(filter, resourceType)).toArray();
+  const resultResources = results.map(result => new dataType(result));
+  const entries = resultResources.map(resource => new BundleEntry({ resource: resource }));
+  return new Bundle({ entry: entries });
 };
 
 /**
@@ -93,36 +127,6 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * search for resources, currently only by identifier
- * @param {Object} args the args containing search params
- * @param {Object} req the http request object
- * @param {string} resourceType string which signifies which collection to add the data to
- * @returns FHIR searchset bundle of results
- */
-const baseSearch = async (args, { req }, resourceType) => {
-  const { identifier } = args;
-
-  if (!identifier) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: 'Base searching only allowed for "identifier"'
-          }
-        }
-      ]
-    });
-  }
-
-  const resources = await findResourcesWithQuery({ identifier: { $elemMatch: { value: identifier } } }, resourceType);
-
-  return mapArrayToSearchSetBundle(resources, resourceType, args, req);
-};
-
-/**
  * checks if the headers are incorrect and throws and error with guidance if so
  * @param {*} requestHeaders the headers from the request body
  */
@@ -156,9 +160,9 @@ const buildServiceModule = resourceType => {
   return {
     create: async (_, data) => baseCreate(data, resourceType),
     searchById: async args => baseSearchById(args, resourceType),
-    search: async (args, data) => baseSearch(args, data, resourceType),
     update: async (args, data) => baseUpdate(args, data, resourceType),
-    remove: async args => baseRemove(args, resourceType)
+    remove: async args => baseRemove(args, resourceType),
+    search: async (args, context) => baseSearch(args, context, resourceType)
   };
 };
 
