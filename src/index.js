@@ -3,10 +3,9 @@ const mongoUtil = require('./util/mongo');
 const { buildConfig } = require('./util/config');
 const { initialize } = require('./server/server');
 const express = require('express');
-const bodyParser = require('body-parser');
 
 const app = express();
-app.use(bodyParser.json({ limit: '50mb', type: 'application/json+fhir' }));
+app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
 
 let config = buildConfig();
 let server = initialize(config, app);
