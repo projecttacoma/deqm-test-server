@@ -50,24 +50,71 @@ const remove = async args => {
  * creates new documents for the measureReport and requirements in the appropriate collections
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
+ * returns a transaction-response bundle
  */
 const submitData = async (args, { req }) => {
-  //Create new transaction bundle
-  const tb = new TransactionBundle();
+  if (req.resourceType !== 'Parameters') {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected 'resourceType: Parameters'. Received 'type: ${req.resourceType}'.`
+          }
+        }
+      ]
+    });
+  }
+  if (!req.body.parameter) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Unreadable or empty entity for attribute 'parameter'. Received: ${req.body.parameter}`
+          }
+        }
+      ]
+    });
+  }
 
+  const tb = new TransactionBundle();
   const resources = req.body.parameter;
 
-  resources.forEach(res => {
-    //TODOMAYBE: add functionality for if res is a bundle
-    if (res.name === 'measureReport' && args.id) {
-      res.resource.measure = `Measure/${args.id}`;
+  let containsMeasureReport = false;
+
+  resources.forEach(resource => {
+    //TODOMAYBE: add functionality for if resource is itself a bundle
+    if (resource.name === 'measureReport') {
+      containsMeasureReport = true;
+
+      if (args.id) {
+        resource.resource.measure = `Measure/${args.id}`;
+      }
     }
-    tb.addEntryFromResource(res.resource);
+    tb.addEntryFromResource(resource.resource);
   });
+  if (!containsMeasureReport) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected at least one resource with name: 'measureReport' and resourceType: 'MeasureReport.`
+          }
+        }
+      ]
+    });
+  }
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
-  console.log(output);
-  //process transactionBundle
+  return output;
 };
 
 module.exports = { create, searchById, remove, update, submitData };
