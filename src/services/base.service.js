@@ -28,7 +28,10 @@ const globalParameterDefinitions = {
   }
 };
 
-const qb = new QueryBuilder({ globalParameterDefinitions });
+const qb = new QueryBuilder({
+  globalParameterDefinitions,
+  implementationParameters: { archivedParamPath: '_isArchived' }
+});
 
 /**
  * creates an object and generates an id for it regardless of the id passed in
@@ -73,13 +76,15 @@ const baseSearchById = async (args, resourceType) => {
 };
 
 const baseSearch = async (args, context, resourceType) => {
-  console.log(context.req);
+  //console.log(context.req);
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
   const BundleEntry = resolveSchema(args.base_version, 'bundleentry');
+  context.req.params = {};
   const filter = qb.buildSearchQuery(context);
-  console.log(filter);
+  console.log(JSON.stringify(filter));
   const results = await (await findResourcesWithFilter(filter, resourceType)).toArray();
+  console.log(results);
   const resultResources = results.map(result => new dataType(result));
   const entries = resultResources.map(resource => new BundleEntry({ resource: resource }));
   return new Bundle({ entry: entries });
