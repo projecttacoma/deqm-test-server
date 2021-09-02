@@ -50,10 +50,10 @@ const remove = async args => {
  * creates new documents for the measureReport and requirements in the appropriate collections
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
- * returns a transaction-response bundle
+ * @returns a transaction-response bundle
  */
 const submitData = async (args, { req }) => {
-  if (req.resourceType !== 'Parameters') {
+  if (req.body.resourceType !== 'Parameters') {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -91,10 +91,6 @@ const submitData = async (args, { req }) => {
     //TODOMAYBE: add functionality for if resource is itself a bundle
     if (resource.name === 'measureReport') {
       containsMeasureReport = true;
-
-      if (args.id) {
-        resource.resource.measure = `Measure/${args.id}`;
-      }
     }
     tb.addEntryFromResource(resource.resource);
   });
