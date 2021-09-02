@@ -86,7 +86,7 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * checks if the headers are incorect and throws and error with guidance if so
+ * checks if the headers are incorrect and throws and error with guidance if so
  * @param {*} requestBody the body of the request
  */
 const checkHeaders = requestHeaders => {
