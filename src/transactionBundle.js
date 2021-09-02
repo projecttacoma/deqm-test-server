@@ -1,6 +1,6 @@
 class TransactionBundle {
   constructor() {
-    this.entries = [];
+    this.entry = [];
   }
 
   addEntryFromResource(resource) {
@@ -11,14 +11,14 @@ class TransactionBundle {
         url: resource.resourceType
       }
     };
-    this.entries.push(newEntry);
+    this.entry.push(newEntry);
   }
 
   toJSON() {
     return {
       resourceType: 'Bundle',
       type: 'transaction',
-      entries: this.entries
+      entry: this.entry
     };
   }
 }

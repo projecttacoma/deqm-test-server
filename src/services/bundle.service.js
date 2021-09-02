@@ -41,6 +41,8 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
  * @returns transaction-response bundle
  */
 async function uploadTransactionBundle(req, res) {
+  console.log(req);
+  //console.log(res);
   logger.info('Base >>> transaction');
   let { resourceType, type, entry: entries } = req.body;
   let { base_version: baseVersion } = req.params;

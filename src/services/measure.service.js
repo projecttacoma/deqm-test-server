@@ -1,7 +1,8 @@
-const { ServerError } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, ServerResponse } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
 const { TransactionBundle } = require('../transactionBundle.js');
+const { uploadTransactionBundle } = require('./bundle.service.js');
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
  * creates a new measure in the database
@@ -63,6 +64,9 @@ const submitData = async (args, { req }) => {
     }
     tb.addEntryFromResource(res.resource);
   });
+  req.body = tb.toJSON();
+  const output = await uploadTransactionBundle(req, req.res);
+  console.log(output);
   //process transactionBundle
 };
 
