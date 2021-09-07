@@ -61,7 +61,7 @@ const submitData = async (args, { req }) => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `Expected 'resourceType: Parameters'. Received 'type: ${req.resourceType}'.`
+            text: `Expected 'resourceType: Parameters'. Received 'type: ${req.body.resourceType}'.`
           }
         }
       ]
