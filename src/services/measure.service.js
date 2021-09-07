@@ -83,16 +83,16 @@ const submitData = async (args, { req }) => {
   }
 
   const tb = new TransactionBundle();
-  const resources = req.body.parameter;
+  const parameters = req.body.parameter;
 
   let containsMeasureReport = false;
 
-  resources.forEach(resource => {
+  parameters.forEach(param => {
     //TODOMAYBE: add functionality for if resource is itself a bundle
-    if (resource.name === 'measureReport') {
+    if (param.name === 'measureReport') {
       containsMeasureReport = true;
     }
-    tb.addEntryFromResource(resource.resource);
+    tb.addEntryFromResource(param.resource);
   });
   if (!containsMeasureReport) {
     throw new ServerError(null, {
