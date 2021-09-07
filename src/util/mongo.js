@@ -1,10 +1,10 @@
+/* eslint-disable no-undef */
 const { MongoClient } = require('mongodb');
 
+require('dotenv').config();
+
 // Connection URL
-const url = 'mongodb://localhost:27017';
+const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
 const client = new MongoClient(url);
 
-// Database Name
-const dbName = 'deqm-test-server';
-
-module.exports = { client, db: client.db(dbName) };
+module.exports = { client, db: client.db(process.env.DB_NAME) };
