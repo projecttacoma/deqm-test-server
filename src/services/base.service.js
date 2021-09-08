@@ -5,7 +5,7 @@ const {
   createResource,
   removeResource,
   updateResource,
-  findResourcesWithFilter
+  findResourcesWithAggregation
 } = require('../util/mongo.controller');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 
@@ -81,11 +81,12 @@ const baseSearch = async (args, context, resourceType) => {
   const Bundle = resolveSchema(args.base_version, 'bundle');
   const BundleEntry = resolveSchema(args.base_version, 'bundleentry');
   context.req.params = {};
+  context.includeArchived = true;
   const filter = qb.buildSearchQuery(context);
   console.log(JSON.stringify(filter));
-  const results = await (await findResourcesWithFilter(filter, resourceType)).toArray();
+  const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
   console.log(results);
-  const resultResources = results.map(result => new dataType(result));
+  const resultResources = results.data.map(result => new dataType(result));
   const entries = resultResources.map(resource => new BundleEntry({ resource: resource }));
   return new Bundle({ entry: entries });
 };

@@ -73,9 +73,9 @@ const removeResource = async (id, resourceType) => {
   return collection.deleteOne({ id: id });
 };
 
-const findResourcesWithFilter = async (filter, resourceType) => {
+const findResourcesWithAggregation = async (query, resourceType) => {
   const collection = db.collection(resourceType);
-  return collection.find(filter);
+  return collection.aggregate(query);
 };
 
 module.exports = {
@@ -85,5 +85,5 @@ module.exports = {
   createResource,
   removeResource,
   updateResource,
-  findResourcesWithFilter
+  findResourcesWithAggregation
 };
