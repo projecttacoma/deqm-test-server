@@ -1,7 +1,7 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
-const { TransactionBundle } = require('../resources/transactionBundle.js');
+const { TransactionBundle, createTransactionBundleClass } = require('../resources/transactionBundle.js');
 const { uploadTransactionBundle } = require('./bundle.service.js');
 
 const logger = loggers.get('default');
@@ -84,8 +84,8 @@ const submitData = async (args, { req }) => {
       ]
     });
   }
-
-  const tb = new TransactionBundle();
+  const { base_version: baseVersion } = req.params;
+  const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
 
   // Ensure exactly 1 measureReport is in parameters

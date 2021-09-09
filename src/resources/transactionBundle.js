@@ -4,43 +4,48 @@
  */
 
 const { ServerError, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
-const Bundle = resolveSchema('4_0_0', 'bundle');
 
-class TransactionBundle extends Bundle {
-  constructor() {
-    super();
-    this.type = 'transaction';
-    this.entry = [];
-  }
+const createTransactionBundleClass = baseVersion => {
+  const Bundle = resolveSchema(baseVersion, 'bundle');
 
-  addEntryFromResource(resource, requestType) {
-    const request = { method: requestType };
-
-    if (requestType === 'POST') {
-      request.url = resource.resourceType;
-    } else if (requestType === 'PUT') {
-      request.url = `${resource.resourceType}/${resource.id}`;
-    } else {
-      throw new ServerError(null, {
-        statusCode: 422,
-        issue: [
-          {
-            severity: 'error',
-            code: 'UnprocessableEntity',
-            details: {
-              text: `Invalid request type for transaction bundle entry for resource with id: ${resource.id}. 
-              Request must be of type POST or PUT, received type: ${requestType}`
-            }
-          }
-        ]
-      });
+  class TransactionBundle extends Bundle {
+    constructor() {
+      super();
+      this.type = 'transaction';
+      this.entry = [];
     }
-    const newEntry = {
-      resource,
-      request
-    };
-    this.entry = [...this.entry, newEntry];
-  }
-}
 
-module.exports = { TransactionBundle };
+    addEntryFromResource(resource, requestType) {
+      const request = { method: requestType };
+
+      if (requestType === 'POST') {
+        request.url = resource.resourceType;
+      } else if (requestType === 'PUT') {
+        request.url = `${resource.resourceType}/${resource.id}`;
+      } else {
+        throw new ServerError(null, {
+          statusCode: 422,
+          issue: [
+            {
+              severity: 'error',
+              code: 'UnprocessableEntity',
+              details: {
+                text: `Invalid request type for transaction bundle entry for resource with id: ${resource.id}. 
+              Request must be of type POST or PUT, received type: ${requestType}`
+              }
+            }
+          ]
+        });
+      }
+      const newEntry = {
+        resource,
+        request
+      };
+      this.entry = [...this.entry, newEntry];
+    }
+  }
+
+  return new TransactionBundle();
+};
+
+module.exports = { createTransactionBundleClass };
