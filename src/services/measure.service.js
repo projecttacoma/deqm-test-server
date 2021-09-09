@@ -1,7 +1,7 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
-const { TransactionBundle, createTransactionBundleClass } = require('../resources/transactionBundle.js');
+const { createTransactionBundleClass } = require('../resources/transactionBundle.js');
 const { uploadTransactionBundle } = require('./bundle.service.js');
 
 const logger = loggers.get('default');
