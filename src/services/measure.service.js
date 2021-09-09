@@ -1,8 +1,10 @@
-const { ServerError } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 
-const { TransactionBundle } = require('../transactionBundle.js');
+const { TransactionBundle } = require('../resources/transactionBundle.js');
 const { uploadTransactionBundle } = require('./bundle.service.js');
+
+const logger = loggers.get('default');
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
  * creates a new measure in the database
@@ -53,6 +55,7 @@ const remove = async args => {
  * @returns a transaction-response bundle
  */
 const submitData = async (args, { req }) => {
+  logger.info('Base >>> submit-data');
   if (req.body.resourceType !== 'Parameters') {
     throw new ServerError(null, {
       statusCode: 400,
@@ -85,16 +88,9 @@ const submitData = async (args, { req }) => {
   const tb = new TransactionBundle();
   const parameters = req.body.parameter;
 
-  let containsMeasureReport = false;
-
-  parameters.forEach(param => {
-    //TODOMAYBE: add functionality for if resource is itself a bundle
-    if (param.name === 'measureReport') {
-      containsMeasureReport = true;
-    }
-    tb.addEntryFromResource(param.resource);
-  });
-  if (!containsMeasureReport) {
+  // Ensure exactly 1 measureReport is in parameters
+  const numMeasureReportsInput = parameters.filter(param => param.name === 'measureReport').length;
+  if (numMeasureReportsInput !== 1) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -102,12 +98,19 @@ const submitData = async (args, { req }) => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `Expected at least one resource with name: 'measureReport' and resourceType: 'MeasureReport.`
+            text: `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
           }
         }
       ]
     });
   }
+
+  parameters.forEach(param => {
+    //TODOMAYBE: add functionality for if resource is itself a bundle
+
+    tb.addEntryFromResource(param.resource, 'POST');
+  });
+
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
   return output;
