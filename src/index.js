@@ -1,8 +1,8 @@
 const { loggers } = require('@asymmetrik/node-fhir-server-core');
+const express = require('express');
 const mongoUtil = require('./util/mongo');
 const { buildConfig } = require('./util/config');
 const { initialize } = require('./server/server');
-const express = require('express');
 
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));

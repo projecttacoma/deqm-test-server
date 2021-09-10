@@ -24,6 +24,17 @@ const findResourceById = async (id, resourceType) => {
 };
 
 /**
+ * searches the database for the one resource based on a mongo query and returns the data
+ * @param {Object} query the mongo query to use
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
+ * @returns the data of the found document
+ */
+const findOneResourceWithQuery = async (query, resourceType) => {
+  const collection = db.collection(resourceType);
+  return collection.findOne(query);
+};
+
+/**
  * searches for a document and updates it if found, creates it if not
  * @param {*} id id of resource to be updated
  * @param {*} data the updated data to add to/edit in the document
@@ -54,4 +65,4 @@ const removeResource = async (id, resourceType) => {
   return collection.deleteOne({ id: id });
 };
 
-module.exports = { findResourceById, createResource, removeResource, updateResource };
+module.exports = { findResourceById, findOneResourceWithQuery, createResource, removeResource, updateResource };
