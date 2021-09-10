@@ -16,7 +16,7 @@
  *
  *
  */
-const mongoUtil = require('./mongo');
+
 const { findResourceById, findResourcesWithFind } = require('./mongo.controller');
 
 const createCollectionBundle = async measureId => {
@@ -35,7 +35,7 @@ const createCollectionBundle = async measureId => {
   listOfLibraries.push(rootLibJson);
   listOfLibraries.push(findLibraries(rootLibJson, listOfLibraries));
 
-  const cb = createCollectionBundle(base_version);
+  const cb = createCollectionBundle(measureId);
   listOfLibraries.forEach(param => {
     cb.addEntryFromResource(param.resource, 'Library');
   });
@@ -45,17 +45,17 @@ const createCollectionBundle = async measureId => {
 const findLibraries = async (libraryJson, listOfLibraries) => {
   //iterate through the related artifact
   if (libraryJson.relatedArtifact != null) {
-    array.forEach(element => {
+    libraryJson.relatedArtifact.forEach(element => {
       if ((element.type = 'depends-on' && element.url.contains('Library'))) {
         //now query the db for this library and
         listOfLibraries.push(element.url);
-        const dependentLibrary = findLibraries(element.url, listOfLibraries);
+        findLibraries(element.url, listOfLibraries);
       }
     });
   } else {
-    var libraryVersion = split(libraryJson);
-    var findQuery = { url: libraryJson.url };
-    libraryInfoFromDb = findResourcesWithFind(findQuery, 'Library');
+    var libraryInfo = rootLib.split('|');
+    var findQuery = { url: libraryInfo[0], version: libraryInfo[1] };
+    var libraryInfoFromDb = findResourcesWithFind(findQuery, 'Library');
 
     listOfLibraries.push(libraryInfoFromDb);
     return listOfLibraries;
