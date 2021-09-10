@@ -27,8 +27,8 @@ const createCollectionBundle = async measureId => {
   var rootLibJson = null;
   //check if the library is a url or not
   if (isValidLibraryURL(rootLib)) {
-    var libraryVersion = split(rootLib);
-    var findQuery = { url: rootLib.url };
+    var libraryInfo = rootLib.split('|');
+    var findQuery = { url: libraryInfo[0], version: libraryInfo[1] };
     rootLibJson = findResourcesWithFind(findQuery, 'Library');
   } else {
     rootLibJson = findResourceById(rootLib, 'Library');
@@ -36,7 +36,12 @@ const createCollectionBundle = async measureId => {
   var listOfLibraries = null;
   listOfLibraries.push(rootLibJson);
   listOfLibraries.push(findLibraries(rootLibJson, listOfLibraries));
-  //turn this into a bundle and return it
+
+  const cb = createCollectionBundle(base_version);
+  listOfLibraries.forEach(param => {
+    cb.addEntryFromResource(param.resource, 'Library');
+  });
+  return cb;
 };
 
 const findLibraries = async (libraryJson, listOfLibraries) => {
