@@ -17,6 +17,25 @@ function isValidLibraryUrl(s) {
   return urlRegex.test(s);
 }
 
+function hasNoDependencies(lib) {
+  return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
+}
+
+function getQueryFromReference(reference) {
+  // Library references could be canonical or resourceType/id
+  if (isValidLibraryUrl(reference)) {
+    if (reference.includes('|')) {
+      const [urlPart, versionPart] = reference.split('|');
+      return { url: urlPart, version: versionPart };
+    } else {
+      return { url: reference };
+    }
+  } else {
+    const id = reference.split('/')[1];
+    return { id };
+  }
+}
+
 /**
  * Assemble a measure bundle with necessary FHIR Library resources
  * @param {string} measureId id of the measure to assemble bundle for
@@ -42,14 +61,8 @@ async function getMeasureBundleFromId(measureId) {
 
   const [mainLibraryRef] = measure.library;
 
-  // Library references could be canonical or resourceType/id
-  let mainLib;
-  if (isValidLibraryUrl(mainLibraryRef)) {
-    mainLib = await findOneResourceWithQuery({ url: mainLibraryRef }, 'Library');
-  } else {
-    const mainLibraryId = mainLibraryRef.split('/')[1];
-    mainLib = await findResourceById(mainLibraryId, 'Library');
-  }
+  const mainLibQuery = getQueryFromReference(mainLibraryRef);
+  const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 
   if (!mainLib) {
     throw new ServerError(null, {
@@ -66,10 +79,33 @@ async function getMeasureBundleFromId(measureId) {
     });
   }
 
+  // TODO: Could we simplify the logic to avoid the need for de-duplication?
   const allLibsNested = await getAllDependentLibraries(mainLib);
   const allLibs = _(allLibsNested).flattenDeep().uniqBy('id').value();
 
   return mapResourcesToCollectionBundle([measure, ...allLibs]);
+}
+
+/**
+ * Go through the relatedArtifact ValueSets and query for them from the database
+ * @param {Object} lib FHIR library to grab ValueSets for
+ * @returns list of ValueSet resources required by the library
+ */
+async function getDependentValueSets(lib) {
+  if (hasNoDependencies(lib)) {
+    return [];
+  }
+
+  const depValueSetUrls = lib.relatedArtifact
+    .filter(ra => ra.type === 'depends-on' && ra.resource.includes('ValueSet'))
+    .map(ra => ra.resource);
+
+  const valueSetGets = depValueSetUrls.map(async url => {
+    const vsQuery = getQueryFromReference(url);
+    return findOneResourceWithQuery(vsQuery, 'ValueSet');
+  });
+
+  return Promise.all(valueSetGets);
 }
 
 /**
@@ -78,10 +114,12 @@ async function getMeasureBundleFromId(measureId) {
  * @returns array of all libraries
  */
 async function getAllDependentLibraries(lib) {
-  const results = [lib];
+  // Kick off function with current library and any ValueSets it uses
+  const valueSets = await getDependentValueSets(lib);
+  const results = [lib, ...valueSets];
 
   // If the library has no dependencies, we are done
-  if (!lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0)) {
+  if (hasNoDependencies(lib)) {
     return results;
   }
 
@@ -93,9 +131,9 @@ async function getAllDependentLibraries(lib) {
 
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
-    const [urlPart, versionPart] = url.split('|');
+    const libQuery = getQueryFromReference(url);
 
-    const lib = await findOneResourceWithQuery({ url: urlPart, version: versionPart }, 'Library');
+    const lib = await findOneResourceWithQuery(libQuery, 'Library');
     return getAllDependentLibraries(lib);
   });
 
