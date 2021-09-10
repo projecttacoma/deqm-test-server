@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@asymmetrik/node-fhir-server-core": "^2.2.3",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "fqm-execution": "^0.8.0",
