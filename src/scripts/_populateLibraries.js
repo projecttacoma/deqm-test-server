@@ -1,4 +1,4 @@
-const mongoUtil = require('../util/mongo');
+const { findResourceById, createResource, removeResource, updateResource } = require('../util/mongo.controller');
 
 async function main() {
   // Use connect method to connect to the server
@@ -6,12 +6,10 @@ async function main() {
   console.log('Connected successfully to server');
   const collections = await mongoUtil.db.listCollections().toArray();
 
-  db.collection("libraries").insertMany(libraries, function(err, res) {
+  db.collection('libraries').insertMany(libraries, function (err, res) {
     if (err) throw err;
-    console.log(res.insertedCount+" documents inserted");
+    console.log(res.insertedCount + ' documents inserted');
     // close the connection to db when you are done with it
     db.close();
-});
-
-
+  });
 }
