@@ -30,7 +30,21 @@ const buildConfig = () => {
       case 'Measure':
         config.profiles['Measure'] = {
           service: path.resolve('src', 'services', 'measure.service.js'),
-          versions: [VERSIONS['4_0_0']]
+          versions: [VERSIONS['4_0_0']],
+          operation: [
+            {
+              name: 'submitData',
+              route: '/$submit-data',
+              method: 'POST',
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
+            },
+            {
+              name: 'submitData',
+              route: '/:id/$submit-data',
+              method: 'POST',
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
+            }
+          ]
         };
         break;
       default:
