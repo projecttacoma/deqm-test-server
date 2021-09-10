@@ -1,8 +1,9 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
-
-const { createTransactionBundleClass } = require('../resources/transactionBundle.js');
-const { uploadTransactionBundle } = require('./bundle.service.js');
+const { createTransactionBundleClass } = require('../resources/transactionBundle');
+const { uploadTransactionBundle } = require('./bundle.service');
+const { getMeasureBundleFromId } = require('../util/measureBundle');
 
 const logger = loggers.get('default');
 /**
@@ -55,7 +56,7 @@ const remove = async args => {
  * @returns a transaction-response bundle
  */
 const submitData = async (args, { req }) => {
-  logger.info('Base >>> submit-data');
+  logger.info('Measure >>> $submit-data');
   if (req.body.resourceType !== 'Parameters') {
     throw new ServerError(null, {
       statusCode: 400,
@@ -116,4 +117,17 @@ const submitData = async (args, { req }) => {
   return output;
 };
 
-module.exports = { create, searchById, remove, update, submitData };
+/**
+ * Get all data requirements for a given measure as a FHIR Library
+ * @param {Object} args the args object passed in by the user, includes measure id
+ * @returns FHIR Library with all data requirements
+ */
+const dataRequirements = async args => {
+  logger.info('Measure >>> $data-requirements');
+  const measureBundle = await getMeasureBundleFromId(args.id);
+
+  const { results } = await Calculator.calculateDataRequirements(measureBundle);
+  return results;
+};
+
+module.exports = { create, searchById, remove, update, submitData, dataRequirements };

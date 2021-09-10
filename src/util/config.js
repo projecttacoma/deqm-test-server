@@ -43,6 +43,12 @@ const buildConfig = () => {
               route: '/:id/$submit-data',
               method: 'POST',
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
+            },
+            {
+              name: 'dataRequirements',
+              route: '/:id/$data-requirements',
+              method: 'GET',
+              reference: 'https://www.hl7.org/fhir/measure-operation-data-requirements.html'
             }
           ]
         };
