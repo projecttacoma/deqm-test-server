@@ -8,6 +8,7 @@ const {
   findResourcesWithAggregation
 } = require('../util/mongo.controller');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
+const url = require('url');
 
 const globalParameterDefinitions = {
   _content: {
@@ -76,19 +77,40 @@ const baseSearchById = async (args, resourceType) => {
 };
 
 const baseSearch = async (args, context, resourceType) => {
-  //console.log(context.req);
+  // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
-  const BundleEntry = resolveSchema(args.base_version, 'bundleentry');
+
+  // wipe out params since the 'base_version' here breaks the query building
   context.req.params = {};
   context.includeArchived = true;
-  const filter = qb.buildSearchQuery(context);
+
+  // build the aggregation query
+  const filter = qb.buildSearchQuery({ req: context.req, includeArchived: true });
   console.log(JSON.stringify(filter));
+
+  // grab the results from aggregation. has metadata about counts and data with resources
   const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
-  console.log(results);
-  const resultResources = results.data.map(result => new dataType(result));
-  const entries = resultResources.map(resource => new BundleEntry({ resource: resource }));
-  return new Bundle({ entry: entries });
+
+  // create instances of each of the resulting resources
+  const resultEntries = results.data.map(result => {
+    return {
+      fullUrl: new url.URL(
+        `${result.resourceType}/${result.id}`,
+        `http://${context.req.headers.host}/${args.base_version}/`
+      ),
+      resource: new dataType(result)
+    };
+  });
+
+  // build result bundle
+  const searchBundle = new Bundle({
+    type: 'searchset',
+    meta: { lastUpdated: new Date().toISOString() },
+    total: results.metadata[0].total,
+    entry: resultEntries
+  });
+  return searchBundle;
 };
 
 /**
