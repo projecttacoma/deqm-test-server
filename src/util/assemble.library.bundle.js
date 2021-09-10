@@ -53,7 +53,7 @@ const findLibraries = async (libraryJson, listOfLibraries) => {
       }
     });
   } else {
-    var libraryInfo = rootLib.split('|');
+    var libraryInfo = libraryJson.split('|');
     var findQuery = { url: libraryInfo[0], version: libraryInfo[1] };
     var libraryInfoFromDb = findResourcesWithFind(findQuery, 'Library');
 
