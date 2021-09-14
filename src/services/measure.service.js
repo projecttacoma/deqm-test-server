@@ -151,9 +151,12 @@ const submitData = async (args, { req }) => {
  * @param {Object} args the args object passed in by the user, includes measure id
  * @returns FHIR Library with all data requirements
  */
-const dataRequirements = async args => {
+const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
-  const measureBundle = await getMeasureBundleFromId(args.id);
+
+  const id = args.id || req.params.id;
+
+  const measureBundle = await getMeasureBundleFromId(id);
 
   const { results } = await Calculator.calculateDataRequirements(measureBundle);
   return results;
