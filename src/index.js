@@ -7,9 +7,9 @@ const { initialize } = require('./server/server');
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
 
-let config = buildConfig();
-let server = initialize(config, app);
-let logger = loggers.get('default');
+const config = buildConfig();
+const server = initialize(config, app);
+const logger = loggers.get('default');
 
 server.listen(3000, async () => {
   logger.info('Starting the FHIR Server at localhost:3000');

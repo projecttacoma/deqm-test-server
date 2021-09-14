@@ -8,5 +8,8 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 12
   },
-  rules: {}
+  rules: {
+    'prefer-const': 'warn',
+    eqeqeq: ['warn', 'smart']
+  }
 };
