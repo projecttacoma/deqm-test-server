@@ -2,7 +2,9 @@ const path = require('path');
 const axios = require('axios').default;
 const { ServerError, loggers, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
-let logger = loggers.get('default');
+const { replaceReferences } = require('../util/bundleUtils');
+
+const logger = loggers.get('default');
 
 /**
  * Creates transaction-response Bundle
@@ -74,10 +76,12 @@ async function uploadTransactionBundle(req, res) {
   }
   let { protocol, baseUrl } = req;
 
-  let requestsArray = entries.map(async entry => {
+  const scrubbedEntries = replaceReferences(entries);
+
+  let requestsArray = scrubbedEntries.map(async entry => {
     let { url, method } = entry.request;
     let destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    return await axios[method.toLowerCase()](destinationUrl, entry.resource, {
+    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
       headers: { 'Content-Type': 'application/json+fhir' }
     });
   });

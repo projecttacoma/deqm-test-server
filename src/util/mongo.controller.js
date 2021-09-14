@@ -54,9 +54,9 @@ const updateResource = async (id, data, resourceType) => {
   //If the document cannot be created with the passed id, Mongo will throw an error
   //before here, so should be ok to just return the passed id
   if (results.value === null) {
-    return { id: id };
+    return { id: id, created: true };
   }
-  return { id: results.value.id };
+  return { id: results.value.id, created: false };
 };
 
 /**

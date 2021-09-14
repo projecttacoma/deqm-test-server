@@ -1,5 +1,6 @@
 const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 const _ = require('lodash');
+const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
 
 /**
@@ -180,7 +181,55 @@ async function getPatientDataBundle(patientId, dataRequirements) {
   return mapResourcesToCollectionBundle(_.flattenDeep(data));
 }
 
+/**
+ * For entries in a transaction bundle whose IDs will be auto-generated, replace all instances of an existing reference
+ * to the old id with a reference to the newly generated one.
+ *
+ * Modify the request type to PUT after forcing the IDs. This will not affect return results, just internal representation
+ *
+ * @param {Array} entries array of bundle entries
+ * @returns new array of entries with replaced reverences
+ */
+function replaceReferences(entries) {
+  // Add metadata for old IDs and newly created ones of POST entries
+  entries.forEach(e => {
+    if (e.request.method === 'POST') {
+      e.isPost = true;
+      e.oldId = e.resource.id;
+      e.newId = uuidv4();
+    }
+  });
+
+  let entriesStr = JSON.stringify(entries);
+  const postEntries = entries.filter(e => e.isPost);
+
+  // For each POST entry, replace existing reference across all entries
+  postEntries.forEach(e => {
+    if (!e.oldId) return;
+
+    const r = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
+    entriesStr = entriesStr.replace(r, `${e.resource.resourceType}/${e.newId}`);
+  });
+
+  // Remove metadata and modify request type/resource id
+  const newEntries = JSON.parse(entriesStr).map(e => {
+    if (e.isPost) {
+      e.resource.id = e.newId;
+
+      e.request = {
+        method: 'PUT',
+        url: `${e.resource.resourceType}/${e.newId}`
+      };
+    }
+
+    return { resource: e.resource, request: e.request };
+  });
+
+  return newEntries;
+}
+
 module.exports = {
   getMeasureBundleFromId,
+  replaceReferences,
   getPatientDataBundle
 };
