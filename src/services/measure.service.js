@@ -1,10 +1,9 @@
-const { ServerError, loggers, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
-const url = require('url');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
+const { mapArrayToSearchSetBundle, getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
 const { findResourcesWithQuery } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
@@ -61,20 +60,9 @@ const search = async (args, { req }) => {
     ...(version ? { version } : {})
   };
 
-  const Bundle = resolveSchema(args.base_version, 'bundle');
-  const Measure = resolveSchema(args.base_version, 'measure');
-
   const measures = await findResourcesWithQuery(query, 'Measure');
 
-  return new Bundle({
-    type: 'searchset',
-    meta: { lastUpdated: new Date().toISOString() },
-    total: measures.length,
-    entry: measures.map(m => ({
-      fullUrl: new url.URL(`Measure/${m.id}`, `http://${req.headers.host}/${args.base_version}/`),
-      resource: new Measure(m)
-    }))
-  });
+  return mapArrayToSearchSetBundle(measures, 'Measure', args, req);
 };
 
 /**

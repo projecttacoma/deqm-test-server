@@ -1,7 +1,23 @@
-const { ServerError } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
 const _ = require('lodash');
+const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
+
+function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
+  const Bundle = resolveSchema(args.base_version, 'bundle');
+  const DataType = resolveSchema(args.base_version, resourceType);
+
+  return new Bundle({
+    type: 'searchset',
+    meta: { lastUpdated: new Date().toISOString() },
+    total: resources.length,
+    entry: resources.map(r => ({
+      fullUrl: new url.URL(`${resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
+      resource: new DataType(r)
+    }))
+  });
+}
 
 /**
  * Transform array of arbitrary resources into collection bundle
@@ -229,6 +245,7 @@ function replaceReferences(entries) {
 }
 
 module.exports = {
+  mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
   getPatientDataBundle
