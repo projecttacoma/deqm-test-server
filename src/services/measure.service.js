@@ -1,9 +1,11 @@
-const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, loggers, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
+const url = require('url');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { getMeasureBundleFromId } = require('../util/measureBundle');
+const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
+const { findResourcesWithQuery } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 /**
@@ -46,6 +48,33 @@ const update = async (args, data) => {
  */
 const remove = async args => {
   return baseRemove(args, 'Measure');
+};
+
+const search = async (args, { req }) => {
+  logger.info('Measure >>> search');
+
+  // Only supported params for now
+  const { name, version } = args;
+
+  const query = {
+    ...(name ? { name } : {}),
+    ...(version ? { version } : {})
+  };
+
+  const Bundle = resolveSchema(args.base_version, 'bundle');
+  const Measure = resolveSchema(args.base_version, 'measure');
+
+  const measures = await findResourcesWithQuery(query, 'Measure');
+
+  return new Bundle({
+    type: 'searchset',
+    meta: { lastUpdated: new Date().toISOString() },
+    total: measures.length,
+    entry: measures.map(m => ({
+      fullUrl: new url.URL(`Measure/${m.id}`, `http://${req.headers.host}/${args.base_version}/`),
+      resource: new Measure(m)
+    }))
+  });
 };
 
 /**
@@ -130,4 +159,45 @@ const dataRequirements = async args => {
   return results;
 };
 
-module.exports = { create, searchById, remove, update, submitData, dataRequirements };
+const evaluateMeasure = async (args, { req }) => {
+  logger.info('Measure >>> $evaluate-measure');
+  const measureBundle = await getMeasureBundleFromId(args.id);
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+
+  const { periodStart, periodEnd, subject } = req.query;
+
+  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+
+  const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
+  return results;
+};
+
+const careGaps = async (args, { req }) => {
+  logger.info('Measure >>> $care-gaps');
+  const { measureId, periodStart, periodEnd, subject } = req.query;
+  const measureBundle = await getMeasureBundleFromId(measureId);
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+
+  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+
+  const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
+  return results;
+};
+
+module.exports = {
+  create,
+  searchById,
+  remove,
+  update,
+  search,
+  submitData,
+  dataRequirements,
+  evaluateMeasure,
+  careGaps
+};

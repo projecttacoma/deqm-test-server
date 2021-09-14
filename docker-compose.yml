@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  fhir:
+    depends_on:
+      - mongo
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: mongo
+      DB_PORT: 27017
+      DB_NAME: deqm-test-server
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./src:/usr/src/app/src
+    command: npm start
+
+  mongo:
+    image: mongo:4.4.4
+    ports:
+      - '27017'
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

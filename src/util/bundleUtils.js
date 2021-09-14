@@ -1,7 +1,12 @@
 const { ServerError } = require('@asymmetrik/node-fhir-server-core');
 const _ = require('lodash');
-const { findResourceById, findOneResourceWithQuery } = require('../util/mongo.controller');
+const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
 
+/**
+ * Transform array of arbitrary resources into collection bundle
+ * @param {Array} resources the list of resources to map
+ * @returns {Object} FHIR collection bundle of all resources
+ */
 function mapResourcesToCollectionBundle(resources) {
   return {
     resourceType: 'Bundle',
@@ -12,18 +17,33 @@ function mapResourcesToCollectionBundle(resources) {
   };
 }
 
-function isValidLibraryUrl(s) {
+/**
+ * Utility function for checking if a given string is a canonical URL
+ * @param {string} s the string to check
+ * @returns true if the string is a url, false otherwise
+ */
+function isCanonicalUrl(s) {
   const urlRegex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return urlRegex.test(s);
 }
 
+/**
+ * Utility function for checking if a library has any dependencies
+ * @param {Object} lib FHIR Library resource to check dependencies of
+ * @returns true if there are any other Library/ValueSet resources that this library depends on, false otherwise
+ */
 function hasNoDependencies(lib) {
   return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
 }
 
+/**
+ * Assemble a mongo query based on a reference to another resource
+ * @param {string} reference either a canonical or resourceType/id reference
+ * @returns mongo query to pass in to mongo controller to search for the referenced resource
+ */
 function getQueryFromReference(reference) {
-  // Library references could be canonical or resourceType/id
-  if (isValidLibraryUrl(reference)) {
+  // References could be canonical or resourceType/id
+  if (isCanonicalUrl(reference)) {
     if (reference.includes('|')) {
       const [urlPart, versionPart] = reference.split('|');
       return { url: urlPart, version: versionPart };
@@ -144,6 +164,23 @@ async function getAllDependentLibraries(lib) {
   return results;
 }
 
+async function getPatientDataBundle(patientId, dataRequirements) {
+  const patient = await findResourceById(patientId, 'Patient');
+
+  const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+
+  const queries = requiredTypes.map(async type =>
+    findResourcesWithQuery({ 'subject.reference': `Patient/${patientId}` }, type)
+  );
+
+  const data = await Promise.all(queries);
+
+  data.push(patient);
+
+  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+}
+
 module.exports = {
-  getMeasureBundleFromId
+  getMeasureBundleFromId,
+  getPatientDataBundle
 };

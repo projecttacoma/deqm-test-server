@@ -49,6 +49,18 @@ const buildConfig = () => {
               route: '/:id/$data-requirements',
               method: 'GET',
               reference: 'https://www.hl7.org/fhir/measure-operation-data-requirements.html'
+            },
+            {
+              name: 'evaluateMeasure',
+              route: '/:id/$evaluate-measure',
+              method: 'GET',
+              reference: 'https://www.hl7.org/fhir/measure-operation-evaluate-measure.html'
+            },
+            {
+              name: 'careGaps',
+              route: '/$care-gaps',
+              method: 'GET',
+              reference: 'https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html'
             }
           ]
         };

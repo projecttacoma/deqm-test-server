@@ -11,6 +11,7 @@
     "prettier:fix": "prettier --write \"**/*.js\"",
     "check": "npm run lint && npm run prettier",
     "start": "node src/index.js",
+    "start:watch": "nodemon src/index.js",
     "db:setup": "node src/scripts/createCollections.js",
     "db:delete": "node src/scripts/deleteCollections.js",
     "db:reset": "npm run db:delete && npm run db:setup",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
+    "nodemon": "^2.0.12",
     "prettier": "^2.3.2"
   }
 }
