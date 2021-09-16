@@ -92,6 +92,13 @@ const baseRemove = async (args, resourceType) => {
   return removeResource(args.id, resourceType);
 };
 
+/**
+ * search for resources, currently only by identifier
+ * @param {Object} args the args containing search params
+ * @param {Object} req the http request object
+ * @param {string} resourceType string which signifies which collection to add the data to
+ * @returns FHIR searchset bundle of results
+ */
 const baseSearch = async (args, { req }, resourceType) => {
   const { identifier } = args;
 

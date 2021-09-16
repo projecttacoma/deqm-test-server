@@ -186,6 +186,7 @@ async function getPatientDataBundle(patientId, dataRequirements) {
 
   const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
 
+  // TODO: Replace subject.reference with lookup from model info
   const queries = requiredTypes.map(async type =>
     findResourcesWithQuery({ 'subject.reference': `Patient/${patientId}` }, type)
   );

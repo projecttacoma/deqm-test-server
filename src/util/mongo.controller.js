@@ -51,11 +51,14 @@ const updateResource = async (id, data, resourceType) => {
 
   const results = await collection.findOneAndUpdate({ id: id }, { $set: data }, { upsert: true });
 
-  //If the document cannot be created with the passed id, Mongo will throw an error
-  //before here, so should be ok to just return the passed id
+  // If the document cannot be created with the passed id, Mongo will throw an error
+  // before here, so should be ok to just return the passed id
   if (results.value === null) {
+    // null value indicates a newly created document
     return { id: id, created: true };
   }
+
+  // value being present indicates an update, so set created flag to false
   return { id: results.value.id, created: false };
 };
 
