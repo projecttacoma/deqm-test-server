@@ -11,14 +11,6 @@ const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 
 const globalParameterDefinitions = {
-  _content: {
-    type: 'string',
-    fhirtype: 'string',
-    xpath: '',
-    definition: 'http://hl7.org/fhir/SearchParameter/Resource-content',
-    description: 'Search on the entire content of the resource',
-    modifier: 'missing,exact,contains'
-  },
   _id: {
     type: 'token',
     fhirtype: 'token',
@@ -26,6 +18,46 @@ const globalParameterDefinitions = {
     definition: 'http://hl7.org/fhir/SearchParameter/Resource-id',
     description: 'Logical id of this artifact',
     modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  _lastUpdated: {
+    type: 'date',
+    fhirtype: 'date',
+    xpath: 'Resource.meta.lastUpdated',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-lastUpdated',
+    description: 'When the resource version last changed',
+    modifier: 'missing'
+  },
+  _tag: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.meta.tag',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-tag',
+    description: 'Tags applied to this resource',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  _profile: {
+    type: 'reference',
+    fhirtype: 'reference',
+    xpath: 'Resource.meta.profile',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-profile',
+    description: 'Profiles this resource claims to conform to',
+    modifier: 'missing,type,identifier'
+  },
+  _security: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.meta.security',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-security',
+    description: 'Security Labels applied to this resource',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  _content: {
+    type: 'string',
+    fhirtype: 'string',
+    xpath: '',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-content',
+    description: 'Search on the entire content of the resource',
+    modifier: 'missing,exact,contains'
   }
 };
 
@@ -83,7 +115,6 @@ const baseSearch = async (args, context, resourceType) => {
 
   // wipe out params since the 'base_version' here breaks the query building
   context.req.params = {};
-  context.includeArchived = true;
 
   // build the aggregation query
   const filter = qb.buildSearchQuery({ req: context.req, includeArchived: true });
@@ -92,24 +123,30 @@ const baseSearch = async (args, context, resourceType) => {
   // grab the results from aggregation. has metadata about counts and data with resources
   const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
 
-  // create instances of each of the resulting resources
-  const resultEntries = results.data.map(result => {
-    return {
-      fullUrl: new url.URL(
-        `${result.resourceType}/${result.id}`,
-        `http://${context.req.headers.host}/${args.base_version}/`
-      ),
-      resource: new dataType(result)
-    };
-  });
-
-  // build result bundle
+  // build result bundle. default to an empty result
   const searchBundle = new Bundle({
     type: 'searchset',
     meta: { lastUpdated: new Date().toISOString() },
-    total: results.metadata[0].total,
-    entry: resultEntries
+    total: 0
   });
+
+  // If this is undefined, there are no results.
+  if (results.metadata[0]) {
+    // create instances of each of the resulting resources
+    const resultEntries = results.data.map(result => {
+      return {
+        fullUrl: new url.URL(
+          `${result.resourceType}/${result.id}`,
+          `http://${context.req.headers.host}/${args.base_version}/`
+        ),
+        resource: new dataType(result)
+      };
+    });
+
+    searchBundle.total = results.metadata[0].total;
+    searchBundle.entry = resultEntries;
+  }
+
   return searchBundle;
 };
 
