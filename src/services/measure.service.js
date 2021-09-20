@@ -62,6 +62,8 @@ const search = async (args, { req }) => {
   // Only supported params for now
   const { name, version } = args;
 
+  // Conditionally assemble an object based on presence of supported params
+  // Object will include, one, both, or neither of the allowed arguments
   const query = {
     ...(name ? { name } : {}),
     ...(version ? { version } : {})
