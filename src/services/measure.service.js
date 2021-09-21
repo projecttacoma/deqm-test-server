@@ -3,7 +3,8 @@ const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { getMeasureBundleFromId } = require('../util/measureBundle');
+const { mapArrayToSearchSetBundle, getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
+const { findResourcesWithQuery } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 /**
@@ -46,6 +47,31 @@ const update = async (args, data) => {
  */
 const remove = async args => {
   return baseRemove(args, 'Measure');
+};
+
+/**
+ * result of sending a GET request to {BASE_URL}/4_0_0/Measure
+ * queries for all measures matching the criteria, only name and version for now
+ * @param {Object} args passed in arguments including the search parameters for the Measure
+ * @param {Object} req http request object
+ * @returns
+ */
+const search = async (args, { req }) => {
+  logger.info('Measure >>> search');
+
+  // Only supported params for now
+  const { name, version } = args;
+
+  // Conditionally assemble an object based on presence of supported params
+  // Object will include, one, both, or neither of the allowed arguments
+  const query = {
+    ...(name ? { name } : {}),
+    ...(version ? { version } : {})
+  };
+
+  const measures = await findResourcesWithQuery(query, 'Measure');
+
+  return mapArrayToSearchSetBundle(measures, 'Measure', args, req);
 };
 
 /**
@@ -107,7 +133,7 @@ const submitData = async (args, { req }) => {
   }
 
   parameters.forEach(param => {
-    //TODOMAYBE: add functionality for if resource is itself a bundle
+    //TODO: add functionality for if resource is itself a bundle
 
     tb.addEntryFromResource(param.resource, 'POST');
   });
@@ -120,14 +146,111 @@ const submitData = async (args, { req }) => {
 /**
  * Get all data requirements for a given measure as a FHIR Library
  * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} req http request object
  * @returns FHIR Library with all data requirements
  */
-const dataRequirements = async args => {
+const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
-  const measureBundle = await getMeasureBundleFromId(args.id);
+
+  const id = args.id || req.params.id;
+
+  const measureBundle = await getMeasureBundleFromId(id);
 
   const { results } = await Calculator.calculateDataRequirements(measureBundle);
   return results;
 };
 
-module.exports = { create, searchById, remove, update, submitData, dataRequirements };
+/**
+ * Execute the measure for a given Patient
+ * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} req http request object
+ * @returns FHIR MeasureReport with population results
+ */
+const evaluateMeasure = async (args, { req }) => {
+  logger.info('Measure >>> $evaluate-measure');
+  const measureBundle = await getMeasureBundleFromId(args.id);
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+
+  const { periodStart, periodEnd, subject, reportType = 'subject' } = req.query;
+
+  let errorMessage = null;
+  if (!subject) {
+    errorMessage = `Missing "subject" parameter for $evaluate-measure`;
+  }
+
+  if (reportType !== 'subject') {
+    errorMessage = `reportType ${reportType} not supported`;
+  }
+
+  if (errorMessage !== null) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: errorMessage
+          }
+        }
+      ]
+    });
+  }
+
+  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+
+  const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
+  return results;
+};
+
+/**
+ * Calculate the gaps in care for a given Patient
+ * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} req http request object
+ * @returns FHIR MeasureReport with population results
+ */
+const careGaps = async (args, { req }) => {
+  logger.info('Measure >>> $care-gaps');
+  const { measureId, periodStart, periodEnd, subject } = req.query;
+
+  if (!subject) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: 'Missing "subject" parameter for $care-gaps'
+          }
+        }
+      ]
+    });
+  }
+
+  const measureBundle = await getMeasureBundleFromId(measureId);
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+
+  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+
+  const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
+  return results;
+};
+
+module.exports = {
+  create,
+  searchById,
+  remove,
+  update,
+  search,
+  submitData,
+  dataRequirements,
+  evaluateMeasure,
+  careGaps
+};

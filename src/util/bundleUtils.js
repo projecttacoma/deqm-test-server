@@ -1,7 +1,29 @@
-const { ServerError } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
 const _ = require('lodash');
-const { findResourceById, findOneResourceWithQuery } = require('../util/mongo.controller');
+const url = require('url');
+const { v4: uuidv4 } = require('uuid');
+const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
 
+function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
+  const Bundle = resolveSchema(args.base_version, 'bundle');
+  const DataType = resolveSchema(args.base_version, resourceType);
+
+  return new Bundle({
+    type: 'searchset',
+    meta: { lastUpdated: new Date().toISOString() },
+    total: resources.length,
+    entry: resources.map(r => ({
+      fullUrl: new url.URL(`${resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
+      resource: new DataType(r)
+    }))
+  });
+}
+
+/**
+ * Transform array of arbitrary resources into collection bundle
+ * @param {Array} resources the list of resources to map
+ * @returns {Object} FHIR collection bundle of all resources
+ */
 function mapResourcesToCollectionBundle(resources) {
   return {
     resourceType: 'Bundle',
@@ -12,18 +34,33 @@ function mapResourcesToCollectionBundle(resources) {
   };
 }
 
-function isValidLibraryUrl(s) {
+/**
+ * Utility function for checking if a given string is a canonical URL
+ * @param {string} s the string to check
+ * @returns true if the string is a url, false otherwise
+ */
+function isCanonicalUrl(s) {
   const urlRegex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return urlRegex.test(s);
 }
 
+/**
+ * Utility function for checking if a library has any dependencies
+ * @param {Object} lib FHIR Library resource to check dependencies of
+ * @returns true if there are any other Library/ValueSet resources that this library depends on, false otherwise
+ */
 function hasNoDependencies(lib) {
   return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
 }
 
+/**
+ * Assemble a mongo query based on a reference to another resource
+ * @param {string} reference either a canonical or resourceType/id reference
+ * @returns mongo query to pass in to mongo controller to search for the referenced resource
+ */
 function getQueryFromReference(reference) {
-  // Library references could be canonical or resourceType/id
-  if (isValidLibraryUrl(reference)) {
+  // References could be canonical or resourceType/id
+  if (isCanonicalUrl(reference)) {
     if (reference.includes('|')) {
       const [urlPart, versionPart] = reference.split('|');
       return { url: urlPart, version: versionPart };
@@ -144,6 +181,73 @@ async function getAllDependentLibraries(lib) {
   return results;
 }
 
+async function getPatientDataBundle(patientId, dataRequirements) {
+  const patient = await findResourceById(patientId, 'Patient');
+
+  const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+
+  // TODO: Replace subject.reference with lookup from model info
+  const queries = requiredTypes.map(async type =>
+    findResourcesWithQuery({ 'subject.reference': `Patient/${patientId}` }, type)
+  );
+
+  const data = await Promise.all(queries);
+
+  data.push(patient);
+
+  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+}
+
+/**
+ * For entries in a transaction bundle whose IDs will be auto-generated, replace all instances of an existing reference
+ * to the old id with a reference to the newly generated one.
+ *
+ * Modify the request type to PUT after forcing the IDs. This will not affect return results, just internal representation
+ *
+ * @param {Array} entries array of bundle entries
+ * @returns new array of entries with replaced reverences
+ */
+function replaceReferences(entries) {
+  // Add metadata for old IDs and newly created ones of POST entries
+  entries.forEach(e => {
+    if (e.request.method === 'POST') {
+      e.isPost = true;
+      e.oldId = e.resource.id;
+      e.newId = uuidv4();
+    }
+  });
+
+  let entriesStr = JSON.stringify(entries);
+  const postEntries = entries.filter(e => e.isPost);
+
+  // For each POST entry, replace existing reference across all entries
+  postEntries.forEach(e => {
+    if (!e.oldId) return;
+
+    const r = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
+    entriesStr = entriesStr.replace(r, `${e.resource.resourceType}/${e.newId}`);
+  });
+
+  // Remove metadata and modify request type/resource id
+  const newEntries = JSON.parse(entriesStr).map(e => {
+    if (e.isPost) {
+      e.resource.id = e.newId;
+
+      e.request = {
+        method: 'PUT',
+        url: `${e.resource.resourceType}/${e.newId}`
+      };
+    }
+
+    return { resource: e.resource, request: e.request };
+  });
+
+  return newEntries;
+}
+
 module.exports = {
-  getMeasureBundleFromId
+  mapArrayToSearchSetBundle,
+  getMeasureBundleFromId,
+  replaceReferences,
+  getPatientDataBundle
 };

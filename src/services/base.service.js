@@ -1,6 +1,13 @@
-const { findResourceById, createResource, removeResource, updateResource } = require('../util/mongo.controller');
 const { v4: uuidv4 } = require('uuid');
 const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-core');
+const {
+  findResourcesWithQuery,
+  findResourceById,
+  createResource,
+  removeResource,
+  updateResource
+} = require('../util/mongo.controller');
+const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 
 /**
  * creates an object and generates an id for it regardless of the id passed in
@@ -86,6 +93,36 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
+ * search for resources, currently only by identifier
+ * @param {Object} args the args containing search params
+ * @param {Object} req the http request object
+ * @param {string} resourceType string which signifies which collection to add the data to
+ * @returns FHIR searchset bundle of results
+ */
+const baseSearch = async (args, { req }, resourceType) => {
+  const { identifier } = args;
+
+  if (!identifier) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: 'Base searching only allowed for "identifier"'
+          }
+        }
+      ]
+    });
+  }
+
+  const resources = await findResourcesWithQuery({ identifier: { $elemMatch: { value: identifier } } }, resourceType);
+
+  return mapArrayToSearchSetBundle(resources, resourceType, args, req);
+};
+
+/**
  * checks if the headers are incorrect and throws and error with guidance if so
  * @param {*} requestBody the body of the request
  */
@@ -119,6 +156,7 @@ const buildServiceModule = resourceType => {
   return {
     create: async (_, data) => baseCreate(data, resourceType),
     searchById: async args => baseSearchById(args, resourceType),
+    search: async (args, data) => baseSearch(args, data, resourceType),
     update: async (args, data) => baseUpdate(args, data, resourceType),
     remove: async args => baseRemove(args, resourceType)
   };

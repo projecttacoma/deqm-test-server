@@ -34,6 +34,11 @@ const findOneResourceWithQuery = async (query, resourceType) => {
   return collection.findOne(query);
 };
 
+const findResourcesWithQuery = async (query, resourceType) => {
+  const collection = db.collection(resourceType);
+  return (await collection.find(query)).toArray();
+};
+
 /**
  * searches for a document and updates it if found, creates it if not
  * @param {*} id id of resource to be updated
@@ -46,12 +51,15 @@ const updateResource = async (id, data, resourceType) => {
 
   const results = await collection.findOneAndUpdate({ id: id }, { $set: data }, { upsert: true });
 
-  //If the document cannot be created with the passed id, Mongo will throw an error
-  //before here, so should be ok to just return the passed id
+  // If the document cannot be created with the passed id, Mongo will throw an error
+  // before here, so should be ok to just return the passed id
   if (results.value === null) {
-    return { id: id };
+    // null value indicates a newly created document
+    return { id: id, created: true };
   }
-  return { id: results.value.id };
+
+  // value being present indicates an update, so set created flag to false
+  return { id: results.value.id, created: false };
 };
 
 /**
@@ -65,4 +73,11 @@ const removeResource = async (id, resourceType) => {
   return collection.deleteOne({ id: id });
 };
 
-module.exports = { findResourceById, findOneResourceWithQuery, createResource, removeResource, updateResource };
+module.exports = {
+  findResourcesWithQuery,
+  findResourceById,
+  findOneResourceWithQuery,
+  createResource,
+  removeResource,
+  updateResource
+};
