@@ -1,10 +1,9 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
-const { baseCreate, baseSearchById, baseRemove, baseUpdate } = require('./base.service');
+const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { mapArrayToSearchSetBundle, getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
-const { findResourcesWithQuery } = require('../util/mongo.controller');
+const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
 
 const logger = loggers.get('default');
 /**
@@ -50,6 +49,14 @@ const remove = async args => {
 };
 
 /**
+ * Parameter definitions for attributes on Measure that we can pass to the query builder.
+ */
+const SEARCH_PARAM_DEFS = {
+  name: { type: 'token', fhirtype: 'token', xpath: 'Measure.name' },
+  version: { type: 'token', fhirtype: 'token', xpath: 'Measure.version' }
+};
+
+/**
  * result of sending a GET request to {BASE_URL}/4_0_0/Measure
  * queries for all measures matching the criteria, only name and version for now
  * @param {Object} args passed in arguments including the search parameters for the Measure
@@ -58,20 +65,7 @@ const remove = async args => {
  */
 const search = async (args, { req }) => {
   logger.info('Measure >>> search');
-
-  // Only supported params for now
-  const { name, version } = args;
-
-  // Conditionally assemble an object based on presence of supported params
-  // Object will include, one, both, or neither of the allowed arguments
-  const query = {
-    ...(name ? { name } : {}),
-    ...(version ? { version } : {})
-  };
-
-  const measures = await findResourcesWithQuery(query, 'Measure');
-
-  return mapArrayToSearchSetBundle(measures, 'Measure', args, req);
+  return baseSearch(args, { req }, 'Measure', SEARCH_PARAM_DEFS);
 };
 
 /**

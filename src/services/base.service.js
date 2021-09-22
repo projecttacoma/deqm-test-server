@@ -10,7 +10,10 @@ const {
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 
-const globalParameterDefinitions = {
+/**
+ * Query Builder Parameter Definitions for all resources
+ */
+const GLOBAL_PARAMETER_DEFINITIONS = {
   _id: {
     type: 'token',
     fhirtype: 'token',
@@ -36,8 +39,8 @@ const globalParameterDefinitions = {
     modifier: 'missing,text,not,in,not-in,below,above,ofType'
   },
   _profile: {
-    type: 'reference',
-    fhirtype: 'reference',
+    type: 'token',
+    fhirtype: 'token',
     xpath: 'Resource.meta.profile',
     definition: 'http://hl7.org/fhir/SearchParameter/Resource-profile',
     description: 'Profiles this resource claims to conform to',
@@ -51,18 +54,15 @@ const globalParameterDefinitions = {
     description: 'Security Labels applied to this resource',
     modifier: 'missing,text,not,in,not-in,below,above,ofType'
   },
-  _content: {
-    type: 'string',
-    fhirtype: 'string',
-    xpath: '',
-    definition: 'http://hl7.org/fhir/SearchParameter/Resource-content',
-    description: 'Search on the entire content of the resource',
-    modifier: 'missing,exact,contains'
+  identifier: {
+    type: 'token',
+    fhirtype: 'Identifier',
+    xpath: 'Resource.identifier'
   }
 };
 
 const qb = new QueryBuilder({
-  globalParameterDefinitions,
+  globalParameterDefinitions: GLOBAL_PARAMETER_DEFINITIONS,
   implementationParameters: { archivedParamPath: '_isArchived' }
 });
 
@@ -108,20 +108,22 @@ const baseSearchById = async (args, resourceType) => {
   return new dataType(result);
 };
 
-const baseSearch = async (args, context, resourceType) => {
+/**
+ * Searches using query parameters.
+ * @param {*} args The args from the request.
+ * @param {*} req The Express request object. This is used by the query builder.
+ * @param {*} resourceType The resource type we are searching on.
+ * @param {*} paramDefs Optional parameter definitions for the specific resource types. Specific
+ *                      resource services should call this and pass
+ * @returns Search set result bundle
+ */
+const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
   // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
 
   // wipe out params since the 'base_version' here breaks the query building
-  context.req.params = {};
-
-  // build the aggregation query
-  const filter = qb.buildSearchQuery({ req: context.req, includeArchived: true });
-  console.log(JSON.stringify(filter));
-
-  // grab the results from aggregation. has metadata about counts and data with resources
-  const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
+  req.params = {};
 
   // build result bundle. default to an empty result
   const searchBundle = new Bundle({
@@ -130,23 +132,46 @@ const baseSearch = async (args, context, resourceType) => {
     total: 0
   });
 
-  // If this is undefined, there are no results.
-  if (results.metadata[0]) {
-    // create instances of each of the resulting resources
-    const resultEntries = results.data.map(result => {
-      return {
-        fullUrl: new url.URL(
-          `${result.resourceType}/${result.id}`,
-          `http://${context.req.headers.host}/${args.base_version}/`
-        ),
-        resource: new dataType(result)
-      };
+  // build the aggregation query
+  const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: paramDefs });
+
+  // if the query builder was able to build a query actually execute it.
+  if (filter.query) {
+    // grab the results from aggregation. has metadata about counts and data with resources
+    const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
+
+    // If this is undefined, there are no results.
+    if (results.metadata[0]) {
+      // create instances of each of the resulting resources
+      const resultEntries = results.data.map(result => {
+        return {
+          fullUrl: new url.URL(
+            `${result.resourceType}/${result.id}`,
+            `http://${req.headers.host}/${args.base_version}/`
+          ),
+          resource: new dataType(result)
+        };
+      });
+
+      searchBundle.total = results.metadata[0].total;
+      searchBundle.entry = resultEntries;
+    }
+  } else {
+    // If there were issues with query building, throw an error. Use the provided error if possible.
+    const errorMessage = filter.errors[0] ? filter.errors[0].message : 'Issue parsing parameters.';
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: errorMessage
+          }
+        }
+      ]
     });
-
-    searchBundle.total = results.metadata[0].total;
-    searchBundle.entry = resultEntries;
   }
-
   return searchBundle;
 };
 
@@ -231,4 +256,4 @@ const buildServiceModule = resourceType => {
   };
 };
 
-module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule };
+module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule, baseSearch };
