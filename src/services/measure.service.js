@@ -198,7 +198,11 @@ const evaluateMeasure = async (args, { req }) => {
   }
 
   const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
-
+  console.log('patientBundle from getPatientDataBundle:');
+  patientBundle.entry.forEach(b => {
+    console.log(b);
+  });
+  //console.log(patientBundle);
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd

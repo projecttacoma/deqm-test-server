@@ -3,6 +3,7 @@ const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
+const patientRefs = require('../model-info/patient-references');
 
 function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -185,14 +186,20 @@ async function getPatientDataBundle(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
 
   const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
-
-  // TODO: Replace subject.reference with lookup from model info
-  const queries = requiredTypes.map(async type =>
-    findResourcesWithQuery({ 'subject.reference': `Patient/${patientId}` }, type)
-  );
+  const queries = requiredTypes.map(async type => {
+    const aQuery = patientRefs[type].forEach(t => {
+      const query = {};
+      query[`${t}.reference`] = `Patient/${patientId}`;
+      console.log(query);
+      return query;
+    });
+    return findResourcesWithQuery(aQuery, type);
+  });
 
   const data = await Promise.all(queries);
 
+  console.log('data:');
+  console.log(data);
   data.push(patient);
 
   return mapResourcesToCollectionBundle(_.flattenDeep(data));
