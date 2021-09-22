@@ -8,8 +8,6 @@ const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
 const config = buildConfig();
 const server = initialize(config);
-
-const BASE_URL = 'localhost:3000/4_0_0/Measure/testMeasure';
 const data = {
   headers: 'application/json+fhir',
   title: 'test1',
@@ -29,7 +27,7 @@ describe('measure.service', () => {
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
-        .post(BASE_URL)
+        .post('/4_0_0/measure/testMeasure')
         .send(data)
         .expect(200)
         .then(async response => {
@@ -44,7 +42,8 @@ describe('measure.service', () => {
     //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
-        .get(BASE_URL)
+        //.get(BASE_URL)
+        .get('/4_0_0/measure/testMeasure')
         .send(data)
         .expect(200)
         .then(async response => {
@@ -67,7 +66,7 @@ describe('measure.service', () => {
     //*a put request*/
     test('test update with correctHeaders and  the id is in database', () => {
       supertest(server.app)
-        .put(BASE_URL)
+        .put('/4_0_0/measure/testMeasure')
         .send(updateData)
         .expect(200)
         .then(async response => {
@@ -86,7 +85,7 @@ describe('measure.service', () => {
   describe('remove', () => {
     test('removing the measure from the database when the measure is indeed present', () => {
       supertest(server.app)
-        .delete(BASE_URL)
+        .delete('/4_0_0/measure/testMeasure')
         .send(data)
         .expect(200)
         .then(async response => {
