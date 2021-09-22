@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 const { MongoClient } = require('mongodb');
+/*eslint-disable-next-line no-unused-vars*/
 const dbconfig = require('./dbconfig');
 
 // Connection URL
