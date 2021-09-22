@@ -228,7 +228,8 @@ function replaceReferences(entries) {
   entries.forEach(e => {
     if (e.request.method === 'POST') {
       e.isPost = true;
-      e.oldId = e.resource.id;
+      //if the resource does not have an id, we'll need to parse it from the end of the fullUrl (urn:uuid:resourceId)
+      e.oldId = e.resource.id || e.fullUrl.split(':').slice(-1)[0];
       e.newId = uuidv4();
     }
   });
@@ -240,7 +241,9 @@ function replaceReferences(entries) {
   postEntries.forEach(e => {
     if (!e.oldId) return;
 
-    const r = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
+    //This regexp will match any reference of the form resourceType/resourceId or urn:uuid:resourceId
+    const r = new RegExp(`${e.resource.resourceType}/${e.oldId}|urn:uuid:${e.oldId}`, 'g');
+    //regardless of the previous id format, we want to replace the references with resourceType/resourceId
     entriesStr = entriesStr.replace(r, `${e.resource.resourceType}/${e.newId}`);
   });
 
