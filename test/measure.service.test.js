@@ -8,12 +8,49 @@ const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
 const config = buildConfig();
 const server = initialize(config);
-const data = {
-  headers: 'application/json+fhir',
-  title: 'test1',
-  id: 'testMeasure'
-};
 
+
+const postRequest = {
+  encoding: 'utf8',
+  url: 'http://localhost:3000',
+  json: true,
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json+fhir'
+  },
+  body: JSON.stringify(testMeasure)
+};
+const putRequest = {
+  encoding: 'utf8',
+  url: 'http://localhost:3000',
+  json: true,
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json+fhir'
+  },
+  body: JSON.stringify(testMeasure)
+};
+const getRequest = {
+  encoding: 'utf8',
+  url: 'http://localhost:3000',
+  json: true,
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json+fhir'
+  },
+  body: JSON.stringify(testMeasure)
+}
+
+const deleteRequest = {
+  encoding: 'utf8',
+  url: 'http://localhost:3000',
+  json: true,
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json+fhir'
+  },
+  body: JSON.stringify(testMeasure)
+}
 describe('measure.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
@@ -27,14 +64,14 @@ describe('measure.service', () => {
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
-        .post('/4_0_0/measure/testMeasure')
-        .send(data)
+        .post('/4_0_0/Measure')
+        .send(postRequest)
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body._id).toBeTruthy();
-          expect(response.body.title).toBe(data.title);
-          expect(response.body.content).toBe(data.content);
+          expect(response.body._id != null);
+          // expect(response.body.title).toBe(data.title);
+          // expect(response.body.content).toBe(data.content);
         });
     });
   });
@@ -42,32 +79,23 @@ describe('measure.service', () => {
     //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
-        //.get(BASE_URL)
-        .get('/4_0_0/measure/testMeasure')
-        .send(data)
+        .get('/4_0_0/Measure/testMeasure')
+        .send(getRequest)
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body._id).toBeTruthy();
-          expect(response.body.title).toBe(data.title);
-          expect(response.body.content).toBe(data.content);
 
-          // Check the response
-          expect(response.body._id).toBeTruthy();
-          expect(response.body.title).toBe(data.title);
-          expect(response.body.content).toBe(data.content);
+          expect(response.body.title).toBe(getRequest.title);
+          expect(response.body.content).toBe(getRequest.content);
         });
     });
   });
   describe('update', () => {
-    const updateData = {
-      id: 'testMeasure'
-    };
     //*a put request*/
     test('test update with correctHeaders and  the id is in database', () => {
       supertest(server.app)
-        .put('/4_0_0/measure/testMeasure')
-        .send(updateData)
+        .put('/4_0_0/Measure/testMeasure')
+        .send(putRequest)
         .expect(200)
         .then(async response => {
           // Check the response
@@ -85,15 +113,10 @@ describe('measure.service', () => {
   describe('remove', () => {
     test('removing the measure from the database when the measure is indeed present', () => {
       supertest(server.app)
-        .delete('/4_0_0/measure/testMeasure')
-        .send(data)
+        .delete('/4_0_0/Measure/testMeasure')
+        .send(deleteRequest)
         .expect(200)
         .then(async response => {
-          // Check the response
-          expect(response.body._id).toBeTruthy();
-          expect(response.body.title).toBe(data.title);
-          expect(response.body.content).toBe(data.content);
-
           // Check the response
           expect(response.body._id).toBeTruthy();
           expect(response.body.title).toBe(data.title);
