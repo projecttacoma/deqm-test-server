@@ -27,7 +27,6 @@
     "fqm-execution": "^0.8.0",
     "lodash": "^4.17.21",
     "mongodb": "^4.1.0",
-    "save-dev": "0.0.1-security",
     "uuid": "^8.3.2",
     "xml2js": "^0.4.23"
   },
