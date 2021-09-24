@@ -147,7 +147,7 @@ const submitData = async (args, { req }) => {
 };
 
 /**
- *
+ * TO-DO: add bulk import functionality
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
@@ -161,7 +161,7 @@ const bulkImport = async (args, { req }) => {
         severity: 'error',
         code: 'BadRequest',
         details: {
-          text: `bulkImport not implemented yet`
+          text: `bulkImport has not been implemented yet`
         }
       }
     ]
