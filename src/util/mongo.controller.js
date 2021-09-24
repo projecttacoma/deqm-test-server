@@ -73,9 +73,15 @@ const removeResource = async (id, resourceType) => {
   return collection.deleteOne({ id: id });
 };
 
+/**
+ * Run an aggregation query on the database.
+ * @param {*[]} query Mongo aggregation pipeline array.
+ * @param {*} resourceType The resource type (collection) to aggregate on.
+ * @returns Array promise of results.
+ */
 const findResourcesWithAggregation = async (query, resourceType) => {
   const collection = db.collection(resourceType);
-  return collection.aggregate(query);
+  return (await collection.aggregate(query)).toArray();
 };
 
 module.exports = {

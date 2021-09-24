@@ -137,11 +137,11 @@ const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
 
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
-    // grab the results from aggregation. has metadata about counts and data with resources
-    const results = (await (await findResourcesWithAggregation(filter.query, resourceType)).toArray())[0];
+    // grab the results from aggregation. has metadata about counts and data with resources in the first array position
+    const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
 
     // If this is undefined, there are no results.
-    if (results.metadata[0]) {
+    if (results && results.metadata[0]) {
       // create instances of each of the resulting resources
       const resultEntries = results.data.map(result => {
         return {
