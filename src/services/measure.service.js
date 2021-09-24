@@ -111,10 +111,13 @@ const submitData = async (args, { req }) => {
       ]
     });
   }
+  // check if we want to do a bulk import
+  if (req.headers['prefer'] === 'respond-async') {
+    return await bulkImport(args, { req });
+  }
   const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
-
   // Ensure exactly 1 measureReport is in parameters
   const numMeasureReportsInput = parameters.filter(param => param.name === 'measureReport').length;
   if (numMeasureReportsInput !== 1) {
@@ -141,6 +144,28 @@ const submitData = async (args, { req }) => {
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
   return output;
+};
+
+/**
+ *
+ * @param {*} args the args object passed in by the user
+ * @param {*} req the request object passed in by the user
+ */
+// eslint-disable-next-line no-unused-vars
+const bulkImport = async (args, { req }) => {
+  logger.info('Measure >>> $bulk-import');
+  throw new ServerError(null, {
+    statusCode: 400,
+    issue: [
+      {
+        severity: 'error',
+        code: 'BadRequest',
+        details: {
+          text: `bulkImport not implemented yet`
+        }
+      }
+    ]
+  });
 };
 
 /**

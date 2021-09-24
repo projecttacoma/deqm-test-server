@@ -124,7 +124,7 @@ const baseSearch = async (args, { req }, resourceType) => {
 
 /**
  * checks if the headers are incorrect and throws and error with guidance if so
- * @param {*} requestBody the body of the request
+ * @param {*} requestHeaders the headers from the request body
  */
 const checkHeaders = requestHeaders => {
   if (
