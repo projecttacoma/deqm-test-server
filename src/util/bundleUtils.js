@@ -3,6 +3,8 @@ const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
+// lookup from model info
+const patientRefs = require('../model-info/patient-references');
 
 function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -181,15 +183,29 @@ async function getAllDependentLibraries(lib) {
   return results;
 }
 
+/**
+ * Assemble the patient bundle to be used in our operations from fqm execution
+ * @param {string} patientId patient ID of interest
+ * @param {Array} dataRequirements data requirements obtained from fqm execution
+ * @returns patient bundle
+ */
 async function getPatientDataBundle(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
 
   const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+  const queries = requiredTypes.map(async type => {
+    // instantiate with subject.reference because modelInfo is incorrect
+    // and doesn't map subject to all the types that it should
+    const allQueries = [{ 'subject.reference': `Patient/${patientId}` }];
 
-  // TODO: Replace subject.reference with lookup from model info
-  const queries = requiredTypes.map(async type =>
-    findResourcesWithQuery({ 'subject.reference': `Patient/${patientId}` }, type)
-  );
+    // for each resourceType, go through all keys that can reference patient
+    patientRefs[type].forEach(refKey => {
+      const query = {};
+      query[`${refKey}.reference`] = `Patient/${patientId}`;
+      allQueries.push(query);
+    });
+    return findResourcesWithQuery({ $or: allQueries }, type);
+  });
 
   const data = await Promise.all(queries);
 
