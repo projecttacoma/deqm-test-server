@@ -5,7 +5,7 @@ const {
   BOTH_REPLACE_REFERENCES_ENTRIES,
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
   EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
-} = require('./bundleUtilConsts');
+} = require('./bundleUtilFixtures');
 const { v4: uuidv4 } = require('uuid');
 
 jest.mock('uuid', () => {
@@ -40,7 +40,7 @@ describe('Testing functionality of all functions which run uuidv4', () => {
     beforeEach(() => {
       init(BOTH_REPLACE_REFERENCES_ENTRIES);
     });
-    test('Check that replaceReference works on both style references', () => {
+    test('Check that replaceReference does not replace ref on reference: resourceType/resourceId -> fullUrl: urn:uuid: resourceId', () => {
       expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT);
     });
   });
