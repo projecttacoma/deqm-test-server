@@ -4,7 +4,7 @@
   "description": "A test server for quality measure operations",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --silent",
     "lint": "eslint \"**/*.js\"",
     "lint:fix": "eslint \"**/*.js\" --fix",
     "prettier": "prettier --check \"**/*.js\"",
@@ -33,6 +33,7 @@
   "devDependencies": {
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
+    "jest": "^27.2.1",
     "nodemon": "^2.0.12",
     "prettier": "^2.3.2"
   }

@@ -238,10 +238,15 @@ function replaceReferences(entries) {
 
   // For each POST entry, replace existing reference across all entries
   postEntries.forEach(e => {
-    if (!e.oldId) return;
-
-    const r = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
-    entriesStr = entriesStr.replace(r, `${e.resource.resourceType}/${e.newId}`);
+    //checking fullUrl and id in separate replace loops will prevent invalid ResourcType/ResourceID -> urn:uuid references
+    if (e.oldId) {
+      const idRegexp = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
+      entriesStr = entriesStr.replace(idRegexp, `${e.resource.resourceType}/${e.newId}`);
+    }
+    if (e.fullUrl) {
+      const urnRegexp = new RegExp(e.fullUrl, 'g');
+      entriesStr = entriesStr.replace(urnRegexp, `${e.resource.resourceType}/${e.newId}`);
+    }
   });
 
   // Remove metadata and modify request type/resource id
