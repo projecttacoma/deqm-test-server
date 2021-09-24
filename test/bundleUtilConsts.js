@@ -22,7 +22,7 @@ const URN_REPLACE_REFERENCES_ENTRIES = [
     request: {
       method: 'POST',
       url: 'Patient',
-      ifNoneExist: 'identifier=http:/example.org/fhir/ids|234234'
+      ifNoneExist: 'identifier=http://example.org/fhir/ids|234234'
     }
   }
 ];
@@ -51,7 +51,7 @@ const RESOURCETYPE_REPLACE_REFERENCES_ENTRIES = [
     request: {
       method: 'POST',
       url: 'Patient',
-      ifNoneExist: 'identifier=http:/example.org/fhir/ids|234234'
+      ifNoneExist: 'identifier=http://example.org/fhir/ids|234234'
     }
   }
 ];
@@ -80,7 +80,7 @@ const BOTH_REPLACE_REFERENCES_ENTRIES = [
     request: {
       method: 'POST',
       url: 'Patient',
-      ifNoneExist: 'identifier=http:/example.org/fhir/ids|234234'
+      ifNoneExist: 'identifier=http://example.org/fhir/ids|234234'
     }
   }
 ];
