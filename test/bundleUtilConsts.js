@@ -113,9 +113,38 @@ const EXPECTED_REPLACE_REFERENCES_OUTPUT = [
   }
 ];
 
+const EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT = [
+  {
+    resource: {
+      id: 'Patient-0',
+      resourceType: 'Patient',
+      gender: 'male',
+      birthDate: '1974-12-25'
+    },
+    request: {
+      method: 'PUT',
+      url: 'Patient/Patient-0'
+    }
+  },
+  {
+    resource: {
+      id: 'Patient-1',
+      resourceType: 'Patient',
+      gender: 'male',
+      birthDate: '1974-12-25',
+      reference: 'Patient/61ebe359-bfdc-4613-8bf2-c5e300945f0a'
+    },
+    request: {
+      method: 'PUT',
+      url: 'Patient/Patient-1'
+    }
+  }
+];
+
 module.exports = {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
   BOTH_REPLACE_REFERENCES_ENTRIES,
-  EXPECTED_REPLACE_REFERENCES_OUTPUT
+  EXPECTED_REPLACE_REFERENCES_OUTPUT,
+  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
 };

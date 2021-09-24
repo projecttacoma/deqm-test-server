@@ -3,7 +3,8 @@ const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
   BOTH_REPLACE_REFERENCES_ENTRIES,
-  EXPECTED_REPLACE_REFERENCES_OUTPUT
+  EXPECTED_REPLACE_REFERENCES_OUTPUT,
+  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
 } = require('./bundleUtilConsts');
 const { v4: uuidv4 } = require('uuid');
 
@@ -31,15 +32,7 @@ describe('Testing functionality of all functions which run uuidv4', () => {
     beforeEach(() => {
       init(RESOURCETYPE_REPLACE_REFERENCES_ENTRIES);
     });
-    test('Check that replaceReference works on urn:uuid style references', () => {
-      expect(replaceReferences(RESOURCETYPE_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_REPLACE_REFERENCES_OUTPUT);
-    });
-  });
-  describe('Testing functionality of bundleUtils for resourceType/resourceID style references', () => {
-    beforeEach(() => {
-      init(RESOURCETYPE_REPLACE_REFERENCES_ENTRIES);
-    });
-    test('Check that replaceReference works on urn:uuid style references', () => {
+    test('Check that replaceReference works on resourceType/resourceId style references', () => {
       expect(replaceReferences(RESOURCETYPE_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_REPLACE_REFERENCES_OUTPUT);
     });
   });
@@ -47,8 +40,8 @@ describe('Testing functionality of all functions which run uuidv4', () => {
     beforeEach(() => {
       init(BOTH_REPLACE_REFERENCES_ENTRIES);
     });
-    test('Check that replaceReference works on urn:uuid style references', () => {
-      expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_REPLACE_REFERENCES_OUTPUT);
+    test('Check that replaceReference works on both style references', () => {
+      expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT);
     });
   });
 });
