@@ -155,11 +155,11 @@ const submitData = async (args, { req }) => {
 const bulkImport = async (args, { req }) => {
   logger.info('Measure >>> $bulk-import');
   throw new ServerError(null, {
-    statusCode: 400,
+    statusCode: 501,
     issue: [
       {
         severity: 'error',
-        code: 'BadRequest',
+        code: 'NotImplemented',
         details: {
           text: `bulkImport has not been implemented yet`
         }
