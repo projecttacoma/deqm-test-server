@@ -147,6 +147,7 @@ const submitData = async (args, { req }) => {
  */
 // eslint-disable-next-line no-unused-vars
 const bulkImport = async (args, { req }) => {
+  logger.info('Measure >>> $bulk-import');
   const res = req.res;
   logger.info('Measure >>> $bulk-import');
   res.status(202);

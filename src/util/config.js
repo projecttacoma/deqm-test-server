@@ -3,7 +3,6 @@ const { VERSIONS } = constants;
 const supportedResources = require('./supportedResources');
 const { buildServiceModule } = require('../services/base.service');
 const path = require('path');
-//const configTransaction = require('../services/bundle.controller');
 
 /**
  * Build configuration object to pass to the Asymmetrik core FHIR server
