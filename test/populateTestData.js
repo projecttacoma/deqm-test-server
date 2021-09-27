@@ -10,10 +10,10 @@ async function cleanUpDb() {
   await client.close();
 }
 
-const testSetup = async (pathToFiles, pathToPatients, pathToTestLibrary) => {
+const testSetup = async (testMeasure, testPatient, testLibrary) => {
   await client.connect();
-  await createTestResource(pathToFiles, 'Measure');
-  await createTestResource(pathToPatients, 'Patient');
-  await createTestResource(pathToTestLibrary, 'Library');
+  await createTestResource(testMeasure, 'Measure');
+  await createTestResource(testPatient, 'Patient');
+  await createTestResource(testLibrary, 'Library');
 };
 module.exports = { testSetup, cleanUpDb };

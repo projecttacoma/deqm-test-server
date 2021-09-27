@@ -17,7 +17,7 @@ const postRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testMeasure)
+  body: JSON.stringify(testPatient)
 };
 const putRequest = {
   encoding: 'utf8',
@@ -27,7 +27,7 @@ const putRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testMeasure)
+  body: JSON.stringify(testPatient)
 };
 const getRequest = {
   encoding: 'utf8',
@@ -37,7 +37,7 @@ const getRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testMeasure)
+  body: JSON.stringify(testPatient)
 };
 
 const deleteRequest = {
@@ -48,9 +48,10 @@ const deleteRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testMeasure)
+  body: JSON.stringify(testPatient)
 };
-describe('measure.service', () => {
+
+describe('base.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
@@ -60,13 +61,12 @@ describe('measure.service', () => {
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
-        .post('/4_0_0/Measure')
+        .post('/4_0_0/Patient')
         .send(postRequest)
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body._id).not.toBeNull();
-          expect(response.body.id != testMeasure.id);
+          expect(response.body._id).not.toBeNull(); //!= null);
         });
     });
   });
@@ -74,7 +74,7 @@ describe('measure.service', () => {
     //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
-        .get('/4_0_0/Measure/testMeasure')
+        .get('/4_0_0/Measure/testPatient')
         .send(getRequest)
         .expect(200)
         .then(async response => {
@@ -87,21 +87,22 @@ describe('measure.service', () => {
   });
   describe('update', () => {
     //*a put request*/
-    test('test update with correctHeaders and  the id is in database', async () => {
-      await supertest(server.app)
+    test('test update with correctHeaders and  the id is in database', () => {
+      supertest(server.app)
         .put('/4_0_0/Measure/testMeasure')
         .send(putRequest)
         .expect(200)
         .then(async response => {
           // Check the response
           expect(response.body._id).toBeTruthy();
+     
         });
     });
   });
   describe('remove', () => {
-    test('removing the measure from the database when the measure is indeed present', async () => {
-      await supertest(server.app)
-        .delete('/4_0_0/Measure/testMeasure')
+    test('removing the measure from the database when the measure is indeed present', () => {
+      supertest(server.app)
+        .delete('/4_0_0/Measure/testPatient')
         .send(deleteRequest)
         .expect(200)
         .then(async response => {
