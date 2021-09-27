@@ -1,13 +1,70 @@
 const { v4: uuidv4 } = require('uuid');
 const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-core');
 const {
-  findResourcesWithQuery,
   findResourceById,
   createResource,
   removeResource,
-  updateResource
+  updateResource,
+  findResourcesWithAggregation
 } = require('../util/mongo.controller');
-const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
+const QueryBuilder = require('@asymmetrik/fhir-qb');
+const url = require('url');
+
+/**
+ * Query Builder Parameter Definitions for all resources
+ */
+const GLOBAL_PARAMETER_DEFINITIONS = {
+  _id: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.id',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-id',
+    description: 'Logical id of this artifact',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  _lastUpdated: {
+    type: 'date',
+    fhirtype: 'date',
+    xpath: 'Resource.meta.lastUpdated',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-lastUpdated',
+    description: 'When the resource version last changed',
+    modifier: 'missing'
+  },
+  _tag: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.meta.tag',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-tag',
+    description: 'Tags applied to this resource',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  _profile: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.meta.profile',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-profile',
+    description: 'Profiles this resource claims to conform to',
+    modifier: 'missing,type,identifier'
+  },
+  _security: {
+    type: 'token',
+    fhirtype: 'token',
+    xpath: 'Resource.meta.security',
+    definition: 'http://hl7.org/fhir/SearchParameter/Resource-security',
+    description: 'Security Labels applied to this resource',
+    modifier: 'missing,text,not,in,not-in,below,above,ofType'
+  },
+  identifier: {
+    type: 'token',
+    fhirtype: 'Identifier',
+    xpath: 'Resource.identifier'
+  }
+};
+
+const qb = new QueryBuilder({
+  globalParameterDefinitions: GLOBAL_PARAMETER_DEFINITIONS,
+  implementationParameters: { archivedParamPath: '_isArchived' }
+});
 
 /**
  * creates an object and generates an id for it regardless of the id passed in
@@ -52,6 +109,73 @@ const baseSearchById = async (args, resourceType) => {
 };
 
 /**
+ * Searches using query parameters.
+ * @param {*} args The args from the request.
+ * @param {*} req The Express request object. This is used by the query builder.
+ * @param {*} resourceType The resource type we are searching on.
+ * @param {*} paramDefs Optional parameter definitions for the specific resource types. Specific
+ *                      resource services should call this and pass
+ * @returns Search set result bundle
+ */
+const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
+  // grab the schemas for the data type and Bundle to use for response
+  const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
+  const Bundle = resolveSchema(args.base_version, 'bundle');
+
+  // wipe out params since the 'base_version' here breaks the query building
+  req.params = {};
+
+  // build result bundle. default to an empty result
+  const searchBundle = new Bundle({
+    type: 'searchset',
+    meta: { lastUpdated: new Date().toISOString() },
+    total: 0
+  });
+
+  // build the aggregation query
+  const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: paramDefs });
+
+  // if the query builder was able to build a query actually execute it.
+  if (filter.query) {
+    // grab the results from aggregation. has metadata about counts and data with resources in the first array position
+    const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
+
+    // If this is undefined, there are no results.
+    if (results && results.metadata[0]) {
+      // create instances of each of the resulting resources
+      const resultEntries = results.data.map(result => {
+        return {
+          fullUrl: new url.URL(
+            `${result.resourceType}/${result.id}`,
+            `http://${req.headers.host}/${args.base_version}/`
+          ),
+          resource: new dataType(result)
+        };
+      });
+
+      searchBundle.total = results.metadata[0].total;
+      searchBundle.entry = resultEntries;
+    }
+  } else {
+    // If there were issues with query building, throw an error. Use the provided error if possible.
+    const errorMessage = filter.errors[0] ? filter.errors[0].message : 'Issue parsing parameters.';
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: errorMessage
+          }
+        }
+      ]
+    });
+  }
+  return searchBundle;
+};
+
+/**
  * updates the document of the specified resource type with the passed in id or creates a new
  * document if no document with passed id is found
  * @param {*} args the args added to the end of the url, contains id of desired resource
@@ -93,36 +217,6 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * search for resources, currently only by identifier
- * @param {Object} args the args containing search params
- * @param {Object} req the http request object
- * @param {string} resourceType string which signifies which collection to add the data to
- * @returns FHIR searchset bundle of results
- */
-const baseSearch = async (args, { req }, resourceType) => {
-  const { identifier } = args;
-
-  if (!identifier) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: 'Base searching only allowed for "identifier"'
-          }
-        }
-      ]
-    });
-  }
-
-  const resources = await findResourcesWithQuery({ identifier: { $elemMatch: { value: identifier } } }, resourceType);
-
-  return mapArrayToSearchSetBundle(resources, resourceType, args, req);
-};
-
-/**
  * checks if the headers are incorrect and throws and error with guidance if so
  * @param {*} requestHeaders the headers from the request body
  */
@@ -156,10 +250,10 @@ const buildServiceModule = resourceType => {
   return {
     create: async (_, data) => baseCreate(data, resourceType),
     searchById: async args => baseSearchById(args, resourceType),
-    search: async (args, data) => baseSearch(args, data, resourceType),
     update: async (args, data) => baseUpdate(args, data, resourceType),
-    remove: async args => baseRemove(args, resourceType)
+    remove: async args => baseRemove(args, resourceType),
+    search: async (args, context) => baseSearch(args, context, resourceType)
   };
 };
 
-module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule };
+module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule, baseSearch };

@@ -20,6 +20,8 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@asymmetrik/fhir-qb": "^0.12.5",
+    "@asymmetrik/fhir-qb-mongo": "^0.12.3",
     "@asymmetrik/node-fhir-server-core": "^2.2.3",
     "axios": "^0.21.2",
     "dotenv": "^10.0.0",
