@@ -109,7 +109,7 @@ const submitData = async (args, { req }) => {
   if (req.headers['prefer'] === 'respond-async') {
     return await bulkImport(args, { req });
   }
-  const { base_version: baseVersion } = req;
+  const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
