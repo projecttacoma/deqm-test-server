@@ -1,4 +1,4 @@
-name: ci
+name: Docker Build
 
 on:
   push:
@@ -19,9 +19,9 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            tacoma/fqm-execution-service
+            tacoma/deqm-test-server
           flavor: |
-            latest=${{ github.ref == 'refs/heads/master' }}
+            latest=${{ github.ref == 'refs/heads/main' }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=ref,event=branch,pattern=latest
