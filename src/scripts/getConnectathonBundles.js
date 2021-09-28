@@ -26,7 +26,6 @@ const getBundleFiles = directory => {
       bundleFiles.push(absolute);
     }
   });
-  return bundleFiles;
 };
 
 /**
@@ -37,7 +36,7 @@ const getBundleFiles = directory => {
  * but may want to expand to other measure bundle providers in the future.
  */
 async function main() {
-  const bundleFiles = getBundleFiles(connectathonPath);
+  getBundleFiles(connectathonPath);
 
   await mongoUtil.client.connect();
   console.log('Connected successfully to server');
@@ -46,7 +45,7 @@ async function main() {
     // read each EXM bundle file
     const data = fs.readFileSync(filePath, 'utf8');
     if (data) {
-      const bundle = await JSON.parse(data);
+      const bundle = JSON.parse(data);
       // retrieve each resource and insert into database
       const uploads = bundle.entry.map(async res => {
         try {
