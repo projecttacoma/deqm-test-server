@@ -11,38 +11,39 @@ const server = initialize(config);
 
 const postRequest = {
   encoding: 'utf8',
-  url: 'http://localhost:3000',
+  url: 'http://localhost:3000/4_0_0/Patient',
   json: true,
   method: 'POST',
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testPatient)
+  body: { id: '1', name: 'testPatient' }
+
 };
 const putRequest = {
   encoding: 'utf8',
-  url: 'http://localhost:3000',
+  url: 'http://localhost:3000/4_0_0/Patient',
   json: true,
   method: 'PUT',
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testPatient)
+  body: { id: '1', name: 'testPatient1' }
 };
 const getRequest = {
   encoding: 'utf8',
-  url: 'http://localhost:3000',
+  url: 'http://localhost:3000/4_0_0/Patient/testPatient',
   json: true,
   method: 'GET',
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: JSON.stringify(testPatient)
+  body: { id: '1' }
 };
 
 const deleteRequest = {
   encoding: 'utf8',
-  url: 'http://localhost:3000',
+  url: 'http://localhost:3000/4_0_0/Patient',
   json: true,
   method: 'DELETE',
   headers: {
@@ -55,19 +56,18 @@ describe('base.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_0/Patient')
         .send(postRequest)
-        .expect(200)
-        .then(async response => {
-          // Check the response
-          expect(response.body._id).not.toBeNull(); //!= null);
-        });
+        .set('Accept', 'application/json+fhir')
+        .expect(200);
+      then(async response => {
+        // Check the response
+        expect(response.body._id).not.toBeNull(); //!= null);
+      });
     });
   });
   describe('searchById', () => {
@@ -76,6 +76,7 @@ describe('base.service', () => {
       await supertest(server.app)
         .get('/4_0_0/Patient/testPatient')
         .send(getRequest)
+        .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
@@ -89,6 +90,7 @@ describe('base.service', () => {
       supertest(server.app)
         .put('/4_0_0/Patient/testPatient')
         .send(putRequest)
+        .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
@@ -101,11 +103,16 @@ describe('base.service', () => {
       supertest(server.app)
         .delete('/4_0_0/Patient/testPatient')
         .send(deleteRequest)
+        .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
           expect(response.body._id).toBeTruthy();
         });
     });
+  });
+
+  afterAll(async () => {
+    await cleanUpDb();
   });
 });
