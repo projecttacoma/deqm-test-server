@@ -36,10 +36,16 @@ const getBundleFiles = directory => {
  * but may want to expand to other measure bundle providers in the future.
  */
 async function main() {
-  getBundleFiles(connectathonPath);
-
   await mongoUtil.client.connect();
   console.log('Connected successfully to server');
+
+  try {
+    getBundleFiles(connectathonPath);
+  } catch (e) {
+    throw new Error(
+      'Connectathon directory not found. Git clone the connectathon repo into the root directory and run script again'
+    );
+  }
 
   const bundlePromises = bundleFiles.map(async filePath => {
     // read each EXM bundle file
@@ -51,7 +57,10 @@ async function main() {
         try {
           await createResource(res.resource, res.resource.resourceType);
         } catch (e) {
-          console.log(e.message);
+          // ignore duplicate key errors for Libraries, ValueSets
+          if (res.resource.resourceType === 'Measure') {
+            console.log(e.message);
+          }
         }
       });
       await Promise.all(uploads);
