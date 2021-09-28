@@ -3,7 +3,7 @@ const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
+const { getMeasureBundleFromId, getPatientDataBundle, validateEvalMeasureParams } = require('../util/bundleUtils');
 
 const logger = loggers.get('default');
 /**
@@ -185,37 +185,17 @@ const evaluateMeasure = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
   const dataReq = await Calculator.calculateDataRequirements(measureBundle);
 
-  const { periodStart, periodEnd, subject, reportType = 'subject' } = req.query;
+  // throw errors if missing required params, using unsupported params,
+  // or using unsupported report type
+  validateEvalMeasureParams(req);
 
-  let errorMessage = null;
-  if (!subject) {
-    errorMessage = `Missing "subject" parameter for $evaluate-measure`;
-  }
-
-  if (reportType !== 'subject') {
-    errorMessage = `reportType ${reportType} not supported`;
-  }
-
-  if (errorMessage !== null) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: errorMessage
-          }
-        }
-      ]
-    });
-  }
-
+  const { periodStart, periodEnd, reportType = 'individual', subject } = req.query;
   const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
 
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd
+    measurementPeriodEnd: periodEnd,
+    reportType: reportType
   });
   return results;
 };
