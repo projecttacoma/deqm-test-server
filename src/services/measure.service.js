@@ -141,25 +141,20 @@ const submitData = async (args, { req }) => {
 };
 
 /**
- * TO-DO: add bulk import functionality
+ * "TO-DO: add bulk import funtionality" (sic)
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
 // eslint-disable-next-line no-unused-vars
 const bulkImport = async (args, { req }) => {
+  const res = req.res;
   logger.info('Measure >>> $bulk-import');
-  throw new ServerError(null, {
-    statusCode: 501,
-    issue: [
-      {
-        severity: 'error',
-        code: 'NotImplemented',
-        details: {
-          text: `bulkImport has not been implemented yet`
-        }
-      }
-    ]
-  });
+  res.status(202);
+  res.setHeader('Content-Location', 'EXAMPLE-LOCATION');
+  //Temporary solution. Asymmetrik automatically rewrites this to a 200.
+  //Rewriting the res.status method prevents the code from being overwritten.
+  //TODO: change this once we fork asymmetrik
+  res.status = () => res;
 };
 
 /**
