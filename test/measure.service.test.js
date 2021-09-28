@@ -35,8 +35,7 @@ const getRequest = {
   json: true,
   method: 'GET',
   headers: {
-    'Content-Type': 'application/json+fhir',
-    'Content-Type': 'application/fhir+json'
+    'Content-Type': 'application/json+fhir'
   },
  
   body: { id: '1', name: 'testMeasure' }
@@ -112,8 +111,8 @@ describe('measure.service', () => {
         .expect(204)
         .then(async response => {
           // Check the response
-          expect(response.body._id).toBeTruthy();
-        });
+          expect(response.statusCode).toBe(204);
+         });
     });
   });
 

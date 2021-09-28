@@ -79,7 +79,6 @@ describe('base.service', () => {
         .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
-          // Check the response
           expect(response.statusCode).not.toBe('ResourceNotFound');
         });
     });
