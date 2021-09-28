@@ -79,9 +79,8 @@ describe('measure.service', () => {
         .expect(200)
         .then(async response => {
           // Check the response
-
-          expect(response.body.title).toBe(getRequest.title);
-          expect(response.body.content).toBe(getRequest.content);
+          expect(response.body._id).not.toBeNull();
+          expect(response.statusCode).not.toBe('ResourceNotFound');
         });
     });
   });

@@ -74,14 +74,12 @@ describe('base.service', () => {
     //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
-        .get('/4_0_0/Measure/testPatient')
+        .get('/4_0_0/Patient/testPatient')
         .send(getRequest)
         .expect(200)
         .then(async response => {
           // Check the response
-
-          expect(response.body.title).toBe(getRequest.title);
-          expect(response.body.content).toBe(getRequest.content);
+          expect(response.statusCode).not.toBe('ResourceNotFound');
         });
     });
   });
@@ -89,20 +87,19 @@ describe('base.service', () => {
     //*a put request*/
     test('test update with correctHeaders and  the id is in database', () => {
       supertest(server.app)
-        .put('/4_0_0/Measure/testMeasure')
+        .put('/4_0_0/Patient/testPatient')
         .send(putRequest)
         .expect(200)
         .then(async response => {
           // Check the response
           expect(response.body._id).toBeTruthy();
-     
         });
     });
   });
   describe('remove', () => {
     test('removing the measure from the database when the measure is indeed present', () => {
       supertest(server.app)
-        .delete('/4_0_0/Measure/testPatient')
+        .delete('/4_0_0/Patient/testPatient')
         .send(deleteRequest)
         .expect(200)
         .then(async response => {
