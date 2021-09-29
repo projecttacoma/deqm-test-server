@@ -319,7 +319,7 @@ const validateCareGapsParams = req => {
           severity: 'error',
           code: 'NotImplemented',
           details: {
-            text: `Currently only supporting $care-gaps request with status='open'`
+            text: `Currently only supporting $care-gaps requests with status='open'`
           }
         }
       ]
