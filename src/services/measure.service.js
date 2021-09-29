@@ -4,7 +4,11 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = requi
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
 const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
-const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
+const {
+  getMeasureBundleFromId,
+  getPatientDataBundle,
+  assembleCollectionBundleFromMeasure
+} = require('../util/bundleUtils');
 
 const logger = loggers.get('default');
 /**
@@ -209,9 +213,16 @@ const evaluateMeasure = async (args, { req }) => {
  */
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
-  const { measureId, periodStart, periodEnd, subject } = req.query;
 
-  if (!subject) {
+  validateCareGapsParams(req);
+
+  const { periodStart, periodEnd, subject } = req.query;
+  const searchTerm = retrieveSearchTerm(req);
+  req.query = searchTerm;
+  //Use the base search function here to allow search by measureId, measureUrl, and measureIdentifier
+  const measure = await search(args, { req });
+  if (!measure.entry) {
+    //We know the search term will have exactly one key and value, so just fill them in in the error message
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -219,15 +230,14 @@ const careGaps = async (args, { req }) => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: 'Missing "subject" parameter for $care-gaps'
+            text: `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
           }
         }
       ]
     });
   }
-
-  const measureBundle = await getMeasureBundleFromId(measureId);
-  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+  const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
 
@@ -236,6 +246,85 @@ const careGaps = async (args, { req }) => {
     measurementPeriodEnd: periodEnd
   });
   return results;
+};
+
+/**
+ * Checks that all required parameters for care-gaps are present. Throws an error if not.
+ * @param {*} req the request passed in by the client
+ * @returns void but throws a detailed error if it finds an issue
+ */
+const validateCareGapsParams = req => {
+  const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status', 'subject'];
+  // These params are not supported. We should throw an error if we receive them
+  const UNSUPPORTED_PARAMS = ['topic', 'practitioner', 'organization', 'program'];
+
+  // Returns a list of all required params which are undefined on req.query
+  const missingParams = REQUIRED_PARAMS.filter(key => !req.query[key]);
+
+  if (missingParams.length > 0) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Missing required parameters for $care-gaps: ${missingParams.join(', ')}.`
+          }
+        }
+      ]
+    });
+  }
+  // Returns a list of all unsupported params which are present
+  const presentUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
+
+  if (presentUnsupportedParams.length > 0) {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `$care-gaps functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
+              ', '
+            )}`
+          }
+        }
+      ]
+    });
+  }
+
+  const measureIdentification = req.query.measureId || req.query.meaureIdentifier || req.query.measureUrl;
+
+  if (!measureIdentification) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `No measure identification parameter supplied. Must provide either 'measureId', 'measureUrl', or 'measureIdentifier' parameter for $care-gaps requests`
+          }
+        }
+      ]
+    });
+  }
+};
+
+const retrieveSearchTerm = req => {
+  const { measureId, measureIdentifier, measureUrl } = req.query;
+
+  if (measureId) {
+    return { _id: measureId };
+  } else if (measureIdentifier) {
+    return { identifier: measureIdentifier };
+  } else if (measureUrl) {
+    return { url: measureUrl };
+  } else {
+    return null;
+  }
 };
 
 module.exports = {

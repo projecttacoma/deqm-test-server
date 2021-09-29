@@ -82,7 +82,7 @@ function getQueryFromReference(reference) {
  */
 async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
-
+  console.log(JSON.stringify(measure, null, 4));
   if (!measure) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -98,6 +98,10 @@ async function getMeasureBundleFromId(measureId) {
     });
   }
 
+  return assembleCollectionBundleFromMeasure(measure);
+}
+
+async function assembleCollectionBundleFromMeasure(measure) {
   const [mainLibraryRef] = measure.library;
 
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
@@ -111,7 +115,7 @@ async function getMeasureBundleFromId(measureId) {
           severity: 'error',
           code: 'internal',
           details: {
-            text: `Could not find Library ${mainLibraryRef} referenced by Measure ${measureId}`
+            text: `Could not find Library ${mainLibraryRef} referenced by Measure ${measure.id}`
           }
         }
       ]
@@ -270,5 +274,6 @@ module.exports = {
   mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
-  getPatientDataBundle
+  getPatientDataBundle,
+  assembleCollectionBundleFromMeasure
 };
