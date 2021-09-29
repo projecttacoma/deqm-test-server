@@ -58,7 +58,7 @@ async function main() {
           await createResource(res.resource, res.resource.resourceType);
         } catch (e) {
           // ignore duplicate key errors for Libraries, ValueSets
-          if (res.resource.resourceType === 'Measure') {
+          if (e.code !== 11000 || res.resource.resourceType === 'Measure') {
             console.log(e.message);
           }
         }
