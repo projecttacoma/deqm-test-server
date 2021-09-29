@@ -294,8 +294,7 @@ const validateCareGapsParams = req => {
       ]
     });
   }
-
-  const measureIdentification = req.query.measureId || req.query.meaureIdentifier || req.query.measureUrl;
+  const measureIdentification = req.query.measureId || req.query.measureIdentifier || req.query.measureUrl;
 
   if (!measureIdentification) {
     throw new ServerError(null, {

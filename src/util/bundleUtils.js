@@ -82,7 +82,6 @@ function getQueryFromReference(reference) {
  */
 async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
-  console.log(JSON.stringify(measure, null, 4));
   if (!measure) {
     throw new ServerError(null, {
       statusCode: 400,
