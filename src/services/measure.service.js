@@ -310,6 +310,21 @@ const validateCareGapsParams = req => {
       ]
     });
   }
+
+  if (req.query.status !== 'open') {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `Currently only supporting $care-gaps request with status='open'`
+          }
+        }
+      ]
+    });
+  }
 };
 
 const retrieveSearchTerm = req => {

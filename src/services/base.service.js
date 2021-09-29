@@ -136,7 +136,6 @@ const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
     meta: { lastUpdated: new Date().toISOString() },
     total: 0
   });
-  console.log(req);
   // build the aggregation query
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: paramDefs });
 
