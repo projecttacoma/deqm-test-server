@@ -9,6 +9,7 @@ const {
 } = require('../util/mongo.controller');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
+const { getSearchParameters } = require('@asymmetrik/node-fhir-server-core/src/server/utils/params.utils');
 
 /**
  * Query Builder Parameter Definitions for all resources
@@ -122,10 +123,20 @@ const baseSearchById = async (args, resourceType) => {
  *                      resource services should call this and pass
  * @returns Search set result bundle
  */
-const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
+const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
+
+  if (!paramDefs) {
+    const searchParameterList = getSearchParameters(resourceType, args.base_version);
+    paramDefs = {};
+    searchParameterList.forEach(async paramDef => {
+      {
+        paramDefs[paramDef.name] = paramDef;
+      }
+    });
+  }
 
   // wipe out params since the 'base_version' here breaks the query building
   req.params = {};
