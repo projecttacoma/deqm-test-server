@@ -46,8 +46,23 @@ function validateEvalMeasureParams(req) {
     });
   }
 
+  if (['population', 'subject-list'].includes(req.query.reportType)) {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `The ${req.query.reportType} reportType is not currently supported by the server.`
+          }
+        }
+      ]
+    });
+  }
+
   // returns unsupported report type that is included in the http request
-  if (!['individual', 'summary', undefined].includes(req.query.reportType)) {
+  if (!['individual', 'population', 'subject-list', undefined].includes(req.query.reportType)) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -55,7 +70,7 @@ function validateEvalMeasureParams(req) {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `reportType ${req.query.reportType} not supported for $evaluate-measure`
+            text: `reportType ${req.query.reportType} is not supported for $evaluate-measure`
           }
         }
       ]
