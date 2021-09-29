@@ -3,7 +3,8 @@ const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { getMeasureBundleFromId, getPatientDataBundle, validateEvalMeasureParams } = require('../util/bundleUtils');
+const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
+const { getMeasureBundleFromId, getPatientDataBundle } = require('../util/bundleUtils');
 
 const logger = loggers.get('default');
 /**
