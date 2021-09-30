@@ -29,7 +29,7 @@ describe('measure.service', () => {
   });
 
   describe('searchById', () => {
-    test('test searchById with correctHeaders and  the id should be in database', async () => {
+    test('test searchById with correctHeaders and the id should be in database', async () => {
       await supertest(server.app)
         .get('/4_0_0/Measure/testMeasure')
         .set('Accept', 'application/json+fhir')
@@ -41,7 +41,7 @@ describe('measure.service', () => {
     });
   });
   describe('update', () => {
-    test('test update with correctHeaders and  the id is in database', async () => {
+    test('test update with correctHeaders and the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_0/Measure/testMeasure')
         .send(updateMeasure)
