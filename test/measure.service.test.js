@@ -27,9 +27,6 @@ describe('measure.service', () => {
           expect(response.body._id).not.toBeNull();
           expect(response.headers.location).not.toBeNull();
         })
-        .catch(error => {
-          console.log('we have error', error);
-        });
     });
   });
 
@@ -59,9 +56,7 @@ describe('measure.service', () => {
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.headers.location).toBeTruthy();
-          expect(response.body.location).not.toBeNull();
-          console.log(response.error.message);
+          expect(response.headers.location).toBeDefined();
         });
     });
   });

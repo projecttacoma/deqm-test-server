@@ -24,21 +24,18 @@ describe('base.service', () => {
         .expect(201)
         .then(async response => {
           // Check the response
-          expect(response.body._id).not.toBeNull();
-          expect(response.body._id).not.toBe(testMeasure.id);
-          expect(response.headers.location).not.toBeNull();
+          expect(response.headers.location).toBeDefined();
         });
     });
   });
   describe('searchById', () => {
-    //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
         .get('/4_0_0/Patient/testPatient')
         .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
-          expect(response.statusCode).not.toBe('ResourceNotFound');
+          expect(response.body.id).toEqual(testPatient.id);
         });
     });
   });
@@ -65,9 +62,6 @@ describe('base.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(204)
-        .then(async response => {
-          expect(response.statusCode).toBe(204);
-        });
     });
   });
 
