@@ -23,15 +23,12 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .expect(201)
         .then(response => {
-          // Check the response
-          expect(response.body._id).not.toBeNull();
-          expect(response.headers.location).not.toBeNull();
-        })
+          expect(response.headers.location).toBeDefined();
+        });
     });
   });
 
   describe('searchById', () => {
-    //* result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
         .get('/4_0_0/Measure/testMeasure')
@@ -39,14 +36,11 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
-          // Check the response
-          expect(response.body._id).not.toBeNull();
-          expect(response.statusCode).not.toBe('ResourceNotFound');
+          expect(response.body.id).toEqual(testPatient.id);
         });
     });
   });
   describe('update', () => {
-    //*a put request*/
     test('test update with correctHeaders and  the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_0/Measure/testMeasure')
@@ -62,14 +56,7 @@ describe('measure.service', () => {
   });
   describe('remove', () => {
     test('removing the measure from the database when the measure is indeed present', async () => {
-      await supertest(server.app)
-        .delete('/4_0_0/Measure/testMeasure')
-        .send(testMeasure)
-        .expect(204)
-        .then(async response => {
-          // Check the response
-          expect(response.statusCode).toBe(204);
-        });
+      await supertest(server.app).delete('/4_0_0/Measure/testMeasure').send(testMeasure).expect(204);
     });
   });
 

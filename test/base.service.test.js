@@ -41,8 +41,8 @@ describe('base.service', () => {
   });
   describe('update', () => {
     //*a put request*/
-    test('test update with correctHeaders and  the id is in database', async() => {
-     await supertest(server.app)
+    test('test update with correctHeaders and  the id is in database', async () => {
+      await supertest(server.app)
         .put('/4_0_0/Patient/testPatient')
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
@@ -61,7 +61,7 @@ describe('base.service', () => {
         .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
-        .expect(204)
+        .expect(204);
     });
   });
 
