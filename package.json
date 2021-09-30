@@ -4,7 +4,6 @@
   "description": "A test server for quality measure operations",
   "main": "index.js",
   "scripts": {
-    
     "lint": "eslint \"**/*.js\"",
     "lint:fix": "eslint \"**/*.js\" --fix",
     "prettier": "prettier --check \"**/*.js\"",
@@ -17,10 +16,10 @@
     "db:reset": "npm run db:delete && npm run db:setup",
     "parse-references": "node src/scripts/parseModelInfo.js",
     "connectathon-upload": "node src/scripts/getConnectathonBundles.js",
-    "test": "jest --silent",
+    "test": "jest --silent --runInBand",
     "test:coverage": "jest --collectCoverage --silent",
-    "test:watch": "jest --watchAll",
-    "test:watch:coverage": "jest --watchAll --collectCoverage"
+    "test:watch": "jest --watchAll --runInBand",
+    "test:watch:coverage": "jest --watchAll --runInBand --collectCoverage"
   },
   "author": "",
   "license": "Apache-2.0",
