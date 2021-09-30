@@ -58,7 +58,6 @@ describe('base.service', () => {
     test('removing the data from the database when the data is indeed present', async () => {
       await supertest(server.app)
         .delete('/4_0_0/Patient/testPatient')
-        .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(204);

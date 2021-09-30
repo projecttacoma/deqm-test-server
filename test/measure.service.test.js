@@ -56,7 +56,7 @@ describe('measure.service', () => {
   });
   describe('remove', () => {
     test('removing the measure from the database when the measure is indeed present', async () => {
-      await supertest(server.app).delete('/4_0_0/Measure/testMeasure').send(testMeasure).expect(204);
+      await supertest(server.app).delete('/4_0_0/Measure/testMeasure').expect(204);
     });
   });
 
