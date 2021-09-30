@@ -57,8 +57,8 @@ describe('base.service', () => {
         });
     });
   });
-  describe('remove',  async() => {
-    test('removing the measure from the database when the measure is indeed present', () => {
+  describe('remove',  () => {
+    test('removing the measure from the database when the measure is indeed present',async () => {
      await supertest(server.app)
         .delete('/4_0_0/Patient/testPatient')
         .send(testPatient)
