@@ -8,49 +8,7 @@ const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
 const config = buildConfig();
 const server = initialize(config);
-
-const postRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Measure',
-  json: true,
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  body: { id: '1', name: 'testtestMeasure' }
-};
-const putRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Measure',
-  json: true,
-  method: 'PUT',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  id: 'testMeasure',
-  name: 'testMeasure'
-};
-const getRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Measure',
-  json: true,
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-
-  body: { id: '1', name: 'testMeasure' }
-};
-
-const deleteRequest = {
-  url: 'http://localhost:3000/4_0_0/Measure',
-  json: true,
-  method: 'DELETE',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  body: JSON.stringify(testMeasure)
-};
+const updateMeasure = { id: 'testMeasure', name: 'anUpdate' };
 describe('measure.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
@@ -63,11 +21,11 @@ describe('measure.service', () => {
         .send(testMeasure)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
-        .expect(200)
+        .expect(201)
         .then(response => {
           // Check the response
           expect(response.body._id).not.toBeNull();
-          expect(response.body.id != testMeasure.id); //this should be hte new uuid not the idea
+          expect(response.headers.location).not.toBeNull();
         })
         .catch(error => {
           console.log('we have error', error);
@@ -95,7 +53,7 @@ describe('measure.service', () => {
     test('test update with correctHeaders and  the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_0/Measure/testMeasure')
-        .send(testMeasure)
+        .send(updateMeasure)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
