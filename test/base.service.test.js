@@ -9,49 +9,6 @@ const { initialize } = require('../src/server/server');
 const config = buildConfig();
 const server = initialize(config);
 
-const postRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Patient',
-  json: true,
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  body: { id: '1', name: 'testPatient' }
-};
-const putRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Patient',
-  json: true,
-  method: 'PUT',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  id: 'testPatient',
-  name: 'testPatient1'
-};
-const getRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Patient/testPatient',
-  json: true,
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  id: 'testPatient'
-};
-
-const deleteRequest = {
-  encoding: 'utf8',
-  url: 'http://localhost:3000/4_0_0/Patient',
-  json: true,
-  method: 'DELETE',
-  headers: {
-    'Content-Type': 'application/json+fhir'
-  },
-  body: JSON.stringify(testPatient)
-};
-
 describe('base.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
@@ -61,7 +18,7 @@ describe('base.service', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_0/Patient')
-        .send(postRequest)
+        .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(201)
@@ -77,7 +34,6 @@ describe('base.service', () => {
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
         .get('/4_0_0/Patient/testPatient')
-        .send(getRequest)
         .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
@@ -90,7 +46,7 @@ describe('base.service', () => {
     test('test update with correctHeaders and  the id is in database', () => {
       supertest(server.app)
         .put('/4_0_0/Patient/testPatient')
-        .send(putRequest)
+        .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
@@ -101,12 +57,13 @@ describe('base.service', () => {
         });
     });
   });
-  describe('remove', () => {
+  describe('remove',  async() => {
     test('removing the measure from the database when the measure is indeed present', () => {
-      supertest(server.app)
+     await supertest(server.app)
         .delete('/4_0_0/Patient/testPatient')
-        .send(deleteRequest)
+        .send(testPatient)
         .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response

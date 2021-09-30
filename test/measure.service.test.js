@@ -60,7 +60,7 @@ describe('measure.service', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_0/Measure')
-        .send(postRequest)
+        .send(testMeasure)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
@@ -80,7 +80,6 @@ describe('measure.service', () => {
     test('test searchById with correctHeaders and  the id should be in database', async () => {
       await supertest(server.app)
         .get('/4_0_0/Measure/testMeasure')
-        .send(getRequest)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
@@ -96,7 +95,7 @@ describe('measure.service', () => {
     test('test update with correctHeaders and  the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_0/Measure/testMeasure')
-        .send(putRequest)
+        .send(testMeasure)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
@@ -112,7 +111,7 @@ describe('measure.service', () => {
     test('removing the measure from the database when the measure is indeed present', async () => {
       await supertest(server.app)
         .delete('/4_0_0/Measure/testMeasure')
-        .send(deleteRequest)
+        .send(testMeasure)
         .expect(204)
         .then(async response => {
           // Check the response
