@@ -221,7 +221,7 @@ const careGaps = async (args, { req }) => {
   req.query = searchTerm;
   //Use the base search function here to allow search by measureId, measureUrl, and measureIdentifier
   const measure = await search(args, { req });
-  if (!measure.entry) {
+  if (measure.total === 0) {
     //We know the search term will have exactly one key and value, so just fill them in in the error message
     throw new ServerError(null, {
       statusCode: 400,
