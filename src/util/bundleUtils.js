@@ -82,7 +82,6 @@ function getQueryFromReference(reference) {
  */
 async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
-
   if (!measure) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -98,6 +97,16 @@ async function getMeasureBundleFromId(measureId) {
     });
   }
 
+  return assembleCollectionBundleFromMeasure(measure);
+}
+
+/**
+ * Takes in a measure resource, finds all dependent library resources and bundles them
+ * together with the measure in a collection bundle
+ * @param {*} measure a fhir measure resource
+ * @returns FHIR Bundle of Measure resource and all dependent FHIR Library resources
+ */
+async function assembleCollectionBundleFromMeasure(measure) {
   const [mainLibraryRef] = measure.library;
 
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
@@ -111,7 +120,7 @@ async function getMeasureBundleFromId(measureId) {
           severity: 'error',
           code: 'internal',
           details: {
-            text: `Could not find Library ${mainLibraryRef} referenced by Measure ${measureId}`
+            text: `Could not find Library ${mainLibraryRef} referenced by Measure ${measure.id}`
           }
         }
       ]
@@ -270,5 +279,6 @@ module.exports = {
   mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
-  getPatientDataBundle
+  getPatientDataBundle,
+  assembleCollectionBundleFromMeasure
 };

@@ -58,6 +58,11 @@ const GLOBAL_PARAMETER_DEFINITIONS = {
     type: 'token',
     fhirtype: 'Identifier',
     xpath: 'Resource.identifier'
+  },
+  url: {
+    type: 'token',
+    fhirtype: 'uri',
+    xpath: 'Resource.url'
   }
 };
 
@@ -131,7 +136,6 @@ const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
     meta: { lastUpdated: new Date().toISOString() },
     total: 0
   });
-
   // build the aggregation query
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: paramDefs });
 
