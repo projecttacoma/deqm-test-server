@@ -27,7 +27,8 @@ const putRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: { id: '11', name: 'testMeasure' }
+  id: 'testMeasure',
+  name: 'testMeasure'
 };
 const getRequest = {
   encoding: 'utf8',
@@ -37,7 +38,7 @@ const getRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
- 
+
   body: { id: '1', name: 'testMeasure' }
 };
 
@@ -61,6 +62,7 @@ describe('measure.service', () => {
         .post('/4_0_0/Measure')
         .send(postRequest)
         .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(response => {
           // Check the response
@@ -80,6 +82,7 @@ describe('measure.service', () => {
         .get('/4_0_0/Measure/testMeasure')
         .send(getRequest)
         .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
@@ -95,10 +98,12 @@ describe('measure.service', () => {
         .put('/4_0_0/Measure/testMeasure')
         .send(putRequest)
         .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body._id).toBeTruthy();
+          expect(response.headers.location).toBeTruthy();
+          expect(response.body.location).not.toBeNull();
           console.log(response.error.message);
         });
     });
@@ -112,7 +117,7 @@ describe('measure.service', () => {
         .then(async response => {
           // Check the response
           expect(response.statusCode).toBe(204);
-         });
+        });
     });
   });
 

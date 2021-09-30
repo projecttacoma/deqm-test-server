@@ -18,7 +18,6 @@ const postRequest = {
     'Content-Type': 'application/json+fhir'
   },
   body: { id: '1', name: 'testPatient' }
-
 };
 const putRequest = {
   encoding: 'utf8',
@@ -28,7 +27,8 @@ const putRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: { id: '1', name: 'testPatient1' }
+  id: 'testPatient',
+  name: 'testPatient1'
 };
 const getRequest = {
   encoding: 'utf8',
@@ -38,7 +38,7 @@ const getRequest = {
   headers: {
     'Content-Type': 'application/json+fhir'
   },
-  body: { id: '1' }
+  id: 'testPatient'
 };
 
 const deleteRequest = {
@@ -63,11 +63,13 @@ describe('base.service', () => {
         .post('/4_0_0/Patient')
         .send(postRequest)
         .set('Accept', 'application/json+fhir')
-        .expect(200);
-      then(async response => {
-        // Check the response
-        expect(response.body._id).not.toBeNull(); //!= null);
-      });
+        .set('content-type', 'application/json+fhir')
+        .expect(201)
+        .then(async response => {
+          // Check the response
+          expect(response.body._id).not.toBeNull();
+          expect(response.body._id).not.toBe(postRequest.body.id);
+        });
     });
   });
   describe('searchById', () => {
@@ -90,10 +92,12 @@ describe('base.service', () => {
         .put('/4_0_0/Patient/testPatient')
         .send(putRequest)
         .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body._id).toBeTruthy();
+          expect(response.body.location).toBeTruthy();
+          expect(response.body.location).not.toBeNull();
         });
     });
   });
