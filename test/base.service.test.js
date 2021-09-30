@@ -50,7 +50,7 @@ describe('base.service', () => {
         .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body.location).not.toBeNull();
+          expect(response.headers.location).not.toBeNull();
         });
     });
   });
