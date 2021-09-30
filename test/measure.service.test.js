@@ -36,7 +36,7 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .expect(200)
         .then(async response => {
-          expect(response.body.id).toEqual(testPatient.id);
+          expect(response.body.id).toEqual(testMeasure.id);
         });
     });
   });
