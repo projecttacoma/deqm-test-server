@@ -2,7 +2,21 @@
 
 Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs).
 
-## Local Development
+- [Local Development](#local-development)
+
+  - [Prerequisites](#prerequisites)
+  - [Local Installation](#local-installation)
+  - [Testing](#testing)
+  - [MongoDB](#mongodb)
+
+- [Usage](#usage)
+
+  - [CRUD Operations](#crud-operations)
+  - [Supported Operations](#supported-operations)
+
+- [License](#license)
+
+## Installation and Local Development
 
 ### Prerequisites
 
@@ -10,7 +24,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 - [MongoDB >= 5.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
 
-### Local Installation/Usage
+### Local Installation
 
 Clone the source code:
 
