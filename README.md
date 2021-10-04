@@ -86,7 +86,7 @@ The test server's resource searching capabilities support searches by identifier
 
 ### Supported FHIR Operations
 
-#### `$evaluate-measure
+#### `$evaluate-measure`
 
 This operation calculates a measure for a given patient. Currently, individual measure reports are supported. Subject-list and population measure reports are not yet supported.
 
