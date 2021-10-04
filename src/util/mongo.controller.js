@@ -1,5 +1,5 @@
 const { db } = require('./mongo');
-
+const { v4: uuidv4 } = require('uuid');
 /**
  * creates a new document in the specified collection
  * @param {*} data the data of the document to be created
@@ -84,6 +84,36 @@ const findResourcesWithAggregation = async (query, resourceType) => {
   return (await collection.aggregate(query)).toArray();
 };
 
+/**
+ * Called as a result of bulkImport request. Adds a new clientId to db
+ * which can be queried to get updates on the status of the bulk import
+ * @returns
+ */
+const addPendingBulkImportRequest = async () => {
+  const collection = db.collection('bulkImportStatuses');
+  const clientId = uuidv4();
+  const bulkImportClient = {
+    id: clientId,
+    status: 'Pending',
+    error: {
+      code: null,
+      message: null
+    }
+  };
+  await collection.insertOne(bulkImportClient);
+  return clientId;
+};
+
+/**
+ * Wrapper for the findResourceById function that only searches bulkImportStatuses db
+ * @param {string} clientId The id signifying the bulk status request
+ * @returns
+ */
+const getBulkImportStatus = async clientId => {
+  const status = await findResourceById(clientId, 'bulkImportStatuses');
+  return status;
+};
+
 module.exports = {
   findResourcesWithQuery,
   findResourceById,
@@ -91,5 +121,7 @@ module.exports = {
   createResource,
   removeResource,
   updateResource,
-  findResourcesWithAggregation
+  findResourcesWithAggregation,
+  addPendingBulkImportRequest,
+  getBulkImportStatus
 };
