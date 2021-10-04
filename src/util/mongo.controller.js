@@ -94,7 +94,7 @@ const addPendingBulkImportRequest = async () => {
   const clientId = uuidv4();
   const bulkImportClient = {
     id: clientId,
-    status: 'Pending',
+    status: 'In Progress',
     error: {
       code: null,
       message: null

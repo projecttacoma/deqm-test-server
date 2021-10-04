@@ -12,8 +12,8 @@ describe('checkBulkStatus logic', () => {
       .get('/4_0_0/bulkstatus/PENDING_REQUEST')
       .expect(202)
       .then(response => {
-        expect(response.body.id).toEqual('PENDING_REQUEST');
-        expect(response.body.status).toEqual('Pending');
+        expect(response.headers['x-progress']).toEqual('Retrieving export files');
+        expect(response.headers['retry-after']).toEqual('120');
       });
   });
   test('check 200 returned for completed request', async () => {
@@ -21,8 +21,9 @@ describe('checkBulkStatus logic', () => {
       .get('/4_0_0/bulkstatus/COMPLETED_REQUEST')
       .expect(200)
       .then(response => {
-        expect(response.body.id).toEqual('COMPLETED_REQUEST');
-        expect(response.body.status).toEqual('Completed');
+        expect(response.headers.expires).toBeDefined();
+        expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
+        expect(response.body).toBeDefined();
       });
   });
   test('check 500 and error returned for failed request with known error', async () => {

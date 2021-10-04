@@ -1,5 +1,5 @@
 [
-  { "id": "PENDING_REQUEST", "status": "Pending", "error": { "code": null, "message": null } },
+  { "id": "PENDING_REQUEST", "status": "In Progress", "error": { "code": null, "message": null } },
   { "id": "COMPLETED_REQUEST", "status": "Completed", "error": { "code": null, "message": null } },
   {
     "id": "KNOWN_ERROR_REQUEST",
