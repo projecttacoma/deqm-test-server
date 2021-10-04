@@ -31,7 +31,6 @@ async function checkBulkStatus(req, res) {
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
-    res.set('Content-Type', 'application/json');
     //TODO: Fill all this in with actual response data. Example data for now.
     return {
       transactionTime: '2021-01-01T00:00:00Z',
