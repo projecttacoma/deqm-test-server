@@ -100,7 +100,7 @@ Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not su
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
-#### $care-gaps
+#### `$care-gaps`
 
 This operation calculates gaps in care for a given patient against the given measure.
 
@@ -115,11 +115,11 @@ Currently, `topic`, `practitioner`, `organization`, and `program` are not suppor
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/$care-gaps` with the required parameters.
 
-#### $data-requirements
+#### `$data-requirements`
 
 This operation retrieves all the data requirements for a given measure as a FHIR library. To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$data-requirements`.
 
-#### $submit-data
+#### `$submit-data`
 
 This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_0/Measure/$submit-data`.
 
