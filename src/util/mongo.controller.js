@@ -87,7 +87,7 @@ const findResourcesWithAggregation = async (query, resourceType) => {
 /**
  * Called as a result of bulkImport request. Adds a new clientId to db
  * which can be queried to get updates on the status of the bulk import
- * @returns
+ * @returns the id of the inserted client
  */
 const addPendingBulkImportRequest = async () => {
   const collection = db.collection('bulkImportStatuses');
@@ -107,7 +107,7 @@ const addPendingBulkImportRequest = async () => {
 /**
  * Wrapper for the findResourceById function that only searches bulkImportStatuses db
  * @param {string} clientId The id signifying the bulk status request
- * @returns
+ * @returns The bulkstatus entry for the passed in clientId
  */
 const getBulkImportStatus = async clientId => {
   const status = await findResourceById(clientId, 'bulkImportStatuses');
