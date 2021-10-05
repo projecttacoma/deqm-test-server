@@ -32,6 +32,7 @@ describe('checkBulkStatus logic', () => {
       .expect(500)
       .then(response => {
         expect(response.body.issue[0].code).toEqual('ErrorCode');
+        expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
         expect(response.body.issue[0].details.text).toEqual('Known Error Occurred!');
       });
   });
@@ -41,6 +42,7 @@ describe('checkBulkStatus logic', () => {
       .expect(500)
       .then(response => {
         expect(response.body.issue[0].code).toEqual('UnknownError');
+        expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
         expect(response.body.issue[0].details.text).toEqual(
           'An unknown error occurred during bulk import with id: UNKNOWN_ERROR_REQUEST'
         );

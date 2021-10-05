@@ -151,7 +151,6 @@ const submitData = async (args, { req }) => {
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
-// eslint-disable-next-line no-unused-vars
 const bulkImport = async (args, { req }) => {
   const res = req.res;
   logger.info('Measure >>> $bulk-import');
