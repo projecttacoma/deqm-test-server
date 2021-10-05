@@ -1,4 +1,5 @@
 const { db, client } = require('../src/util/mongo');
+const testStatuses = require('./fixtures/testBulkStatus.json');
 const createTestResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
   await collection.insertOne(data);
@@ -16,4 +17,12 @@ const testSetup = async (testMeasure, testPatient, testLibrary) => {
   await createTestResource(testPatient, 'Patient');
   await createTestResource(testLibrary, 'Library');
 };
-module.exports = { testSetup, cleanUpDb };
+
+const bulkStatusSetup = async () => {
+  await client.connect();
+  const promises = testStatuses.map(async status => {
+    await createTestResource(status, 'bulkImportStatuses');
+  });
+  await Promise.all(promises);
+};
+module.exports = { testSetup, cleanUpDb, bulkStatusSetup };

@@ -9,6 +9,7 @@ const {
   getPatientDataBundle,
   assembleCollectionBundleFromMeasure
 } = require('../util/bundleUtils');
+const { addPendingBulkImportRequest } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 /**
@@ -150,12 +151,12 @@ const submitData = async (args, { req }) => {
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
-// eslint-disable-next-line no-unused-vars
 const bulkImport = async (args, { req }) => {
   const res = req.res;
   logger.info('Measure >>> $bulk-import');
+  const clientEntry = await addPendingBulkImportRequest();
   res.status(202);
-  res.setHeader('Content-Location', 'EXAMPLE-LOCATION');
+  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
   //Temporary solution. Asymmetrik automatically rewrites this to a 200.
   //Rewriting the res.status method prevents the code from being overwritten.
   //TODO: change this once we fork asymmetrik

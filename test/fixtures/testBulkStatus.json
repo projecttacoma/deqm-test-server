@@ -1,0 +1,10 @@
+[
+  { "id": "PENDING_REQUEST", "status": "In Progress", "error": { "code": null, "message": null } },
+  { "id": "COMPLETED_REQUEST", "status": "Completed", "error": { "code": null, "message": null } },
+  {
+    "id": "KNOWN_ERROR_REQUEST",
+    "status": "Error",
+    "error": { "code": "ErrorCode", "message": "Known Error Occurred!" }
+  },
+  { "id": "UNKNOWN_ERROR_REQUEST", "status": "Error", "error": { "code": null, "message": null } }
+]
