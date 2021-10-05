@@ -133,7 +133,7 @@ Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measu
 
 #### `$submit-data`
 
-This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_0/Measure/$submit-data`.
+This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_0/Measure/$submit-data` or `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$submit-data`.
 
 Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more infomration.
 
