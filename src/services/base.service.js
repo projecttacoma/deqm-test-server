@@ -133,7 +133,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
 
-  // Reprsents search params retrieved from fhir spec, or custom params specified by resource service
+  // Represents search params retrieved from fhir spec, or custom params specified by resource service
   let searchParams;
 
   if (!paramDefs) {
