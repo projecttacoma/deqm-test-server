@@ -13,7 +13,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 
   - [Database Setup](#database-setup)
   - [CRUD Operations](#crud-operations)
-  - [Searches] (#searches)
+  - [Searches](#searches)
   - [Supported FHIR Operations](#supported-fhir-operations)
 
 - [License](#license)
