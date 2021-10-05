@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { resolveSchema, ServerError } = require('@asymmetrik/node-fhir-server-core');
+const { resolveSchema, ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
 const {
   findResourceById,
   createResource,
@@ -9,6 +9,9 @@ const {
 } = require('../util/mongo.controller');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
+const { getSearchParameters } = require('@asymmetrik/node-fhir-server-core/dist/server/utils/params.utils');
+
+const logger = loggers.get('default');
 
 /**
  * Query Builder Parameter Definitions for all resources
@@ -78,6 +81,7 @@ const qb = new QueryBuilder({
  * @returns the id of the created object
  */
 const baseCreate = async ({ req }, resourceType) => {
+  logger.info(`${resourceType} >>> create`);
   checkHeaders(req.headers);
   const data = req.body;
   //Create a new id regardless of whether one is passed
@@ -94,6 +98,7 @@ const baseCreate = async ({ req }, resourceType) => {
  * @returns the object with the desired id cast to the requested type
  */
 const baseSearchById = async (args, resourceType) => {
+  logger.info(`${resourceType} >>> read`);
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
   if (!result) {
@@ -119,13 +124,29 @@ const baseSearchById = async (args, resourceType) => {
  * @param {*} req The Express request object. This is used by the query builder.
  * @param {*} resourceType The resource type we are searching on.
  * @param {*} paramDefs Optional parameter definitions for the specific resource types. Specific
- *                      resource services should call this and pass
+ *                      resource services should call this and pass along supported params
  * @returns Search set result bundle
  */
-const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
+const baseSearch = async (args, { req }, resourceType, paramDefs) => {
+  logger.info(`${resourceType} >>> search`);
   // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
+
+  // Represents search params retrieved from fhir spec, or custom params specified by resource service
+  let searchParams;
+
+  if (!paramDefs) {
+    searchParams = {};
+    const searchParameterList = getSearchParameters(resourceType, args.base_version);
+    searchParameterList.forEach(async paramDef => {
+      {
+        searchParams[paramDef.name] = paramDef;
+      }
+    });
+  } else {
+    searchParams = paramDefs;
+  }
 
   // wipe out params since the 'base_version' here breaks the query building
   req.params = {};
@@ -137,7 +158,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
     total: 0
   });
   // build the aggregation query
-  const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: paramDefs });
+  const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
 
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
@@ -188,6 +209,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs = {}) => {
  * @returns the id of the updated/created document
  */
 const baseUpdate = async (args, { req }, resourceType) => {
+  logger.info(`${resourceType} >>> update`);
   checkHeaders(req.headers);
   const data = req.body;
   //The user passes in an id in the request body and it doesn't match the id arg in the url
@@ -217,6 +239,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
  * @returns an object containing deletedCount: the number of documents deleted
  */
 const baseRemove = async (args, resourceType) => {
+  logger.info(`${resourceType} >>> delete`);
   return removeResource(args.id, resourceType);
 };
 
