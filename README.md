@@ -8,6 +8,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
   - [Local Installation](#local-installation)
   - [Testing](#testing)
   - [MongoDB](#mongodb)
+  - [Docker](#docker)
 
 - [Usage](#usage)
 
@@ -25,6 +26,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 - [Node.js >=10.15.1](https://nodejs.org/en/)
 - [MongoDB >= 5.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
+- [Docker](https://docs.docker.com/get-docker/)
 
 ### Local Installation
 
@@ -54,6 +56,10 @@ This test server makes use of [MongoDB](https://www.mongodb.com), a cross-platfo
 
 Follow the [MongoDB Community Edition installation guide](https://docs.mongodb.com/manual/installation/) for your platform, and follow the commands for running MongoDB on your machine.
 
+### Docker
+
+This test server can be run with Docker by calling `docker-compose up --build`.
+
 ## Usage
 
 Once MongoDB is running on your machine, run the `npm start` command to start up the FHIR server at `localhost:3000`. The server can also be run in "watch" mode with `npm run start:watch`.
@@ -70,7 +76,7 @@ The following `npm` commands can be used to set up the database:
 
 ### CRUD Operations
 
-The test server supports the standard CRUD operations to create, read, update, and delete documents in the database. See the [MongoDB CRUD Operations documentation](https://docs.mongodb.com/manual/crud/) for more information.
+The test server supports the following operations: create, read, update, and delete, search, and transaction. See the [FHIR CRUD Operations documentation](https://www.hl7.org/fhir/http.html) for more information.
 
 ### Searches
 
@@ -100,6 +106,8 @@ Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not su
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
+Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more infomration.
+
 #### `$care-gaps`
 
 This operation calculates gaps in care for a given patient against the given measure.
@@ -115,13 +123,19 @@ Currently, `topic`, `practitioner`, `organization`, and `program` are not suppor
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/$care-gaps` with the required parameters.
 
+Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html) for more infomration.
+
 #### `$data-requirements`
 
 This operation retrieves all the data requirements for a given measure as a FHIR library. To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$data-requirements`.
 
+Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more infomration.
+
 #### `$submit-data`
 
 This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_0/Measure/$submit-data`.
+
+Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more infomration.
 
 ## License
 
