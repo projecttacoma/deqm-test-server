@@ -1,4 +1,5 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { RequirementsQuery } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -12,6 +13,7 @@ const {
 const { addPendingBulkImportRequest } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
+
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
  * creates a new measure in the database
