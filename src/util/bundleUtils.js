@@ -108,7 +108,6 @@ async function getMeasureBundleFromId(measureId) {
  */
 async function assembleCollectionBundleFromMeasure(measure) {
   const [mainLibraryRef] = measure.library;
-
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 

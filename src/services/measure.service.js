@@ -10,7 +10,7 @@ const {
   getPatientDataBundle,
   assembleCollectionBundleFromMeasure
 } = require('../util/bundleUtils');
-const { addPendingBulkImportRequest } = require('../util/mongo.controller');
+const { addPendingBulkImportRequest, findResourceById } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 
@@ -113,15 +113,13 @@ const submitData = async (args, { req }) => {
       ]
     });
   }
-  // check if we want to do a bulk import
-  if (req.headers['prefer'] === 'respond-async') {
-    return await bulkImport(args, { req });
-  }
   const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
-  const numMeasureReportsInput = parameters.filter(param => param.name === 'measureReport').length;
+  const numMeasureReportsInput = parameters.filter(
+    param => param.name === 'measureReport' || param.resource.resourceType === 'MeasureReport'
+  ).length;
   if (numMeasureReportsInput !== 1) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -137,12 +135,16 @@ const submitData = async (args, { req }) => {
     });
   }
 
+  // check if we want to do a bulk import
+  if (req.headers['prefer'] === 'respond-async') {
+    return await bulkImport(args, { req });
+  }
+
   parameters.forEach(param => {
     //TODO: add functionality for if resource is itself a bundle
 
     tb.addEntryFromResource(param.resource, 'POST');
   });
-
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
   return output;
@@ -154,15 +156,52 @@ const submitData = async (args, { req }) => {
  * @param {*} req the request object passed in by the user
  */
 const bulkImport = async (args, { req }) => {
-  const res = req.res;
   logger.info('Measure >>> $bulk-import');
+  // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
+  const res = req.res;
   res.status(202);
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
   //Temporary solution. Asymmetrik automatically rewrites this to a 200.
   //Rewriting the res.status method prevents the code from being overwritten.
   //TODO: change this once we fork asymmetrik
   res.status = () => res;
+
+  // use measure ID and export server location to map to data-requirements
+  // case 1: request is in Measure/<id>/$submit-data format
+  let measureId;
+  let measureBundle;
+  if (req.params.id) {
+    measureId = req.params.id;
+    measureBundle = await getMeasureBundleFromId(measureId);
+  }
+  // case 2: request is in Measure/$submit-data format
+  else {
+    const parameters = req.body.parameter;
+    const measureReport = parameters.filter(param => param.name === 'measureReport')[0];
+    // get measure from db that matches measure param since no id is present
+    measureId = measureReport.resource.measure.split('/')[1];
+    //const measure = await findResourceById(measureReport.resource.measure.split('/')[1], 'Measure');
+    measureBundle = await getMeasureBundleFromId(measureId);
+  }
+  if (!measureBundle) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Could not find measure bundle with id ${measureId}`
+          }
+        }
+      ]
+    });
+  }
+
+  // retrieve data requirements
+  const results = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
+  console.log(results);
 };
 
 /**

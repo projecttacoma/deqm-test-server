@@ -75,9 +75,7 @@ async function uploadTransactionBundle(req, res) {
     });
   }
   const { protocol, baseUrl } = req;
-
   const scrubbedEntries = replaceReferences(entries);
-
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
