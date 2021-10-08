@@ -201,7 +201,8 @@ const bulkImport = async (args, { req }) => {
 
   // retrieve data requirements
   const results = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
-  console.log(results);
+  return results;
+  //console.log(results);
 };
 
 /**
