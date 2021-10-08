@@ -10,7 +10,7 @@ const {
   getPatientDataBundle,
   assembleCollectionBundleFromMeasure
 } = require('../util/bundleUtils');
-const { addPendingBulkImportRequest, findResourceById } = require('../util/mongo.controller');
+const { addPendingBulkImportRequest } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 
@@ -78,7 +78,9 @@ const search = async (args, { req }) => {
 
 /**
  * takes a measureReport and a set of required data with which to calculate the measure and
- * creates new documents for the measureReport and requirements in the appropriate collections
+ * creates new documents for the measureReport and requirements in the appropriate collections.
+ *
+ * If 'prefer': 'respond-async' header is present, calls bulkImport.
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  * @returns a transaction-response bundle
@@ -113,8 +115,6 @@ const submitData = async (args, { req }) => {
       ]
     });
   }
-  const { base_version: baseVersion } = req.params;
-  const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
   const numMeasureReportsInput = parameters.filter(
@@ -140,6 +140,8 @@ const submitData = async (args, { req }) => {
     return await bulkImport(args, { req });
   }
 
+  const { base_version: baseVersion } = req.params;
+  const tb = createTransactionBundleClass(baseVersion);
   parameters.forEach(param => {
     //TODO: add functionality for if resource is itself a bundle
 
@@ -152,6 +154,9 @@ const submitData = async (args, { req }) => {
 
 /**
  * "TO-DO: add bulk import funtionality" (sic)
+ * Retrieves measure bundle from the measure ID and
+ * maps data requirements into an export request, which is
+ * returned to the intiial import client.
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
@@ -181,7 +186,6 @@ const bulkImport = async (args, { req }) => {
     const measureReport = parameters.filter(param => param.name === 'measureReport')[0];
     // get measure from db that matches measure param since no id is present
     measureId = measureReport.resource.measure.split('/')[1];
-    //const measure = await findResourceById(measureReport.resource.measure.split('/')[1], 'Measure');
     measureBundle = await getMeasureBundleFromId(measureId);
   }
   if (!measureBundle) {
@@ -202,7 +206,6 @@ const bulkImport = async (args, { req }) => {
   // retrieve data requirements
   const results = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
   return results;
-  //console.log(results);
 };
 
 /**
