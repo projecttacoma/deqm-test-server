@@ -46,22 +46,22 @@ jobs:
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-pr.json"
+      # - run: npm ci
+      # - run: npm run build --if-present
+      # - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-pr.json"
 
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
+      # - uses: actions/checkout@v2
+      #   with:
+      #     ref: ${{ github.event.pull_request.base.sha }}
 
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-base.json"
+      # - run: npm ci
+      # - run: npm run build --if-present
+      # - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-base.json"
 
       - uses: artiomtr/jest-coverage-report-action@v2.0-rc.4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 45
-          coverage-file: ./coverage-pr.json
-          base-coverage-file: ./coverage-base.json
-          skip-step: all
+          #coverage-file: ./coverage-pr.json
+          #base-coverage-file: ./coverage-base.json
+          #skip-step: all
