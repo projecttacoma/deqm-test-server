@@ -66,3 +66,4 @@ jobs:
           threshold: 45
           coverage-file: ./coverage-pr.json
           base-coverage-file: ./coverage-base.json
+          skip-step: all
