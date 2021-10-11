@@ -2,7 +2,7 @@ name: Continuous Integration
 on: [pull_request]
 
 jobs:
-  build-lint-prettier:
+  checks:
     runs-on: ubuntu-latest
 
     strategy:
@@ -23,9 +23,20 @@ jobs:
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm run check
+      - name: Setup Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run prettier
+
+      - name: Unit Test
+        run: npm run test
 
   coverage:
     runs-on: ubuntu-latest
@@ -46,22 +57,8 @@ jobs:
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
-      # - run: npm ci
-      # - run: npm run build --if-present
-      # - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-pr.json"
-
-      # - uses: actions/checkout@v2
-      #   with:
-      #     ref: ${{ github.event.pull_request.base.sha }}
-
-      # - run: npm ci
-      # - run: npm run build --if-present
-      # - run: npx jest --silent --ci --coverage --testLocationInResults --json --outputFile="coverage-base.json"
-
-      - uses: artiomtr/jest-coverage-report-action@v2.0-rc.4
+      - name: Run Jest Coverage Report
+        uses: artiomtr/jest-coverage-report-action@v2.0-rc.4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 45
-          #coverage-file: ./coverage-pr.json
-          #base-coverage-file: ./coverage-base.json
-          #skip-step: all
