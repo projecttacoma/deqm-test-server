@@ -34,12 +34,35 @@ jobs:
         node-version: [14.x]
         mongodb-version: ['5.0']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
       - name: Use MongoDB
         uses: supercharge/mongodb-github-action@1.6.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
-      - uses: artiomtr/jest-coverage-report-action@v1.1
+
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm run test:coverage
+      - run: cp coverage/coverage-final.json coverage-pr.json
+
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm run test:coverage
+      - run: cp coverage/coverage-final.json coverage-base.json
+
+      - uses: artiomtr/jest-coverage-report-action@v2.0-rc.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 60
+          coverage-file: coverage-pr.json
+          base-coverage-file: coverage-base.json
