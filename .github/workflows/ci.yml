@@ -29,8 +29,16 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+        mongodb-version: ['5.0']
     steps:
       - uses: actions/checkout@v1
+      - name: Use MongoDB
+        uses: supercharge/mongodb-github-action@1.6.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
       - uses: artiomtr/jest-coverage-report-action@v1.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
