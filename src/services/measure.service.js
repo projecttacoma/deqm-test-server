@@ -1,5 +1,5 @@
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
-const { RequirementsQuery } = require('bulk-data-utilities');
+const { RequirementsQuery, ndjsonParser, bundleAssemblyHelpers } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -17,8 +17,11 @@ const {
   getQueryFromReference
 } = require('../util/bundleUtils');
 const {
-  addPendingBulkImportRequest,
+
   findOneResourceWithQuery,
+  addPendingBulkImportRequest,
+  failBulkImportRequest,
+  completeBulkImportRequest,
   findResourcesWithQuery
 } = require('../util/mongo.controller');
 
@@ -212,27 +215,39 @@ const bulkImport = async (args, { req }) => {
   }
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
-  const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle, exportURL);
-  if (!bulkDataResults.output && bulkDataResults.error) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Received AxiosError: ${bulkDataResults.error}`
+
+  executePingAndPull(clientEntry, exportUrl, measureBundle, req.res);
+
+  return;
+};
+
+const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, res) => {
+  try {
+    const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
+    if (!bulkDataResults.output && bulkDataResults.error) {
+      throw new ServerError(null, {
+        statusCode: 400,
+        issue: [
+          {
+            severity: 'error',
+            code: 'BadRequest',
+            details: {
+              text: `Received AxiosError: ${bulkDataResults.error}`
+            }
           }
-        }
-      ]
+        ]
+      });
+    }
+    const tempDB = await ndjsonParser.populateDB(bulkDataExportLocations, '../../bulkDataTemp.db');
+    const transactionBundles = await bundleAssemblyHelpers.assembleTransactionBundles(tempDB);
+    const pendingTransactionBundles = transactionBundles.map(async tb => {
+      await uploadTransactionBundle({ body: tb }, res);
     });
+    await Promise.all(pendingTransactionBundles);
+    await completeBulkImportRequest(clientEntryId);
+  } catch (e) {
+    await failBulkImportRequest(clientEntryId, e);
   }
-  res.status(202);
-  //Temporary solution. Asymmetrik automatically rewrites this to a 200.
-  //Rewriting the res.status method prevents the code from being overwritten.
-  //TODO: change this once we fork asymmetrik
-  res.status = () => res;
-  return bulkDataResults.output;
 };
 
 /**
