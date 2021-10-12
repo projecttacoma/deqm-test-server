@@ -183,7 +183,7 @@ const bulkImport = async (args, { req }) => {
   // case 2: request is in Measure/$submit-data format
   else {
     const parameters = req.body.parameter;
-    const measureReport = parameters.filter(param => param.name === 'measureReport')[0];
+    const measureReport = parameters.filter(param => param.resource.resourceType === 'MeasureReport')[0];
     // get measure from db that matches measure param since no id is present
     measureId = measureReport.resource.measure.split('/')[1];
     measureBundle = await getMeasureBundleFromId(measureId);
