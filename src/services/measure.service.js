@@ -11,7 +11,6 @@ const {
   validateDataRequirementsParams,
   retrieveExportURL
 } = require('../util/measureOperationsUtils');
-const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
