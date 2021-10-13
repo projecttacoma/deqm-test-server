@@ -1,5 +1,5 @@
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
-const { RequirementsQuery, ndjsonParser, bundleAssemblyHelpers } = require('bulk-data-utilities');
+const { BulkImportWrappers } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -8,8 +8,10 @@ const {
   retrieveExportURL,
   validateEvalMeasureParams,
   validateCareGapsParams,
-  validateDataRequirementsParams
+  validateDataRequirementsParams,
+  retrieveExportURL
 } = require('../util/measureOperationsUtils');
+const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
@@ -241,7 +243,7 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, res) 
     const tempDB = await ndjsonParser.populateDB(bulkDataExportLocations, '../../bulkDataTemp.db');
     const transactionBundles = await bundleAssemblyHelpers.assembleTransactionBundles(tempDB);
     const pendingTransactionBundles = transactionBundles.map(async tb => {
-      await uploadTransactionBundle({ body: tb }, res);
+      return uploadTransactionBundle({ ...req, body: tb }, req.res);
     });
     await Promise.all(pendingTransactionBundles);
     await completeBulkImportRequest(clientEntryId);
@@ -376,5 +378,6 @@ module.exports = {
   submitData,
   dataRequirements,
   evaluateMeasure,
-  careGaps
+  careGaps,
+  executePingAndPull
 };

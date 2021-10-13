@@ -111,7 +111,7 @@ const addPendingBulkImportRequest = async () => {
 const completeBulkImportRequest = async clientId => {
   const collection = db.collection('bulkImportStatuses');
   const update = {
-    status: 'Complete'
+    status: 'Completed'
   };
   await collection.findOneAndUpdate({ id: clientId }, { $set: update });
 };
