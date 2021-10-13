@@ -279,5 +279,6 @@ module.exports = {
   getMeasureBundleFromId,
   replaceReferences,
   getPatientDataBundle,
-  assembleCollectionBundleFromMeasure
+  assembleCollectionBundleFromMeasure,
+  getQueryFromReference
 };

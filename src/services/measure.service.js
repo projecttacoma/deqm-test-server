@@ -8,9 +8,10 @@ const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
-  assembleCollectionBundleFromMeasure
+  assembleCollectionBundleFromMeasure,
+  getQueryFromReference
 } = require('../util/bundleUtils');
-const { addPendingBulkImportRequest } = require('../util/mongo.controller');
+const { addPendingBulkImportRequest, findOneResourceWithQuery } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 
@@ -184,8 +185,10 @@ const bulkImport = async (args, { req }) => {
   else {
     const parameters = req.body.parameter;
     const measureReport = parameters.filter(param => param.resource.resourceType === 'MeasureReport')[0];
-    // get measure from db that matches measure param since no id is present
-    measureId = measureReport.resource.measure.split('/')[1];
+    // get measure resource from db that matches measure param since no id is present in request
+    const query = getQueryFromReference(measureReport.resource.measure);
+    const measureResource = await findOneResourceWithQuery(query, 'Measure');
+    measureId = measureResource.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
   if (!measureBundle) {
