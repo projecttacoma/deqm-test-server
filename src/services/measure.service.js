@@ -1,4 +1,5 @@
 const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { RequirementsQuery } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -7,11 +8,13 @@ const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
-  assembleCollectionBundleFromMeasure
+  assembleCollectionBundleFromMeasure,
+  getQueryFromReference
 } = require('../util/bundleUtils');
-const { addPendingBulkImportRequest } = require('../util/mongo.controller');
+const { addPendingBulkImportRequest, findOneResourceWithQuery } = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
+
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
  * creates a new measure in the database
@@ -76,7 +79,9 @@ const search = async (args, { req }) => {
 
 /**
  * takes a measureReport and a set of required data with which to calculate the measure and
- * creates new documents for the measureReport and requirements in the appropriate collections
+ * creates new documents for the measureReport and requirements in the appropriate collections.
+ *
+ * If 'prefer': 'respond-async' header is present, calls bulkImport.
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  * @returns a transaction-response bundle
@@ -111,15 +116,11 @@ const submitData = async (args, { req }) => {
       ]
     });
   }
-  // check if we want to do a bulk import
-  if (req.headers['prefer'] === 'respond-async') {
-    return await bulkImport(args, { req });
-  }
-  const { base_version: baseVersion } = req.params;
-  const tb = createTransactionBundleClass(baseVersion);
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
-  const numMeasureReportsInput = parameters.filter(param => param.name === 'measureReport').length;
+  const numMeasureReportsInput = parameters.filter(
+    param => param.name === 'measureReport' || param.resource.resourceType === 'MeasureReport'
+  ).length;
   if (numMeasureReportsInput !== 1) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -135,12 +136,18 @@ const submitData = async (args, { req }) => {
     });
   }
 
+  // check if we want to do a bulk import
+  if (req.headers['prefer'] === 'respond-async') {
+    return await bulkImport(args, { req });
+  }
+
+  const { base_version: baseVersion } = req.params;
+  const tb = createTransactionBundleClass(baseVersion);
   parameters.forEach(param => {
     //TODO: add functionality for if resource is itself a bundle
 
     tb.addEntryFromResource(param.resource, 'POST');
   });
-
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
   return output;
@@ -148,19 +155,61 @@ const submitData = async (args, { req }) => {
 
 /**
  * "TO-DO: add bulk import funtionality" (sic)
+ * Retrieves measure bundle from the measure ID and
+ * maps data requirements into an export request, which is
+ * returned to the intiial import client.
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
 const bulkImport = async (args, { req }) => {
-  const res = req.res;
   logger.info('Measure >>> $bulk-import');
+  // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
+  const res = req.res;
   res.status(202);
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
   //Temporary solution. Asymmetrik automatically rewrites this to a 200.
   //Rewriting the res.status method prevents the code from being overwritten.
   //TODO: change this once we fork asymmetrik
   res.status = () => res;
+
+  // use measure ID and export server location to map to data-requirements
+  let measureId;
+  let measureBundle;
+
+  // case 1: request is in Measure/<id>/$submit-data format
+  if (req.params.id) {
+    measureId = req.params.id;
+    measureBundle = await getMeasureBundleFromId(measureId);
+  }
+  // case 2: request is in Measure/$submit-data format
+  else {
+    const parameters = req.body.parameter;
+    const measureReport = parameters.filter(param => param.resource.resourceType === 'MeasureReport')[0];
+    // get measure resource from db that matches measure param since no id is present in request
+    const query = getQueryFromReference(measureReport.resource.measure);
+    const measureResource = await findOneResourceWithQuery(query, 'Measure');
+    measureId = measureResource.id;
+    measureBundle = await getMeasureBundleFromId(measureId);
+  }
+  if (!measureBundle) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Could not find measure bundle with id ${measureId}`
+          }
+        }
+      ]
+    });
+  }
+
+  // retrieve data requirements
+  const results = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
+  return results;
 };
 
 /**
