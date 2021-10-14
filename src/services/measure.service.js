@@ -222,9 +222,18 @@ const bulkImport = async (args, { req }) => {
   return;
 };
 
-const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, res) => {
+/**
+ * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
+ * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
+ * Finally, uploads the resulting transaction bundles to the server and updateed the bulkstatus endpoint
+ * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
+ * @param {*} exportUrl The url of the bulk export fhir server
+ * @param {*} measureBundle The measure bundle for which to retireve data requirements
+ * @param {*} req The request object passed in by the user
+ */
+const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) => {
   try {
-    const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
+    const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle, exportUrl);
     if (!bulkDataResults.output && bulkDataResults.error) {
       throw new ServerError(null, {
         statusCode: 400,
