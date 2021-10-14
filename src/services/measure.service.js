@@ -174,9 +174,10 @@ const bulkImport = async (args, { req }) => {
   res.status = () => res;
 
   // use measure ID and export server location to map to data-requirements
-  // case 1: request is in Measure/<id>/$submit-data format
   let measureId;
   let measureBundle;
+
+  // case 1: request is in Measure/<id>/$submit-data format
   if (req.params.id) {
     measureId = req.params.id;
     measureBundle = await getMeasureBundleFromId(measureId);
@@ -184,7 +185,7 @@ const bulkImport = async (args, { req }) => {
   // case 2: request is in Measure/$submit-data format
   else {
     const parameters = req.body.parameter;
-    const measureReport = parameters.filter(param => param.resource.resourceType === 'MeasureReport')[0];
+    const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
     // get measure resource from db that matches measure param since no id is present in request
     const query = getQueryFromReference(measureReport.resource.measure);
     const measureResource = await findOneResourceWithQuery(query, 'Measure');
