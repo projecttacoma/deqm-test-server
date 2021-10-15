@@ -187,9 +187,7 @@ const bulkImport = async (args, { req }) => {
     const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
     // get measure resource from db that matches measure param since no id is present in request
     const query = getQueryFromReference(measureReport.resource.measure);
-    console.log(query);
     const measureResource = await findOneResourceWithQuery(query, 'Measure');
-    //console.log(measureResource);
     measureId = measureResource.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
