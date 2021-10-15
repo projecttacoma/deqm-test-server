@@ -64,3 +64,54 @@ describe('measure.service', () => {
     await cleanUpDb();
   });
 });
+
+describe('testing $evaluate-measure operation', () => {
+  beforeAll(async () => {
+    await testSetup(testMeasure, testPatient, testLibrary);
+  });
+  test('return 200 when subject is omitted and reportType is set to population', async () => {
+    const { Calculator } = require('fqm-execution');
+    const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+      return {
+        results: [
+          {
+            resourceType: 'MeasureReport',
+            period: {},
+            measure: '',
+            status: 'complete',
+            type: 'individual'
+          }
+        ],
+        debugOutput: {}
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_0/Measure/testMeasure/$evaluate-measure')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        reportType: 'population'
+      })
+      .expect(200);
+    expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021',
+      reportType: 'summary'
+    });
+  });
+  afterAll(async () => {
+    await cleanUpDb();
+  });
+});

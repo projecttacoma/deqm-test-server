@@ -1,13 +1,5 @@
 {
-    "resourceType": "Library",
-    "id": "testLibrary",
-    "library": ["Library/testLibrary"],
-
-    "relatedArtifact": [
-        {
-          "type": "depends-on",
-          "resource": "Library/library-FHIRHelpers-4.0.1"
-        }
-       
-      ]
-  }
+  "resourceType": "Library",
+  "id": "testLibrary",
+  "library": ["Library/testLibrary"]
+}
