@@ -241,7 +241,6 @@ const dataRequirements = async (args, { req }) => {
  */
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
-  console.log(args.id);
   const measureBundle = await getMeasureBundleFromId(args.id);
 
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
@@ -258,8 +257,6 @@ const evaluateMeasure = async (args, { req }) => {
 
     patientBundles = await Promise.all(patientBundles);
     const { periodStart, periodEnd } = req.query;
-    console.log(measureBundle);
-    console.log(patientBundles);
     const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd,
