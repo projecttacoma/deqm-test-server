@@ -1,4 +1,4 @@
-const { ServerError, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');

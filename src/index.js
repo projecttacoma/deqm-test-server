@@ -1,4 +1,4 @@
-const { loggers } = require('@asymmetrik/node-fhir-server-core');
+const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const express = require('express');
 const mongoUtil = require('./util/mongo');
 const { buildConfig } = require('./util/config');

@@ -239,7 +239,7 @@ const bulkImport = async (args, { req }) => {
 const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
 
-  const id = args.id || req.params.id;
+  const id = args.id;
 
   const measureBundle = await getMeasureBundleFromId(id);
 

@@ -1,11 +1,11 @@
-const { constants } = require('@asymmetrik/node-fhir-server-core');
+const { constants } = require('@projecttacoma/node-fhir-server-core');
 const { VERSIONS } = constants;
 const supportedResources = require('./supportedResources');
 const { buildServiceModule } = require('../services/base.service');
 const path = require('path');
 
 /**
- * Build configuration object to pass to the Asymmetrik core FHIR server
+ * Build configuration object to pass to the core FHIR server
  *
  * @returns Server configuration.
  */
@@ -18,7 +18,7 @@ const buildConfig = () => {
       case 'Measure':
         config.profiles['Measure'] = {
           service: path.resolve('src', 'services', 'measure.service.js'),
-          versions: [VERSIONS['4_0_0']],
+          versions: [VERSIONS['4_0_1']],
           operation: [
             {
               name: 'submitData',
@@ -62,7 +62,7 @@ const buildConfig = () => {
       default:
         config.profiles[resourceType] = {
           service: buildServiceModule(resourceType),
-          versions: [VERSIONS['4_0_0']]
+          versions: [VERSIONS['4_0_1']]
         };
     }
   });

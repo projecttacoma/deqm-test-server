@@ -1,4 +1,4 @@
-const { Server } = require('@asymmetrik/node-fhir-server-core');
+const { Server } = require('@projecttacoma/node-fhir-server-core');
 const configTransaction = require('../services/bundle.controller');
 const configBulkStatus = require('../services/bulkstatus.controller');
 
