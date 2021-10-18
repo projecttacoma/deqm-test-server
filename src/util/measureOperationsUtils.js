@@ -7,7 +7,7 @@ const { ServerError } = require('@asymmetrik/node-fhir-server-core');
  * @param {Object} req http request object
  */
 function validateEvalMeasureParams(req) {
-  const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'subject'];
+  const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   const UNSUPPORTED_PARAMS = ['measure', 'practitioner', 'lastReceivedOn'];
 
   const missingParams = REQUIRED_PARAMS.filter(key => !req.query[key]);
@@ -28,6 +28,7 @@ function validateEvalMeasureParams(req) {
       ]
     });
   }
+
   // returns all unsupported params that are included in the http request
   if (includedUnsupportedParams.length > 0) {
     throw new ServerError(null, {
@@ -44,9 +45,7 @@ function validateEvalMeasureParams(req) {
         }
       ]
     });
-  }
-
-  if (['population', 'subject-list'].includes(req.query.reportType)) {
+  } else if (req.query.reportType === 'subject-list') {
     throw new ServerError(null, {
       statusCode: 501,
       issue: [
@@ -54,7 +53,7 @@ function validateEvalMeasureParams(req) {
           severity: 'error',
           code: 'NotImplemented',
           details: {
-            text: `The ${req.query.reportType} reportType is not currently supported by the server.`
+            text: `The subject-list reportType is not currently supported by the server.`
           }
         }
       ]
@@ -71,6 +70,21 @@ function validateEvalMeasureParams(req) {
           code: 'BadRequest',
           details: {
             text: `reportType ${req.query.reportType} is not supported for $evaluate-measure`
+          }
+        }
+      ]
+    });
+  }
+
+  if (!req.query.subject && req.query.reportType !== 'population') {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Must specify subject for all $evaluate-measure requests with reportType: ${req.query.reportType}`
           }
         }
       ]

@@ -11,7 +11,11 @@ const {
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
-const { addPendingBulkImportRequest, findOneResourceWithQuery } = require('../util/mongo.controller');
+const {
+  addPendingBulkImportRequest,
+  findOneResourceWithQuery,
+  findResourcesWithQuery
+} = require('../util/mongo.controller');
 
 const logger = loggers.get('default');
 
@@ -238,11 +242,28 @@ const dataRequirements = async (args, { req }) => {
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
   const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = await Calculator.calculateDataRequirements(measureBundle);
+
+  const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
   validateEvalMeasureParams(req);
+
+  if (req.query.reportType === 'population') {
+    const patients = await findResourcesWithQuery({}, 'Patient');
+    let patientBundles = patients.map(async p => {
+      return getPatientDataBundle(p.id, dataReq.results.dataRequirement);
+    });
+
+    patientBundles = await Promise.all(patientBundles);
+    const { periodStart, periodEnd } = req.query;
+    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd,
+      reportType: 'summary'
+    });
+    return results;
+  }
 
   const { periodStart, periodEnd, reportType = 'individual', subject } = req.query;
   const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
