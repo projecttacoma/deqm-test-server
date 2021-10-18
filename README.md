@@ -23,7 +23,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 
 ### Prerequisites
 
-- [Node.js >=10.15.1](https://nodejs.org/en/)
+- [Node.js >=11.15.0](https://nodejs.org/en/)
 - [MongoDB >= 5.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
 - [Docker](https://docs.docker.com/get-docker/)
@@ -73,6 +73,7 @@ The following `npm` commands can be used to set up the database:
 - `npm run db:setup` creates collections for all the valid FHIR resource types
 - `npm run db:delete` deletes all existing collections in the database
 - `npm run db:reset` runs both of the above, deleting all current collections and then creating new, empty collections
+- To upload all the Connectathon measure bundles, `git clone` the [Connectathon repository](https://github.com/DBCG/connectathon) into the root directory of the `deqm-test-server` repository. Run `npm run connectathon-upload`. This runs a script that uploads all the Connectathon bundle resources to the appropriate Mongo collections.
 
 ### CRUD Operations
 
