@@ -214,7 +214,6 @@ const validateDataRequirementsParams = req => {
 const checkRequiredParams = ({ query }, requiredParams, functionName) => {
   // Returns a list of all required params which are undefined on req.query
   const missingParams = requiredParams.filter(key => !query[key]);
-
   if (missingParams.length > 0) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -230,9 +229,11 @@ const checkRequiredParams = ({ query }, requiredParams, functionName) => {
     });
   }
 };
+
 module.exports = {
+  retrieveExportURL,
   validateEvalMeasureParams,
   validateCareGapsParams,
-  retrieveExportURL,
-  validateDataRequirementsParams
+  validateDataRequirementsParams,
+  checkRequiredParams
 };
