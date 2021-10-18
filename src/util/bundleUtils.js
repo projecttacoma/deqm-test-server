@@ -96,7 +96,6 @@ async function getMeasureBundleFromId(measureId) {
       ]
     });
   }
-
   return assembleCollectionBundleFromMeasure(measure);
 }
 
@@ -175,11 +174,9 @@ async function getAllDependentLibraries(lib) {
   const depLibUrls = lib.relatedArtifact
     .filter(ra => ra.type === 'depends-on' && ra.resource.includes('Library'))
     .map(ra => ra.resource);
-
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
     const libQuery = getQueryFromReference(url);
-
     const lib = await findOneResourceWithQuery(libQuery, 'Library');
     return getAllDependentLibraries(lib);
   });
@@ -199,7 +196,6 @@ async function getAllDependentLibraries(lib) {
  */
 async function getPatientDataBundle(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
-
   const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
   const queries = requiredTypes.map(async type => {
     const allQueries = [];
