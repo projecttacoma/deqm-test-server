@@ -76,7 +76,7 @@ function validateEvalMeasureParams(req) {
     });
   }
 
-  if (!req.query.subject && !req.query.reportType === 'population') {
+  if (!req.query.subject && req.query.reportType !== 'population') {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
