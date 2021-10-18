@@ -76,7 +76,7 @@ describe('bulkImport with exportURL', () => {
       .expect(400);
   });
 
-  test('FHIR Parameters object is has two export URLs', async () => {
+  test('FHIR Parameters object has two export URLs', async () => {
     await supertest(server.app)
       .post('/4_0_0/Measure/$submit-data')
       .send(testParamTwoExports)
