@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { resolveSchema, ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { resolveSchema, ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const {
   findResourceById,
   createResource,
@@ -9,7 +9,7 @@ const {
 } = require('../util/mongo.controller');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
-const { getSearchParameters } = require('@asymmetrik/node-fhir-server-core/dist/server/utils/params.utils');
+const { getSearchParameters } = require('@projecttacoma/node-fhir-server-core/dist/server/utils/params.utils');
 
 const logger = loggers.get('default');
 

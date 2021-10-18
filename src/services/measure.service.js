@@ -1,4 +1,4 @@
-const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { RequirementsQuery } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
