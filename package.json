@@ -28,7 +28,7 @@
     "@asymmetrik/fhir-qb-mongo": "^0.12.3",
     "@asymmetrik/node-fhir-server-core": "^2.2.3",
     "axios": "^0.21.4",
-    "bulk-data-utilities": "git+https://github.com/projecttacoma/bulk-data-utilities#export-url",
+    "bulk-data-utilities": "git+https://github.com/projecttacoma/bulk-data-utilities.git#export-url",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "fqm-execution": "^0.8.0",
