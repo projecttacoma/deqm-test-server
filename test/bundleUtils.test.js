@@ -11,9 +11,9 @@ const {
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
   EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
 } = require('./bundleUtilFixtures');
-const testBundle = require('./fixtures/testBundle.json');
 const config = buildConfig();
 const server = initialize(config);
+const testBundle = require('./fixtures/testBundle.json');
 const testDataReq = require('./fixtures/testDataReq.json');
 const testNestedBundle = require('./fixtures/testNestedBundle.json');
 const { v4: uuidv4 } = require('uuid');

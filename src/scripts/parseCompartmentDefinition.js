@@ -14,13 +14,11 @@ const { getSearchParameters } = require('@asymmetrik/node-fhir-server-core/dist/
  * @return object whose keys are resourceTypes and values are arrays of strings to use to reference a patient
  */
 async function parse(compartmentJson) {
-  //console.log(base_version);
   const compartmentDefinition = await JSON.parse(compartmentJson);
   const results = {};
   compartmentDefinition.resource.forEach(resourceObj => {
     if (resourceObj.param) {
       results[resourceObj.code] = [];
-      // get an error because cant get something returned from getParameters
       const searchParameterList = getSearchParameters(resourceObj.code, '4_0_0').filter(objs =>
         resourceObj.param?.includes(objs.name)
       );
