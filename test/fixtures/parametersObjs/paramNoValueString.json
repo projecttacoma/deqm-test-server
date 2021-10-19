@@ -1,0 +1,16 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "measureReport",
+      "resource": {
+        "resourceType": "MeasureReport",
+        "id": "measurereport-testMeasure",
+        "measure": "Measure/testMeasure"
+      }
+    },
+    {
+      "name": "exportURL"
+    }
+  ]
+}

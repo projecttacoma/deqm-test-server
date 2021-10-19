@@ -4,7 +4,7 @@ const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { validateEvalMeasureParams } = require('../util/measureOperationsUtils');
+const { validateEvalMeasureParams, retrieveExportURL } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
@@ -123,7 +123,7 @@ const submitData = async (args, { req }) => {
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
   const numMeasureReportsInput = parameters.filter(
-    param => param.name === 'measureReport' || param.resource.resourceType === 'MeasureReport'
+    param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
   ).length;
   if (numMeasureReportsInput !== 1) {
     throw new ServerError(null, {
@@ -170,17 +170,13 @@ const bulkImport = async (args, { req }) => {
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
   const res = req.res;
-  res.status(202);
+
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
-  //Temporary solution. Asymmetrik automatically rewrites this to a 200.
-  //Rewriting the res.status method prevents the code from being overwritten.
-  //TODO: change this once we fork asymmetrik
-  res.status = () => res;
 
   // use measure ID and export server location to map to data-requirements
   let measureId;
   let measureBundle;
-
+  const parameters = req.body.parameter;
   // case 1: request is in Measure/<id>/$submit-data format
   if (req.params.id) {
     measureId = req.params.id;
@@ -188,8 +184,7 @@ const bulkImport = async (args, { req }) => {
   }
   // case 2: request is in Measure/$submit-data format
   else {
-    const parameters = req.body.parameter;
-    const measureReport = parameters.filter(param => param.resource.resourceType === 'MeasureReport')[0];
+    const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
     // get measure resource from db that matches measure param since no id is present in request
     const query = getQueryFromReference(measureReport.resource.measure);
     const measureResource = await findOneResourceWithQuery(query, 'Measure');
@@ -210,10 +205,29 @@ const bulkImport = async (args, { req }) => {
       ]
     });
   }
-
   // retrieve data requirements
-  const results = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle);
-  return results;
+  const exportURL = retrieveExportURL(parameters);
+  const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle, exportURL);
+  if (!bulkDataResults.output && bulkDataResults.error) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Received AxiosError: ${bulkDataResults.error}`
+          }
+        }
+      ]
+    });
+  }
+  res.status(202);
+  //Temporary solution. Asymmetrik automatically rewrites this to a 200.
+  //Rewriting the res.status method prevents the code from being overwritten.
+  //TODO: change this once we fork asymmetrik
+  res.status = () => res;
+  return bulkDataResults.output;
 };
 
 /**
