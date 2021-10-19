@@ -177,9 +177,6 @@ const bulkImport = async (args, { req }) => {
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
   const res = req.res;
-  res.status(202);
-  res.status = () => res;
-  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
 
   // use measure ID and export server location to map to data-requirements
   let measureId;
@@ -217,6 +214,9 @@ const bulkImport = async (args, { req }) => {
   const exportURL = retrieveExportURL(parameters);
 
   executePingAndPull(clientEntry, exportURL, measureBundle, req);
+  res.status(202);
+  res.status = () => res;
+  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
 
   return;
 };
