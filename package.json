@@ -26,7 +26,7 @@
   "dependencies": {
     "@asymmetrik/fhir-qb": "^0.12.5",
     "@asymmetrik/fhir-qb-mongo": "^0.12.3",
-    "@projecttacoma/node-fhir-server-core": "^2.2.5",
+    "@projecttacoma/node-fhir-server-core": "^2.2.6 ",
     "axios": "^0.21.4",
     "bulk-data-utilities": "git+https://github.com/projecttacoma/bulk-data-utilities.git",
     "dotenv": "^10.0.0",
