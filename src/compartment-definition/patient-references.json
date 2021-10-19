@@ -1,298 +1,234 @@
 {
   "Account": [
-    "Account.subject"
+    "subject"
   ],
-  "ActivityDefinition": [],
   "AdverseEvent": [
-    "AdverseEvent.subject"
+    "subject"
   ],
   "AllergyIntolerance": [
-    "AllergyIntolerance.asserter",
-    "AllergyIntolerance.patient",
-    "AllergyIntolerance.recorder"
+    "asserter",
+    "patient",
+    "recorder"
   ],
   "Appointment": [
-    "Appointment.participant.actor"
+    "participant.actor"
   ],
   "AppointmentResponse": [
-    "AppointmentResponse.actor"
+    "actor"
   ],
   "AuditEvent": [
-    "AuditEvent.agent.who"
+    "agent.who"
   ],
   "Basic": [
-    "Basic.author",
-    "Basic.subject"
+    "author",
+    "subject"
   ],
-  "Binary": [],
   "BodyStructure": [
-    "BodyStructure.patient"
+    "patient"
   ],
-  "Bundle": [],
-  "CapabilityStatement": [],
   "CarePlan": [
-    "CarePlan.subject",
-    "CarePlan.activity.detail.performer"
+    "subject",
+    "activity.detail.performer"
   ],
   "CareTeam": [
-    "CareTeam.subject",
-    "CareTeam.participant.member"
+    "subject",
+    "participant.member"
   ],
   "ChargeItem": [
-    "ChargeItem.subject"
+    "subject"
   ],
-  "ChargeItemDefinition": [],
   "Claim": [
-    "Claim.patient",
-    "Claim.payee.party"
+    "patient",
+    "payee.party"
   ],
   "ClaimResponse": [
-    "ClaimResponse.patient"
+    "patient"
   ],
   "ClinicalImpression": [
-    "ClinicalImpression.subject"
+    "subject"
   ],
-  "CodeSystem": [],
   "Communication": [
-    "Communication.recipient",
-    "Communication.sender",
-    "Communication.subject"
+    "recipient",
+    "sender",
+    "subject"
   ],
   "CommunicationRequest": [
-    "CommunicationRequest.recipient",
-    "CommunicationRequest.requester",
-    "CommunicationRequest.sender",
-    "CommunicationRequest.subject"
+    "recipient",
+    "requester",
+    "sender",
+    "subject"
   ],
-  "CompartmentDefinition": [],
   "Composition": [
-    "Composition.attester.party",
-    "Composition.author",
-    "Composition.subject"
+    "attester.party",
+    "author",
+    "subject"
   ],
-  "ConceptMap": [],
   "Condition": [
-    "Condition.subject",
-    "Condition.asserter"
+    "subject",
+    "asserter"
   ],
   "Consent": [
-    "Consent.patient"
+    "patient"
   ],
-  "Contract": [],
   "Coverage": [
-    "Coverage.beneficiary",
-    "Coverage.payor",
-    "Coverage.policyHolder",
-    "Coverage.subscriber"
+    "beneficiary",
+    "payor",
+    "policyHolder",
+    "subscriber"
   ],
   "CoverageEligibilityRequest": [
-    "CoverageEligibilityRequest.patient"
+    "patient"
   ],
   "CoverageEligibilityResponse": [
-    "CoverageEligibilityResponse.patient"
+    "patient"
   ],
   "DetectedIssue": [
-    "DetectedIssue.patient"
+    "patient"
   ],
-  "Device": [],
-  "DeviceDefinition": [],
-  "DeviceMetric": [],
   "DeviceRequest": [
-    "DeviceRequest.performer",
-    "DeviceRequest.subject"
+    "performer",
+    "subject"
   ],
   "DeviceUseStatement": [
-    "DeviceUseStatement.subject"
+    "subject"
   ],
   "DiagnosticReport": [
-    "DiagnosticReport.subject"
+    "subject"
   ],
   "DocumentManifest": [
-    "DocumentManifest.author",
-    "DocumentManifest.recipient",
-    "DocumentManifest.subject"
+    "author",
+    "recipient",
+    "subject"
   ],
   "DocumentReference": [
-    "DocumentReference.author",
-    "DocumentReference.subject"
+    "author",
+    "subject"
   ],
-  "EffectEvidenceSynthesis": [],
   "Encounter": [
-    "Encounter.subject"
+    "subject"
   ],
-  "Endpoint": [],
   "EnrollmentRequest": [
-    "EnrollmentRequest.candidate"
+    "candidate"
   ],
-  "EnrollmentResponse": [],
   "EpisodeOfCare": [
-    "EpisodeOfCare.patient"
+    "patient"
   ],
-  "EventDefinition": [],
-  "ExampleScenario": [],
   "ExplanationOfBenefit": [
-    "ExplanationOfBenefit.patient",
-    "ExplanationOfBenefit.payee.party"
+    "patient",
+    "payee.party"
   ],
   "FamilyMemberHistory": [
-    "FamilyMemberHistory.patient"
+    "patient"
   ],
   "Flag": [
-    "Flag.subject"
+    "subject"
   ],
   "Goal": [
-    "Goal.subject"
+    "subject"
   ],
-  "GraphDefinition": [],
   "Group": [
-    "Group.member.entity"
+    "member.entity"
   ],
-  "GuidanceResponse": [],
-  "HealthcareService": [],
   "ImagingStudy": [
-    "ImagingStudy.subject"
+    "subject"
   ],
   "Immunization": [
-    "Immunization.patient"
+    "patient"
   ],
   "ImmunizationEvaluation": [
-    "ImmunizationEvaluation.patient"
+    "patient"
   ],
   "ImmunizationRecommendation": [
-    "ImmunizationRecommendation.patient"
+    "patient"
   ],
-  "ImplementationGuide": [],
-  "InsurancePlan": [],
   "Invoice": [
-    "Invoice.subject",
-    "Invoice.recipient",
-    "Invoice.subject"
+    "subject",
+    "recipient",
+    "subject"
   ],
-  "Library": [],
-  "Linkage": [],
   "List": [
-    "List.source",
-    "List.subject"
+    "source",
+    "subject"
   ],
-  "Location": [],
-  "Measure": [],
   "MeasureReport": [
-    "MeasureReport.subject"
+    "subject"
   ],
   "Media": [
-    "Media.subject"
+    "subject"
   ],
-  "Medication": [],
   "MedicationAdministration": [
-    "MedicationAdministration.subject",
-    "MedicationAdministration.performer.actor",
-    "MedicationAdministration.subject"
+    "subject",
+    "performer.actor",
+    "subject"
   ],
   "MedicationDispense": [
-    "MedicationDispense.subject",
-    "MedicationDispense.receiver",
-    "MedicationDispense.subject"
+    "subject",
+    "receiver",
+    "subject"
   ],
-  "MedicationKnowledge": [],
   "MedicationRequest": [
-    "MedicationRequest.subject"
+    "subject"
   ],
   "MedicationStatement": [
-    "MedicationStatement.subject"
+    "subject"
   ],
-  "MedicinalProduct": [],
-  "MedicinalProductAuthorization": [],
-  "MedicinalProductContraindication": [],
-  "MedicinalProductIndication": [],
-  "MedicinalProductPackaged": [],
-  "MedicinalProductPharmaceutical": [],
-  "MessageDefinition": [],
-  "MessageHeader": [],
   "MolecularSequence": [
-    "MolecularSequence.patient"
+    "patient"
   ],
-  "NamingSystem": [],
   "NutritionOrder": [
-    "NutritionOrder.patient"
+    "patient"
   ],
   "Observation": [
-    "Observation.performer",
-    "Observation.subject"
+    "performer",
+    "subject"
   ],
-  "OperationDefinition": [],
-  "Organization": [],
-  "OrganizationAffiliation": [],
   "Patient": [
-    "Patient.link.other"
+    "link.other"
   ],
-  "PaymentNotice": [],
-  "PaymentReconciliation": [],
   "Person": [
-    "Person.link.target"
+    "link.target"
   ],
-  "PlanDefinition": [],
-  "Practitioner": [],
-  "PractitionerRole": [],
   "Procedure": [
-    "Procedure.subject",
-    "Procedure.performer.actor"
+    "subject",
+    "performer.actor"
   ],
   "Provenance": [
-    "Provenance.target"
+    "target"
   ],
-  "Questionnaire": [],
   "QuestionnaireResponse": [
-    "QuestionnaireResponse.author",
-    "QuestionnaireResponse.subject"
+    "author",
+    "subject"
   ],
   "RelatedPerson": [
-    "RelatedPerson.patient"
+    "patient"
   ],
   "RequestGroup": [
-    "RequestGroup.action.participant",
-    "RequestGroup.subject"
+    "action.participant",
+    "subject"
   ],
-  "ResearchDefinition": [],
-  "ResearchElementDefinition": [],
-  "ResearchStudy": [],
   "ResearchSubject": [
-    "ResearchSubject.individual"
+    "individual"
   ],
   "RiskAssessment": [
-    "RiskAssessment.subject"
+    "subject"
   ],
-  "RiskEvidenceSynthesis": [],
   "Schedule": [
-    "Schedule.actor"
+    "actor"
   ],
-  "SearchParameter": [],
   "ServiceRequest": [
-    "ServiceRequest.performer",
-    "ServiceRequest.subject"
+    "performer",
+    "subject"
   ],
-  "Slot": [],
   "Specimen": [
-    "Specimen.subject"
+    "subject"
   ],
-  "SpecimenDefinition": [],
-  "StructureDefinition": [],
-  "StructureMap": [],
-  "Subscription": [],
-  "Substance": [],
-  "SubstanceSpecification": [],
   "SupplyDelivery": [
-    "SupplyDelivery.patient"
+    "patient"
   ],
   "SupplyRequest": [
-    "SupplyRequest.deliverTo"
+    "deliverTo"
   ],
-  "Task": [],
-  "TerminologyCapabilities": [],
-  "TestReport": [],
-  "TestScript": [],
-  "ValueSet": [],
-  "VerificationResult": [],
   "VisionPrescription": [
-    "VisionPrescription.patient"
+    "patient"
   ]
 }

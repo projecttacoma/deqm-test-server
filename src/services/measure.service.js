@@ -256,7 +256,6 @@ const dataRequirements = async (args, { req }) => {
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
   const measureBundle = await getMeasureBundleFromId(args.id);
-
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   // throw errors if missing required params, using unsupported params,
