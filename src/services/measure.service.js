@@ -24,8 +24,6 @@ const {
   findResourcesWithQuery
 } = require('../util/mongo.controller');
 
-const fs = require('fs');
-
 const logger = loggers.get('default');
 
 /**
