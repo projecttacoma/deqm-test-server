@@ -13,12 +13,7 @@ const { initialize } = require('../src/server/server');
 const config = buildConfig();
 const server = initialize(config);
 const updateMeasure = { id: 'testMeasure', name: 'anUpdate' };
-<<<<<<< HEAD
 describe('measure.service CRUD operations', () => {
-=======
-
-describe('measure.service', () => {
->>>>>>> 3bbd25d (in the end we gave up)
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });

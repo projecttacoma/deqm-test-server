@@ -8,8 +8,7 @@ const {
   retrieveExportURL,
   validateEvalMeasureParams,
   validateCareGapsParams,
-  validateDataRequirementsParams,
-  retrieveExportURL
+  validateDataRequirementsParams
 } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
@@ -18,13 +17,14 @@ const {
   getQueryFromReference
 } = require('../util/bundleUtils');
 const {
-
   findOneResourceWithQuery,
   addPendingBulkImportRequest,
   failBulkImportRequest,
   completeBulkImportRequest,
   findResourcesWithQuery
 } = require('../util/mongo.controller');
+
+const fs = require('fs');
 
 const logger = loggers.get('default');
 
@@ -217,7 +217,7 @@ const bulkImport = async (args, { req }) => {
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
 
-  executePingAndPull(clientEntry, exportUrl, measureBundle, req.res);
+  executePingAndPull(clientEntry, exportURL, measureBundle, req);
 
   return;
 };
@@ -228,28 +228,18 @@ const bulkImport = async (args, { req }) => {
  * Finally, uploads the resulting transaction bundles to the server and updateed the bulkstatus endpoint
  * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
  * @param {*} exportUrl The url of the bulk export fhir server
- * @param {*} measureBundle The measure bundle for which to retireve data requirements
+ * @param {*} measureBundle The measure bundle for which to retrieve data requirements
  * @param {*} req The request object passed in by the user
  */
 const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) => {
   try {
-    const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle, exportUrl);
-    if (!bulkDataResults.output && bulkDataResults.error) {
-      throw new ServerError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: `Received AxiosError: ${bulkDataResults.error}`
-            }
-          }
-        ]
-      });
-    }
-    const tempDB = await ndjsonParser.populateDB(bulkDataExportLocations, '../../bulkDataTemp.db');
-    const transactionBundles = await bundleAssemblyHelpers.assembleTransactionBundles(tempDB);
+    const transactionBundles = await BulkImportWrappers.executeBulkImport(
+      measureBundle,
+      exportUrl,
+      clientEntryId
+    ).catch(async e => {
+      await failBulkImportRequest(clientEntryId, e);
+    });
     const pendingTransactionBundles = transactionBundles.map(async tb => {
       return uploadTransactionBundle({ ...req, body: tb }, req.res);
     });
