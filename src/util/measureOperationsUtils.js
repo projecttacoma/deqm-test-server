@@ -130,6 +130,7 @@ const retrieveExportURL = parameters => {
   }
   return exportURL;
 };
+
 /**
  * Checks that all required parameters for care-gaps are present. Throws an error if not.
  * @param {*} req the request passed in by the client
