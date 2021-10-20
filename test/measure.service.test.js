@@ -158,7 +158,7 @@ describe('testing custom measure operation', () => {
       })
       .expect(400);
   });
-  test('data-requirements returns 200 with valid params', async () => {
+  test('$data-requirements returns 200 with valid params', async () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
     await supertest(server.app)
