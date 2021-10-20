@@ -101,11 +101,11 @@ describe('bulkImport with exportURL', () => {
   });
 });
 
-describe('testing $evaluate-measure operation', () => {
+describe('testing custom measure operation', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
-  test('return 200 when subject is omitted and reportType is set to population', async () => {
+  test('$evaluate-measure returns 200 when subject is omitted and reportType is set to population', async () => {
     const { Calculator } = require('fqm-execution');
     const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
       return {
@@ -146,6 +146,28 @@ describe('testing $evaluate-measure operation', () => {
       measurementPeriodEnd: '01-01-2021',
       reportType: 'summary'
     });
+  });
+
+  test('$data-requirements returns 400 when required param is omitted', async () => {
+    const { Calculator } = require('fqm-execution');
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$data-requirements')
+      .query({
+        periodEnd: '01-01-2021'
+      })
+      .expect(400);
+  });
+  test('$data-requirements returns 200 with valid params', async () => {
+    const { Calculator } = require('fqm-execution');
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$data-requirements')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021'
+      })
+      .expect(200);
   });
   afterAll(async () => {
     await cleanUpDb();

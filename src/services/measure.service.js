@@ -4,7 +4,12 @@ const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { uploadTransactionBundle } = require('./bundle.service');
-const { validateEvalMeasureParams, retrieveExportURL } = require('../util/measureOperationsUtils');
+const {
+  retrieveExportURL,
+  validateEvalMeasureParams,
+  validateCareGapsParams,
+  validateDataRequirementsParams
+} = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataBundle,
@@ -235,14 +240,16 @@ const bulkImport = async (args, { req }) => {
  * @param {Object} args the args object passed in by the user, includes measure id
  * @returns FHIR Library with all data requirements
  */
-const dataRequirements = async args => {
+const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
 
   const id = args.id;
 
+  validateDataRequirementsParams(req);
+
   const measureBundle = await getMeasureBundleFromId(id);
 
-  const { results } = await Calculator.calculateDataRequirements(measureBundle);
+  const { results } = Calculator.calculateDataRequirements(measureBundle, req.query);
   return results;
 };
 
@@ -329,85 +336,6 @@ const careGaps = async (args, { req }) => {
     measurementPeriodEnd: periodEnd
   });
   return results;
-};
-
-/**
- * Checks that all required parameters for care-gaps are present. Throws an error if not.
- * @param {*} req the request passed in by the client
- * @returns void but throws a detailed error if it finds an issue
- */
-const validateCareGapsParams = req => {
-  const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status', 'subject'];
-  // These params are not supported. We should throw an error if we receive them
-  const UNSUPPORTED_PARAMS = ['topic', 'practitioner', 'organization', 'program'];
-
-  // Returns a list of all required params which are undefined on req.query
-  const missingParams = REQUIRED_PARAMS.filter(key => !req.query[key]);
-
-  if (missingParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Missing required parameters for $care-gaps: ${missingParams.join(', ')}.`
-          }
-        }
-      ]
-    });
-  }
-  // Returns a list of all unsupported params which are present
-  const presentUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
-
-  if (presentUnsupportedParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `$care-gaps functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
-              ', '
-            )}`
-          }
-        }
-      ]
-    });
-  }
-  const measureIdentification = req.query.measureId || req.query.measureIdentifier || req.query.measureUrl;
-
-  if (!measureIdentification) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `No measure identification parameter supplied. Must provide either 'measureId', 'measureUrl', or 'measureIdentifier' parameter for $care-gaps requests`
-          }
-        }
-      ]
-    });
-  }
-
-  if (req.query.status !== 'open') {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `Currently only supporting $care-gaps requests with status='open'`
-          }
-        }
-      ]
-    });
-  }
 };
 
 const retrieveSearchTerm = req => {

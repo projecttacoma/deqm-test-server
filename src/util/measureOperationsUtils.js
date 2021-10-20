@@ -10,24 +10,8 @@ function validateEvalMeasureParams(req) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   const UNSUPPORTED_PARAMS = ['measure', 'practitioner', 'lastReceivedOn'];
 
-  const missingParams = REQUIRED_PARAMS.filter(key => !req.query[key]);
+  checkRequiredParams(req, REQUIRED_PARAMS, '$evaluate-measure');
   const includedUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
-
-  // returns all required params that are missing in the http request
-  if (missingParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Missing required parameters: ${missingParams.join(', ')} for $evaluate-measure`
-          }
-        }
-      ]
-    });
-  }
 
   // returns all unsupported params that are included in the http request
   if (includedUnsupportedParams.length > 0) {
@@ -147,4 +131,110 @@ const retrieveExportURL = parameters => {
   return exportURL;
 };
 
-module.exports = { validateEvalMeasureParams, retrieveExportURL };
+/**
+ * Checks that all required parameters for care-gaps are present. Throws an error if not.
+ * @param {*} req the request passed in by the client
+ * @returns void but throws a detailed error if it finds an issue
+ */
+const validateCareGapsParams = req => {
+  const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status', 'subject'];
+  // These params are not supported. We should throw an error if we receive them
+  const UNSUPPORTED_PARAMS = ['topic', 'practitioner', 'organization', 'program'];
+
+  checkRequiredParams(req, REQUIRED_PARAMS, '$care-gaps');
+  // Returns a list of all unsupported params which are present
+  const presentUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
+
+  if (presentUnsupportedParams.length > 0) {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `$care-gaps functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
+              ', '
+            )}`
+          }
+        }
+      ]
+    });
+  }
+
+  const measureIdentification = req.query.measureId || req.query.measureIdentifier || req.query.measureUrl;
+
+  if (!measureIdentification) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `No measure identification parameter supplied. Must provide either 'measureId', 'measureUrl', or 'measureIdentifier' parameter for $care-gaps requests`
+          }
+        }
+      ]
+    });
+  }
+
+  if (req.query.status !== 'open') {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `Currently only supporting $care-gaps requests with status='open'`
+          }
+        }
+      ]
+    });
+  }
+};
+
+/**
+ * Checks that the parameters passed in for $data-requirements are valid
+ * @param {*} req the request passed in by the user
+ * @returns void but throws a detailed error if necessary
+ */
+const validateDataRequirementsParams = req => {
+  const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
+  checkRequiredParams(req, REQUIRED_PARAMS, '$data-requirements');
+};
+
+/**
+ * Dynamic function for checking the presence of required params for all validation functions
+ * @param {*} query the query passed in through the client's request
+ * @param {*} requiredParams  an array of strings detailing which params are required
+ * @param {*} functionName the name of the function we are checking for more detailed error message
+ * @returns void, but throws a detailed error when necessary
+ */
+const checkRequiredParams = ({ query }, requiredParams, functionName) => {
+  // Returns a list of all required params which are undefined on req.query
+  const missingParams = requiredParams.filter(key => !query[key]);
+  if (missingParams.length > 0) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Missing required parameters for ${functionName}: ${missingParams.join(', ')}.`
+          }
+        }
+      ]
+    });
+  }
+};
+
+module.exports = {
+  retrieveExportURL,
+  validateEvalMeasureParams,
+  validateCareGapsParams,
+  validateDataRequirementsParams,
+  checkRequiredParams
+};
