@@ -65,7 +65,7 @@ describe('Testing dynamic querying for patient references using compartment defi
   });
   test('Check that patient reference can be found at one level', async () => {
     await supertest(server.app)
-      .post('/4_0_0/')
+      .post('/4_0_1/')
       .send(testBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -76,9 +76,9 @@ describe('Testing dynamic querying for patient references using compartment defi
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
   });
 
-  test.skip('Check that patient reference can be found when nested', async () => {
+  test('Check that patient reference can be found when nested', async () => {
     await supertest(server.app)
-      .post('/4_0_0/')
+      .post('/4_0_1/')
       .send(testNestedBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
