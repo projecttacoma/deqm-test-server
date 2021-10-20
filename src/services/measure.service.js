@@ -240,7 +240,7 @@ const bulkImport = async (args, { req }) => {
  * @param {Object} args the args object passed in by the user, includes measure id
  * @returns FHIR Library with all data requirements
  */
-const dataRequirements = async args => {
+const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
 
   const id = args.id;

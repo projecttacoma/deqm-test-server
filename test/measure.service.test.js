@@ -152,7 +152,7 @@ describe('testing custom measure operation', () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
     await supertest(server.app)
-      .get('/4_0_0/Measure/testMeasure/$data-requirements')
+      .get('/4_0_1/Measure/testMeasure/$data-requirements')
       .query({
         periodEnd: '01-01-2021'
       })
@@ -162,7 +162,7 @@ describe('testing custom measure operation', () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
     await supertest(server.app)
-      .get('/4_0_0/Measure/testMeasure/$data-requirements')
+      .get('/4_0_1/Measure/testMeasure/$data-requirements')
       .query({
         periodStart: '01-01-2020',
         periodEnd: '01-01-2021'
