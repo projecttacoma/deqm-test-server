@@ -84,13 +84,13 @@ The test server supports the following operations: create, read, update, and del
 
 The test server's Measure searching capabilities support searches by name, version, both, or neither.
 
-- `GET http://localhost:3000/4_0_0/Measure/` returns all Measures currently in the database
-- `GET http://localhost:3000/4_0_0/Measure?name=NAME` returns all Measures in the database with name `NAME`
-- `GET http://localhost:3000/4_0_0/Measure?NAME&version=VERSION` returns all Measures in the database with name `NAME` and version `VERSION`
+- `GET http://localhost:3000/4_0_1/Measure/` returns all Measures currently in the database
+- `GET http://localhost:3000/4_0_1/Measure?name=NAME` returns all Measures in the database with name `NAME`
+- `GET http://localhost:3000/4_0_1/Measure?NAME&version=VERSION` returns all Measures in the database with name `NAME` and version `VERSION`
 
 The test server's resource searching capabilities support searches by identifier.
 
-- `GET http://localhost:3000/4_0_0/RESOURCETYPE/?identifier=ID` returns bundle entries of resource type `RESOURCETYPE` that have the identifier `ID`. Errors are thrown when an identifier is not included. An empty searchset is returned if the identifier cannot be found in the database.
+- `GET http://localhost:3000/4_0_1/RESOURCETYPE/?identifier=ID` returns bundle entries of resource type `RESOURCETYPE` that have the identifier `ID`. Errors are thrown when an identifier is not included. An empty searchset is returned if the identifier cannot be found in the database.
 
 ### Supported FHIR Operations
 
@@ -106,7 +106,7 @@ Required parameters include:
 
 Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not supported by the test server.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
 Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more infomration.
 
@@ -123,19 +123,19 @@ Required parameters include:
 
 Currently, `topic`, `practitioner`, `organization`, and `program` are not supported by the test server.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/$care-gaps` with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/$care-gaps` with the required parameters.
 
 Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html) for more infomration.
 
 #### `$data-requirements`
 
-This operation retrieves all the data requirements for a given measure as a FHIR library. To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$data-requirements`.
+This operation retrieves all the data requirements for a given measure as a FHIR library. To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
 
 Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more infomration.
 
 #### `$submit-data`
 
-This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_0/Measure/$submit-data` or `http://localhost:3000/4_0_0/Measure/<your-measure-id>/$submit-data`.
+This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data`.
 
 Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more infomration.
 
