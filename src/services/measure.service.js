@@ -1,5 +1,5 @@
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
-const { RequirementsQuery } = require('bulk-data-utilities');
+const { BulkImportWrappers } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -17,8 +17,10 @@ const {
   getQueryFromReference
 } = require('../util/bundleUtils');
 const {
-  addPendingBulkImportRequest,
   findOneResourceWithQuery,
+  addPendingBulkImportRequest,
+  failBulkImportRequest,
+  completeBulkImportRequest,
   findResourcesWithQuery
 } = require('../util/mongo.controller');
 
@@ -176,8 +178,6 @@ const bulkImport = async (args, { req }) => {
   const clientEntry = await addPendingBulkImportRequest();
   const res = req.res;
 
-  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
-
   // use measure ID and export server location to map to data-requirements
   let measureId;
   let measureBundle;
@@ -212,27 +212,41 @@ const bulkImport = async (args, { req }) => {
   }
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
-  const bulkDataResults = await RequirementsQuery.retrieveBulkDataFromMeasureBundle(measureBundle, exportURL);
-  if (!bulkDataResults.output && bulkDataResults.error) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Received AxiosError: ${bulkDataResults.error}`
-          }
-        }
-      ]
-    });
-  }
+
+  executePingAndPull(clientEntry, exportURL, measureBundle, req);
   res.status(202);
-  //Temporary solution. Asymmetrik automatically rewrites this to a 200.
-  //Rewriting the res.status method prevents the code from being overwritten.
-  //TODO: change this once we fork asymmetrik
   res.status = () => res;
-  return bulkDataResults.output;
+  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
+
+  return;
+};
+
+/**
+ * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
+ * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
+ * Finally, uploads the resulting transaction bundles to the server and updateed the bulkstatus endpoint
+ * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
+ * @param {*} exportUrl The url of the bulk export fhir server
+ * @param {*} measureBundle The measure bundle for which to retrieve data requirements
+ * @param {*} req The request object passed in by the user
+ */
+const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) => {
+  try {
+    const transactionBundles = await BulkImportWrappers.executeBulkImport(
+      measureBundle,
+      exportUrl,
+      clientEntryId
+    ).catch(async e => {
+      await failBulkImportRequest(clientEntryId, e);
+    });
+    const pendingTransactionBundles = transactionBundles.map(async tb => {
+      return uploadTransactionBundle({ ...req, body: tb }, req.res);
+    });
+    await Promise.all(pendingTransactionBundles);
+    await completeBulkImportRequest(clientEntryId);
+  } catch (e) {
+    await failBulkImportRequest(clientEntryId, e);
+  }
 };
 
 /**
@@ -361,5 +375,6 @@ module.exports = {
   submitData,
   dataRequirements,
   evaluateMeasure,
-  careGaps
+  careGaps,
+  executePingAndPull
 };

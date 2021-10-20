@@ -105,6 +105,34 @@ const addPendingBulkImportRequest = async () => {
 };
 
 /**
+ * Updates the bulk import status entry for a successful import
+ * @param {*} clientId The ID for the bulkImportStatus entry
+ */
+const completeBulkImportRequest = async clientId => {
+  const collection = db.collection('bulkImportStatuses');
+  const update = {
+    status: 'Completed'
+  };
+  await collection.findOneAndUpdate({ id: clientId }, { $set: update });
+};
+
+/**
+ * Updates the bulk import status entry for a successful import
+ * @param {*} clientId The ID for the bulkImportStatus entry
+ */
+const failBulkImportRequest = async (clientId, error) => {
+  const collection = db.collection('bulkImportStatuses');
+  const update = {
+    status: 'Failed',
+    error: {
+      code: 500,
+      message: error.message
+    }
+  };
+  await collection.findOneAndUpdate({ id: clientId }, { $set: update });
+};
+
+/**
  * Wrapper for the findResourceById function that only searches bulkImportStatuses db
  * @param {string} clientId The id signifying the bulk status request
  * @returns The bulkstatus entry for the passed in clientId
@@ -123,5 +151,7 @@ module.exports = {
   updateResource,
   findResourcesWithAggregation,
   addPendingBulkImportRequest,
-  getBulkImportStatus
+  getBulkImportStatus,
+  failBulkImportRequest,
+  completeBulkImportRequest
 };

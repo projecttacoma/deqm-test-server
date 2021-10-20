@@ -9,6 +9,7 @@ const { testSetup, cleanUpDb } = require('./populateTestData');
 const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
+
 const config = buildConfig();
 const server = initialize(config);
 const updateMeasure = { id: 'testMeasure', name: 'anUpdate' };
