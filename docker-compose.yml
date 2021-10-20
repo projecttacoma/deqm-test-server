@@ -16,6 +16,8 @@ services:
     volumes:
       - ./src:/usr/src/app/src
     command: npm start
+    stdin_open: true
+    tty: true
 
   mongo:
     image: mongo:4.4.4
@@ -23,6 +25,16 @@ services:
       - '27017'
     volumes:
       - mongo_data:/data/db
+      
+  keycloak:
+    environment:
+      DB_VENDOR: h2
+      KEYCLOAK_USER: user
+      KEYCLOAK_PASSWORD: password
+    image: jboss/keycloak:${KEYCLOAK_VERSION}
+    ports:
+      - "28080:8080"
+    restart: unless-stopped
 
 volumes:
   mongo_data:
