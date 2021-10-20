@@ -196,7 +196,7 @@ const validateCareGapsParams = req => {
 };
 
 /**
- * Checks that the parameters passed in for $data-requirements are vaild
+ * Checks that the parameters passed in for $data-requirements are valid
  * @param {*} req the request passed in by the user
  * @returns void but throws a detailed error if necessary
  */
