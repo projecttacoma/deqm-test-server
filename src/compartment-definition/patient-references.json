@@ -6,37 +6,40 @@
     "subject"
   ],
   "AllergyIntolerance": [
+    "asserter",
     "patient",
-    "recorder",
-    "asserter"
+    "recorder"
   ],
   "Appointment": [
-    "actor"
+    "participant.actor"
   ],
   "AppointmentResponse": [
     "actor"
   ],
-  "AuditEvent": [],
+  "AuditEvent": [
+    "agent.who"
+  ],
   "Basic": [
-    "author"
+    "author",
+    "subject"
   ],
   "BodyStructure": [
     "patient"
   ],
   "CarePlan": [
-    "patient",
-    "performer"
+    "subject",
+    "activity.detail.performer"
   ],
   "CareTeam": [
-    "patient",
-    "member"
+    "subject",
+    "participant.member"
   ],
   "ChargeItem": [
     "subject"
   ],
   "Claim": [
     "patient",
-    "party"
+    "payee.party"
   ],
   "ClaimResponse": [
     "patient"
@@ -45,33 +48,33 @@
     "subject"
   ],
   "Communication": [
-    "subject",
+    "recipient",
     "sender",
-    "recipient"
+    "subject"
   ],
   "CommunicationRequest": [
-    "subject",
-    "sender",
     "recipient",
-    "requester"
+    "requester",
+    "sender",
+    "subject"
   ],
   "Composition": [
-    "subject",
+    "attester.party",
     "author",
-    "party"
+    "subject"
   ],
   "Condition": [
-    "patient",
+    "subject",
     "asserter"
   ],
   "Consent": [
     "patient"
   ],
   "Coverage": [
-    "policyHolder",
-    "subscriber",
     "beneficiary",
-    "payor"
+    "payor",
+    "policyHolder",
+    "subscriber"
   ],
   "CoverageEligibilityRequest": [
     "patient"
@@ -83,8 +86,8 @@
     "patient"
   ],
   "DeviceRequest": [
-    "subject",
-    "performer"
+    "performer",
+    "subject"
   ],
   "DeviceUseStatement": [
     "subject"
@@ -93,16 +96,16 @@
     "subject"
   ],
   "DocumentManifest": [
-    "subject",
     "author",
-    "recipient"
+    "recipient",
+    "subject"
   ],
   "DocumentReference": [
-    "subject",
-    "author"
+    "author",
+    "subject"
   ],
   "Encounter": [
-    "patient"
+    "subject"
   ],
   "EnrollmentRequest": [
     "candidate"
@@ -112,22 +115,22 @@
   ],
   "ExplanationOfBenefit": [
     "patient",
-    "party"
+    "payee.party"
   ],
   "FamilyMemberHistory": [
     "patient"
   ],
   "Flag": [
-    "patient"
+    "subject"
   ],
   "Goal": [
-    "patient"
+    "subject"
   ],
   "Group": [
-    "entity"
+    "member.entity"
   ],
   "ImagingStudy": [
-    "patient"
+    "subject"
   ],
   "Immunization": [
     "patient"
@@ -140,26 +143,28 @@
   ],
   "Invoice": [
     "subject",
-    "recipient"
+    "recipient",
+    "subject"
   ],
-  "Linkage": [],
   "List": [
-    "subject",
-    "source"
+    "source",
+    "subject"
   ],
-  "MeasureReport": [],
+  "MeasureReport": [
+    "subject"
+  ],
   "Media": [
     "subject"
   ],
   "MedicationAdministration": [
-    "patient",
-    "actor",
+    "subject",
+    "performer.actor",
     "subject"
   ],
   "MedicationDispense": [
     "subject",
-    "patient",
-    "receiver"
+    "receiver",
+    "subject"
   ],
   "MedicationRequest": [
     "subject"
@@ -167,7 +172,6 @@
   "MedicationStatement": [
     "subject"
   ],
-  "MessageHeader": [],
   "MolecularSequence": [
     "patient"
   ],
@@ -175,33 +179,33 @@
     "patient"
   ],
   "Observation": [
-    "subject",
-    "performer"
+    "performer",
+    "subject"
   ],
   "Patient": [
-    "other"
+    "link.other"
   ],
-  "PaymentNotice": [],
-  "PaymentReconciliation": [],
-  "Person": [],
-  "PractitionerRole": [],
+  "Person": [
+    "link.target"
+  ],
   "Procedure": [
-    "patient",
-    "actor"
-  ],
-  "Provenance": [],
-  "QuestionnaireResponse": [
     "subject",
-    "author"
+    "performer.actor"
+  ],
+  "Provenance": [
+    "target"
+  ],
+  "QuestionnaireResponse": [
+    "author",
+    "subject"
   ],
   "RelatedPerson": [
     "patient"
   ],
   "RequestGroup": [
-    "subject",
-    "participant"
+    "action.participant",
+    "subject"
   ],
-  "ResearchStudy": [],
   "ResearchSubject": [
     "individual"
   ],
@@ -212,8 +216,8 @@
     "actor"
   ],
   "ServiceRequest": [
-    "subject",
-    "performer"
+    "performer",
+    "subject"
   ],
   "Specimen": [
     "subject"

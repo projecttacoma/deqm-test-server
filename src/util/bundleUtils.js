@@ -3,8 +3,8 @@ const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
-// lookup from model info
-const patientRefs = require('../model-info/patient-references');
+// lookup from patient compartment-definition
+const patientRefs = require('../compartment-definition/patient-references');
 
 function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -202,10 +202,7 @@ async function getPatientDataBundle(patientId, dataRequirements) {
 
   const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
   const queries = requiredTypes.map(async type => {
-    // instantiate with subject.reference because modelInfo is incorrect
-    // and doesn't map subject to all the types that it should
-    const allQueries = [{ 'subject.reference': `Patient/${patientId}` }];
-
+    const allQueries = [];
     // for each resourceType, go through all keys that can reference patient
     patientRefs[type].forEach(refKey => {
       const query = {};

@@ -1,0 +1,52 @@
+{
+  "resourceType": "Bundle",
+  "id": "test-bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Measure",
+        "id": "test-measure",
+        "library": ["Library/test-library"]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Measure/test-measure"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Library",
+        "id": "test-library",
+        "library": ["Library/test-library"]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Library/test-library"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "test-procedure",
+        "subject": {
+          "reference": "Patient/test-patient"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Procedure/test-procedure"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "test-patient"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient/test-patient"
+      }
+    }
+  ]
+}
