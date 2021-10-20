@@ -207,7 +207,7 @@ const validateDataRequirementsParams = req => {
 
 /**
  * Dynamic function for checking the presence of required params for all validation functions
- * @param {*} query the query passed in through the clients request
+ * @param {*} query the query passed in through the client's request
  * @param {*} requiredParams  an array of strings detailing which params are required
  * @param {*} functionName the name of the function we are checking for more detailed error message
  * @returns void, but throws a detailed error when necessary
