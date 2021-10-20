@@ -148,7 +148,7 @@ describe('testing custom measure operation', () => {
     });
   });
 
-  test('data-requirements returns 400 when required param is omitted', async () => {
+  test('$data-requirements returns 400 when required param is omitted', async () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
     await supertest(server.app)
