@@ -17,7 +17,7 @@ describe('base.service', () => {
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
-        .post('/4_0_0/Patient')
+        .post('/4_0_1/Patient')
         .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
@@ -31,7 +31,7 @@ describe('base.service', () => {
   describe('searchById', () => {
     test('test searchById with correctHeaders and the id should be in database', async () => {
       await supertest(server.app)
-        .get('/4_0_0/Patient/testPatient')
+        .get('/4_0_1/Patient/testPatient')
         .set('Accept', 'application/json+fhir')
         .expect(200)
         .then(async response => {
@@ -43,7 +43,7 @@ describe('base.service', () => {
     //*a put request*/
     test('test update with correctHeaders and the id is in database', async () => {
       await supertest(server.app)
-        .put('/4_0_0/Patient/testPatient')
+        .put('/4_0_1/Patient/testPatient')
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
@@ -57,7 +57,7 @@ describe('base.service', () => {
   describe('remove', () => {
     test('removing the data from the database when the data is indeed present', async () => {
       await supertest(server.app)
-        .delete('/4_0_0/Patient/testPatient')
+        .delete('/4_0_1/Patient/testPatient')
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(204);

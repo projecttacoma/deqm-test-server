@@ -1,4 +1,4 @@
-const { ServerError, loggers } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { RequirementsQuery } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
@@ -233,13 +233,12 @@ const bulkImport = async (args, { req }) => {
 /**
  * Get all data requirements for a given measure as a FHIR Library
  * @param {Object} args the args object passed in by the user, includes measure id
- * @param {Object} req http request object
  * @returns FHIR Library with all data requirements
  */
-const dataRequirements = async (args, { req }) => {
+const dataRequirements = async args => {
   logger.info('Measure >>> $data-requirements');
 
-  const id = args.id || req.params.id;
+  const id = args.id;
 
   const measureBundle = await getMeasureBundleFromId(id);
 

@@ -3,7 +3,7 @@
  * a txn bundle in the proper format and convert the representation to JSON
  */
 
-const { ServerError, resolveSchema } = require('@asymmetrik/node-fhir-server-core');
+const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 
 const createTransactionBundleClass = baseVersion => {
   const Bundle = resolveSchema(baseVersion, 'bundle');
