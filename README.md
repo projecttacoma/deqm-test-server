@@ -59,6 +59,7 @@ Follow the [MongoDB Community Edition installation guide](https://docs.mongodb.c
 ### Docker
 
 This test server can be run with Docker by calling `docker-compose up --build`.
+Debugging with terminal input can be facilitated with `stdin_open: true` and `tty: true` added to the service specification for the service you want to debug. You can then attach to the image of interest using `docker attach <imagename>`. If you're unsure of the image name, use `docker ps` to find the image of interest.
 
 ## Usage
 
