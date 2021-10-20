@@ -19,7 +19,7 @@ describe('measure.service CRUD operations', () => {
 
   test('test create with correct headers', async () => {
     await supertest(server.app)
-      .post('/4_0_0/Measure')
+      .post('/4_0_1/Measure')
       .send(testMeasure)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -31,7 +31,7 @@ describe('measure.service CRUD operations', () => {
 
   test('test searchById with correctHeaders and the id should be in database', async () => {
     await supertest(server.app)
-      .get('/4_0_0/Measure/testMeasure')
+      .get('/4_0_1/Measure/testMeasure')
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .expect(200)
@@ -42,7 +42,7 @@ describe('measure.service CRUD operations', () => {
 
   test('test update with correctHeaders and the id is in database', async () => {
     await supertest(server.app)
-      .put('/4_0_0/Measure/testMeasure')
+      .put('/4_0_1/Measure/testMeasure')
       .send(updateMeasure)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -54,7 +54,7 @@ describe('measure.service CRUD operations', () => {
   });
 
   test('removing the measure from the database when the measure is indeed present', async () => {
-    await supertest(server.app).delete('/4_0_0/Measure/testMeasure').expect(204);
+    await supertest(server.app).delete('/4_0_1/Measure/testMeasure').expect(204);
   });
 
   afterAll(async () => {
@@ -68,7 +68,7 @@ describe('bulkImport with exportURL', () => {
   });
   test('FHIR Parameters object is missing export URL', async () => {
     await supertest(server.app)
-      .post('/4_0_0/Measure/$submit-data')
+      .post('/4_0_1/Measure/$submit-data')
       .send(testParam)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -78,7 +78,7 @@ describe('bulkImport with exportURL', () => {
 
   test('FHIR Parameters object has two export URLs', async () => {
     await supertest(server.app)
-      .post('/4_0_0/Measure/$submit-data')
+      .post('/4_0_1/Measure/$submit-data')
       .send(testParamTwoExports)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -88,7 +88,7 @@ describe('bulkImport with exportURL', () => {
 
   test('FHIR Parameters object is missing valueString for export URL', async () => {
     await supertest(server.app)
-      .post('/4_0_0/Measure/$submit-data')
+      .post('/4_0_1/Measure/$submit-data')
       .send(testParamNoValString)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
@@ -134,7 +134,7 @@ describe('testing $evaluate-measure operation', () => {
       };
     });
     await supertest(server.app)
-      .get('/4_0_0/Measure/testMeasure/$evaluate-measure')
+      .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
       .query({
         periodStart: '01-01-2020',
         periodEnd: '01-01-2021',
