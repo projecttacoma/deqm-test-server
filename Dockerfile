@@ -1,16 +1,25 @@
-FROM node:lts
+FROM node:14
 
 # Create app directory
 WORKDIR /usr/src/app
 
-# Copy package files to get dependencies
-COPY package*.json ./
 
+# Run a custom ssl_setup script if available
+COPY ./docker_ssl_setup.sh ./
+RUN chmod +x ./docker_ssl_setup.sh; exit 0
+RUN ./docker_ssl_setup.sh; exit 0
+ENV NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
+
+# We're using this because root user can't run any post-install scripts
+USER node
+WORKDIR /home/node/app
+# Copy all app files
+COPY --chown=node:node . .
 # Install dependencies
 RUN npm install
 
-# Copy all app files
-COPY . .
+
+
 
 # Start app
 EXPOSE 3000

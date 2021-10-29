@@ -2,3 +2,4 @@ node_modules
 .vscode/
 connectathon
 coverage
+docker_ssl_setup.sh
