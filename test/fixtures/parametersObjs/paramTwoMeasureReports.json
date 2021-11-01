@@ -1,0 +1,25 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "measureReport1",
+      "resource": {
+        "resourceType": "MeasureReport",
+        "id": "measurereport-testMeasure",
+        "measure": "Measure/testMeasure"
+      }
+    },
+    {
+      "name": "measureReport2",
+      "resource": {
+        "resourceType": "MeasureReport",
+        "id": "measurereport2-testMeasure",
+        "measure": "Measure/testMeasure"
+      }
+    },
+    {
+      "name": "exportURL",
+      "valueString": "https://bulk-data.smarthealthit.org/eyJlcnIiOiIiLCJwYWdlIjoxMDAwMCwiZHVyIjoxMCwidGx0IjoxNSwibSI6MSwic3R1IjozLCJkZWwiOjB9/fhir"
+    }
+  ]
+}

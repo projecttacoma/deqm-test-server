@@ -13,6 +13,57 @@ describe('base.service', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
+  describe('searchById', () => {
+    test('test searchById with correctHeaders and the id should be in database', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/Patient/testPatient')
+        .set('Accept', 'application/json+fhir')
+        .expect(200)
+        .then(async response => {
+          expect(response.body.id).toEqual(testPatient.id);
+        });
+    });
+
+    test('test searchById when the id cannot be found in the database', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/Patient/invalidID')
+        .set('Accept', 'application/json+fhir')
+        .expect(404)
+        .then(async response => {
+          expect(response.body.issue[0].code).toEqual('ResourceNotFound');
+          expect(response.body.issue[0].details.text).toEqual(
+            `No resource found in collection: Patient, with: id invalidID`
+          );
+        });
+    });
+  });
+
+  describe('search', () => {
+    test('test search with correct args and headers', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/Patient')
+        .set('Accept', 'application/json+fhir')
+        .expect(200)
+        .then(async response => {
+          expect(response.body.resourceType).toEqual('Bundle');
+          expect(response.body.type).toEqual('searchset');
+          expect(response.body.total).toEqual(1);
+          expect(response.body.entry[0].resource.id).toEqual(testPatient.id);
+          expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
+        });
+    });
+
+    test('test search with unsupported parameter', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/Patient?publisher=abc')
+        .set('Accept', 'application/json+fhir')
+        .expect(400)
+        .then(async response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(`Unknown parameter 'publisher'`);
+        });
+    });
+  });
 
   describe('create', () => {
     test('test create with correct headers', async () => {
@@ -28,19 +79,7 @@ describe('base.service', () => {
         });
     });
   });
-  describe('searchById', () => {
-    test('test searchById with correctHeaders and the id should be in database', async () => {
-      await supertest(server.app)
-        .get('/4_0_1/Patient/testPatient')
-        .set('Accept', 'application/json+fhir')
-        .expect(200)
-        .then(async response => {
-          expect(response.body.id).toEqual(testPatient.id);
-        });
-    });
-  });
   describe('update', () => {
-    //*a put request*/
     test('test update with correctHeaders and the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
@@ -51,6 +90,19 @@ describe('base.service', () => {
         .then(async response => {
           // Check the response
           expect(response.headers.location).toBeDefined();
+        });
+    });
+
+    test('test update with invalid arg id', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/invalidID')
+        .send(updatePatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(async response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual('Argument id must match request body id for PUT request');
         });
     });
   });

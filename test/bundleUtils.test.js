@@ -1,4 +1,4 @@
-const { replaceReferences, getPatientDataBundle } = require('../src/util/bundleUtils');
+const { replaceReferences, getPatientDataBundle, getQueryFromReference } = require('../src/util/bundleUtils');
 const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
@@ -87,5 +87,20 @@ describe('Testing dynamic querying for patient references using compartment defi
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
     const reference = procedure.resource.performer.actor;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
+  });
+});
+
+describe('Testing getQueryFromReference', () => {
+  test('test getQueryFromReference with canonical url', () => {
+    const TEST_REF = 'http://hl7.org/fhir/StructureDefinition/Patient';
+    expect(getQueryFromReference(TEST_REF)).toEqual({ url: TEST_REF });
+  });
+
+  test('test getQueryFromReference with canonical url containing |', () => {
+    const TEST_REF = 'http://hl7.org/fhir/StructureDefinition/Patient|3.5.0';
+    expect(getQueryFromReference(TEST_REF)).toEqual({
+      url: 'http://hl7.org/fhir/StructureDefinition/Patient',
+      version: '3.5.0'
+    });
   });
 });
