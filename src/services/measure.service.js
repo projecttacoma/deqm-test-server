@@ -160,8 +160,6 @@ const submitData = async (args, { req }) => {
     tb.addEntryFromResource(param.resource, 'POST');
   });
   req.body = tb.toJSON();
-  console.log(req);
-  console.log(req.res);
   const output = await uploadTransactionBundle(req, req.res);
   return output;
 };
