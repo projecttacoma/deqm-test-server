@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # Run a custom ssl_setup script if available
 # We need to copy package.json here as it allows us to conditionally copy the setup script
-COPY README.md ./docker_ssl_setup.sh* ./
+COPY package.json ./docker_ssl_setup.sh* ./
 RUN chmod +x ./docker_ssl_setup.sh; exit 0
 RUN ./docker_ssl_setup.sh; exit 0
 ENV NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
