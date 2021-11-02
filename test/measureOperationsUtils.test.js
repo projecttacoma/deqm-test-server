@@ -4,7 +4,7 @@ const {
   validateCareGapsParams
 } = require('../src/util/measureOperationsUtils');
 
-describe('measureOperationsUtils functions', () => {
+describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {
     const req = { query: {} };
     const REQUIRED_PARAMS = ['test', 'test2'];
@@ -22,7 +22,9 @@ describe('measureOperationsUtils functions', () => {
     const REQUIRED_PARAMS = ['test', 'test2'];
     checkRequiredParams(req, REQUIRED_PARAMS, 'test');
   });
+});
 
+describe('validateEvalMeasureParams', () => {
   test('error thrown for unsupported $evaluate-measure params', async () => {
     const UNSUPPORTEDREQ = {
       query: { practitioner: 'testPractitioner', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
@@ -75,6 +77,13 @@ describe('measureOperationsUtils functions', () => {
     }
   });
 
+  test('validateEvalMeasureParams does not throw error with correct params', async () => {
+    const VALID_REQ = { query: { reportType: 'population', periodStart: '2019-01-01', periodEnd: '2019-12-31' } };
+    expect(validateEvalMeasureParams(VALID_REQ)).toBeUndefined();
+  });
+});
+
+describe('validateCareGapsParams', () => {
   test('error thrown for unsupported param for $care-gaps', async () => {
     const UNSUPPORTEDREQ = {
       query: {
@@ -130,5 +139,18 @@ describe('measureOperationsUtils functions', () => {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(`Currently only supporting $care-gaps requests with status='open'`);
     }
+  });
+
+  test('validateCareGapsParams does not throw error with correct params', async () => {
+    const VALID_REQ = {
+      query: {
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        status: 'open',
+        subject: 'testPatient',
+        measureId: 'testID'
+      }
+    };
+    expect(validateCareGapsParams(VALID_REQ)).toBeUndefined();
   });
 });
