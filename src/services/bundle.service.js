@@ -3,6 +3,7 @@ const axios = require('axios').default;
 const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
+//const { checkContentTypeHeader, checkProvenanceHeader, populateProvenanceTarget } = require('./base.service');
 
 const logger = loggers.get('default');
 
@@ -43,6 +44,10 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
  * @returns transaction-response bundle
  */
 async function uploadTransactionBundle(req, res) {
+  // used for testing provenance - pls delete
+  // checkContentTypeHeader(req.headers);
+  // checkProvenanceHeader(req.headers);
+  // populateProvenanceTarget(req, res, [{reference: 'testRef'}]);
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
