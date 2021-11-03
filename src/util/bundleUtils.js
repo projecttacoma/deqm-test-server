@@ -84,11 +84,11 @@ async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
   if (!measure) {
     throw new ServerError(null, {
-      statusCode: 400,
+      statusCode: 404,
       issue: [
         {
           severity: 'error',
-          code: 'internal',
+          code: 'ResourceNotFound',
           details: {
             text: `Measure with id ${measureId} does not exist in the server`
           }
