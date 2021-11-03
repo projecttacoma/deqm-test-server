@@ -23,30 +23,22 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
   };
 
   const entries = [];
+  // array of reference objects from each resource
+  const bundleProvenanceTarget = [];
   results.forEach(result => {
-    //console.log(result.response);
-    //console.log(JSON.parse(result.config.headers['X-Provenance']));
-    // add resource reference to its x-provenance target attribute
-    //const provenanceRequest = JSON.parse(result.config.headers['X-Provenance']);
-    //provenanceRequest.target = { reference: 'test' };
+    bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
     entries.push(
       new Bundle({
         response: {
           status: `${result.status} ${result.statusText}`,
-          location: result.headers.location,
-          'X-Provenance': JSON.parse(result.config.headers['X-Provenance'])
-          //'X-Provenance': JSON.parse(result.response['X-Provenance'])
+          location: result.headers.location
         }
       })
     );
   });
 
-  const updatedTxnTarget = [];
-  entries.forEach(result => {
-    updatedTxnTarget.push(result.response['X-Provenance'].target);
-  });
   bundle.entry = entries;
-  return { bundle, updatedTxnTarget };
+  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget.flat() };
 };
 
 /**
@@ -56,11 +48,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
  * @returns transaction-response bundle
  */
 async function uploadTransactionBundle(req, res) {
-  // used for testing provenance - pls delete
-  // checkContentTypeHeader(req.headers);
-  //console.log(req.headers);
   checkProvenanceHeader(req.headers);
-  // populateProvenanceTarget(req, res, [{reference: 'testRef'}]);
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
@@ -102,18 +90,13 @@ async function uploadTransactionBundle(req, res) {
     });
   });
   const requestResults = await Promise.all(requestsArray);
-  console.log(requestResults[0]);
-  const { bundle, updatedTxnTarget } = makeTransactionResponseBundle(
+  const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
     requestResults,
     res,
     baseVersion,
     'transaction-response'
   );
-  //const provenanceRequest = JSON.parse(req.headers['x-provenance']);
-  //provenanceRequest.target = updatedTxnTarget;
-  populateProvenanceTarget(req.headers, res, updatedTxnTarget);
-  console.log(updatedTxnTarget);
-  //res.setHeader('X-Provenance', provenanceRequest);
+  populateProvenanceTarget(req.headers, res, bundleProvenanceTarget);
   return bundle;
 }
 

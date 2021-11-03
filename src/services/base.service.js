@@ -83,11 +83,12 @@ const qb = new QueryBuilder({
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
   checkContentTypeHeader(req.headers);
-  // console.log(req.headers);
-  // checkProvenanceHeader(req.headers);
+  checkProvenanceHeader(req.headers);
+  const res = req.res;
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
+  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
 
   return createResource(data, resourceType);
 };
@@ -232,7 +233,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-  populateProvenanceTarget(req.headers, res, args.id);
+  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
   return updateResource(args.id, data, resourceType);
 };
 
@@ -272,7 +273,9 @@ const checkContentTypeHeader = requestHeaders => {
 };
 
 /**
- * Checks if the provenance header is incorrect and throws and error with guidance if so
+ * Checks that provenance header is present, has Provenance resourceType,
+ * and does not yet have a populated target. Throws appropriate
+ * errors if needed,
  * @param {*} requestHeaders the headers from the request body
  */
 const checkProvenanceHeader = requestHeaders => {
@@ -327,12 +330,13 @@ const checkProvenanceHeader = requestHeaders => {
  *
  * will probably need to change for multiple references
  * @param {*} requestHeaders the headers from the request body
- * @param {string} reference
+ * @param {*} res the response body
+ * @param {*} target array of reference objects for provenance header
  */
-const populateProvenanceTarget = (requestHeaders, res, ref) => {
+const populateProvenanceTarget = (requestHeaders, res, target) => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
-  provenanceRequest.target = { reference: ref };
-  res.setHeader('X-Provenance', provenanceRequest);
+  provenanceRequest.target = target;
+  res.setHeader('X-Provenance', JSON.stringify(provenanceRequest));
 };
 
 /**
