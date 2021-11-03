@@ -83,6 +83,8 @@ const qb = new QueryBuilder({
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
   checkContentTypeHeader(req.headers);
+  // console.log(req.headers);
+  // checkProvenanceHeader(req.headers);
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
@@ -211,7 +213,9 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
   checkContentTypeHeader(req.headers);
+  checkProvenanceHeader(req.headers);
   const data = req.body;
+  const res = req.res;
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
@@ -228,7 +232,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-
+  populateProvenanceTarget(req.headers, res, args.id);
   return updateResource(args.id, data, resourceType);
 };
 
@@ -280,7 +284,7 @@ const checkProvenanceHeader = requestHeaders => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: 'Ensure Provenance header is populated for this POST/PUT request'
+            text: `Ensure Provenance header is populated for this POST/PUT request`
           }
         }
       ]
@@ -320,13 +324,15 @@ const checkProvenanceHeader = requestHeaders => {
 /**
  * Populates 'target' attribute of provenance header with the desired reference
  * to the ID that the server uses for a resource that was created via POST/PUT
+ *
+ * will probably need to change for multiple references
  * @param {*} requestHeaders the headers from the request body
  * @param {string} reference
  */
-const populateProvenanceTarget = (req, res, reference) => {
-  const provenanceRequest = JSON.parse(req.headers['x-provenance']);
-  provenanceRequest.target = reference;
-  res.set('x-provenance', provenanceRequest);
+const populateProvenanceTarget = (requestHeaders, res, ref) => {
+  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  provenanceRequest.target = { reference: ref };
+  res.setHeader('X-Provenance', provenanceRequest);
 };
 
 /**
