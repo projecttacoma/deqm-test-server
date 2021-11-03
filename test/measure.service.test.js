@@ -164,6 +164,7 @@ describe('testing custom measure operation', () => {
       .send(testParam)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
+      .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200)
       .then(async response => {
         expect(response.body.entry[0].response.status).toEqual('201 Created');

@@ -132,8 +132,6 @@ describe('base.service', () => {
     });
   });
   describe('update', () => {
-<<<<<<< HEAD
-=======
     //*a put request*/
 
     test('test update with populated provenance target', async () => {
@@ -184,7 +182,6 @@ describe('base.service', () => {
           );
         });
     });
->>>>>>> 1cd1aa7 (added unit tests)
     test('test update with correctHeaders and the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
@@ -206,6 +203,7 @@ describe('base.service', () => {
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance"}')
         .expect(400)
         .then(async response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');

@@ -48,7 +48,6 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
  * @returns transaction-response bundle
  */
 async function uploadTransactionBundle(req, res) {
-  checkProvenanceHeader(req.headers);
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
@@ -80,6 +79,7 @@ async function uploadTransactionBundle(req, res) {
       ]
     });
   }
+  checkProvenanceHeader(req.headers);
   const { protocol, baseUrl } = req;
   const scrubbedEntries = replaceReferences(entries);
   const requestsArray = scrubbedEntries.map(async entry => {
