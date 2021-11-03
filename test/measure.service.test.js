@@ -28,6 +28,7 @@ describe('measure.service CRUD operations', () => {
       .send(testMeasure)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
+      .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(201)
       .then(response => {
         expect(response.headers.location).toBeDefined();
@@ -51,6 +52,7 @@ describe('measure.service CRUD operations', () => {
       .send(updateMeasure)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
+      .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200)
       .then(async response => {
         // Check the response
