@@ -315,11 +315,11 @@ const careGaps = async (args, { req }) => {
   if (measure.total === 0) {
     //We know the search term will have exactly one key and value, so just fill them in in the error message
     throw new ServerError(null, {
-      statusCode: 400,
+      statusCode: 404,
       issue: [
         {
           severity: 'error',
-          code: 'BadRequest',
+          code: 'ResourceNotFound',
           details: {
             text: `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
           }

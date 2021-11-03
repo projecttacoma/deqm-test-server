@@ -320,9 +320,9 @@ describe('testing custom measure operation', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('prefer', 'respond-async')
-      .expect(400)
+      .expect(404)
       .then(async response => {
-        expect(response.body.issue[0].code).toEqual('internal');
+        expect(response.body.issue[0].code).toEqual('ResourceNotFound');
         expect(response.body.issue[0].details.text).toEqual('Measure with id invalid-id does not exist in the server');
       });
   });
