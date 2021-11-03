@@ -196,20 +196,7 @@ const bulkImport = async (args, { req }) => {
     measureId = measureResource.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
-  if (!measureBundle) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Could not find measure bundle with id ${measureId}`
-          }
-        }
-      ]
-    });
-  }
+
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
 
@@ -341,6 +328,7 @@ const careGaps = async (args, { req }) => {
     });
   }
   const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
+
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);

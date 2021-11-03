@@ -5,6 +5,10 @@ const testPatient = require('./fixtures/testPatient.json');
 const testParam = require('./fixtures/parametersObjs/paramNoExport.json');
 const testParamTwoExports = require('./fixtures/parametersObjs/paramTwoExports.json');
 const testParamNoValString = require('./fixtures/parametersObjs/paramNoValueString.json');
+const testParamInvalidResourceType = require('./fixtures/parametersObjs/paramInvalidType.json');
+const testEmptyParam = require('./fixtures/parametersObjs/emptyParam.json');
+const testParamTwoMeasureReports = require('./fixtures/parametersObjs/paramTwoMeasureReports.json');
+const testCareGapsMeasureReport = require('./fixtures/testCareGapsMeasureReport.json');
 const { testSetup, cleanUpDb } = require('./populateTestData');
 const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
@@ -106,6 +110,65 @@ describe('testing custom measure operation', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
+
+  test('$submit-data returns 400 for incorrect resourceType', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParamInvalidResourceType)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .expect(400)
+      .then(async response => {
+        expect(response.body.issue[0].code).toEqual('BadRequest');
+        expect(response.body.issue[0].details.text).toEqual(
+          `Expected 'resourceType: Parameters'. Received 'type: InvalidType'.`
+        );
+      });
+  });
+
+  test('$submit-data returns 400 for empty parameter body', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testEmptyParam)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .expect(400)
+      .then(async response => {
+        expect(response.body.issue[0].code).toEqual('BadRequest');
+        expect(response.body.issue[0].details.text).toEqual(
+          `Unreadable or empty entity for attribute 'parameter'. Received: undefined`
+        );
+      });
+  });
+
+  test('$submit-data returns 400 for invalid number of measure reports', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParamTwoMeasureReports)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .expect(400)
+      .then(async response => {
+        expect(response.body.issue[0].code).toEqual('BadRequest');
+        expect(response.body.issue[0].details.text).toEqual(
+          `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
+        );
+      });
+  });
+
+  test('$submit-data uploads txn bundle for valid parameters request', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParam)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .expect(200)
+      .then(async response => {
+        expect(response.body.entry[0].response.status).toEqual('201 Created');
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.type).toEqual('transaction-response');
+      });
+  });
   test('$evaluate-measure returns 200 when subject is omitted and reportType is set to population', async () => {
     const { Calculator } = require('fqm-execution');
     const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
@@ -149,6 +212,49 @@ describe('testing custom measure operation', () => {
     });
   });
 
+  test('$evaluate-measure returns 200 when reportType is not set', async () => {
+    const { Calculator } = require('fqm-execution');
+    const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+      return {
+        results: [
+          {
+            resourceType: 'MeasureReport',
+            period: {},
+            measure: '',
+            status: 'complete',
+            type: 'individual'
+          }
+        ],
+        debugOutput: {}
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        subject: 'testPatient'
+      })
+      .expect(200);
+    expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021',
+      reportType: 'individual'
+    });
+  });
+
   test('$data-requirements returns 400 when required param is omitted', async () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
@@ -170,6 +276,57 @@ describe('testing custom measure operation', () => {
       })
       .expect(200);
   });
+
+  test('$care-gaps returns 200 with valid params', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: testCareGapsMeasureReport
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        measureId: 'testMeasure',
+        subject: 'testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021'
+    });
+  });
+
+  test('bulk import fails if measure bundle cannot be found', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/invalid-id/$submit-data')
+      .send(testParam)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('prefer', 'respond-async')
+      .expect(400)
+      .then(async response => {
+        expect(response.body.issue[0].code).toEqual('internal');
+        expect(response.body.issue[0].details.text).toEqual('Measure with id invalid-id does not exist in the server');
+      });
+  });
+
   afterAll(async () => {
     await cleanUpDb();
   });
