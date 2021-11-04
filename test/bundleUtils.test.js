@@ -69,6 +69,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .send(testBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
+      .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200);
     const patientBundle = await getPatientDataBundle('test-patient', testDataReq);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
@@ -82,6 +83,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .send(testNestedBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
+      .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200);
     const patientBundle = await getPatientDataBundle('test-patient', testDataReq);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];

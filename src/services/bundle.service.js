@@ -3,6 +3,7 @@ const axios = require('axios').default;
 const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
+const { checkProvenanceHeader, populateProvenanceTarget } = require('./base.service');
 
 const logger = loggers.get('default');
 
@@ -11,7 +12,7 @@ const logger = loggers.get('default');
  * @param {*} results - request results
  * @param {*} res - an object containing the response
  * @param {*} type - bundle type
- * @returns transaction-response Bundle
+ * @returns transaction-response Bundle and updated txn bundle response
  */
 const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
   const Bundle = resolveSchema(baseVersion, 'bundle');
@@ -22,7 +23,10 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
   };
 
   const entries = [];
+  // array of reference objects from each resource
+  const bundleProvenanceTarget = [];
   results.forEach(result => {
+    bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
     entries.push(
       new Bundle({
         response: {
@@ -32,8 +36,9 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
       })
     );
   });
+
   bundle.entry = entries;
-  return bundle;
+  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget.flat() };
 };
 
 /**
@@ -74,18 +79,25 @@ async function uploadTransactionBundle(req, res) {
       ]
     });
   }
+  checkProvenanceHeader(req.headers);
   const { protocol, baseUrl } = req;
   const scrubbedEntries = replaceReferences(entries);
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
     return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-      headers: { 'Content-Type': 'application/json+fhir' }
+      headers: { 'Content-Type': 'application/json+fhir', 'X-Provenance': req.headers['x-provenance'] }
     });
   });
   const requestResults = await Promise.all(requestsArray);
-  const resultsBundle = makeTransactionResponseBundle(requestResults, res, baseVersion, 'transaction-response');
-  return resultsBundle;
+  const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
+    requestResults,
+    res,
+    baseVersion,
+    'transaction-response'
+  );
+  populateProvenanceTarget(req.headers, res, bundleProvenanceTarget);
+  return bundle;
 }
 
 module.exports = { uploadTransactionBundle };

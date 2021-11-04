@@ -82,10 +82,13 @@ const qb = new QueryBuilder({
  */
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
-  checkHeaders(req.headers);
+  checkContentTypeHeader(req.headers);
+  checkProvenanceHeader(req.headers);
+  const res = req.res;
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
+  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
 
   return createResource(data, resourceType);
 };
@@ -210,8 +213,10 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
  */
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
-  checkHeaders(req.headers);
+  checkContentTypeHeader(req.headers);
+  checkProvenanceHeader(req.headers);
   const data = req.body;
+  const res = req.res;
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
@@ -228,7 +233,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-
+  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
   return updateResource(args.id, data, resourceType);
 };
 
@@ -244,10 +249,10 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * checks if the headers are incorrect and throws and error with guidance if so
+ * Checks if the content-type header is incorrect and throws and error with guidance if so
  * @param {*} requestHeaders the headers from the request body
  */
-const checkHeaders = requestHeaders => {
+const checkContentTypeHeader = requestHeaders => {
   if (
     requestHeaders['content-type'] !== 'application/json+fhir' &&
     requestHeaders['content-type'] !== 'application/fhir+json'
@@ -268,6 +273,73 @@ const checkHeaders = requestHeaders => {
 };
 
 /**
+ * Checks that provenance header is present, has Provenance resourceType,
+ * and does not yet have a populated target. Throws appropriate
+ * errors if needed,
+ * @param {*} requestHeaders the headers from the request body
+ */
+const checkProvenanceHeader = requestHeaders => {
+  if (!Object.keys(requestHeaders).includes('x-provenance')) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Ensure Provenance header is populated for this POST/PUT request`
+          }
+        }
+      ]
+    });
+  }
+  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  if (provenanceRequest.resourceType !== 'Provenance') {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected resourceType 'Provenance' for Provenance header. Received ${provenanceRequest.resourceType}.`
+          }
+        }
+      ]
+    });
+  }
+  if (provenanceRequest.target) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `The 'target' attribute should not be populated in the provenance header`
+          }
+        }
+      ]
+    });
+  }
+};
+
+/**
+ * Populates 'target' attribute of provenance header with the desired reference
+ * to the ID that the server uses for a resource that was created via POST/PUT
+ *
+ * will probably need to change for multiple references
+ * @param {*} requestHeaders the headers from the request body
+ * @param {*} res the response body
+ * @param {*} target array of reference objects for provenance header
+ */
+const populateProvenanceTarget = (requestHeaders, res, target) => {
+  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  provenanceRequest.target = target;
+  res.setHeader('X-Provenance', JSON.stringify(provenanceRequest));
+};
+
+/**
  * Build a basic service module for a given resource type. Supports basic CRUD operations.
  *
  * @param {string} resourceType Name of the resource to make a basic resource for.
@@ -283,4 +355,14 @@ const buildServiceModule = resourceType => {
   };
 };
 
-module.exports = { baseCreate, baseSearchById, baseUpdate, baseRemove, buildServiceModule, baseSearch };
+module.exports = {
+  baseCreate,
+  baseSearchById,
+  baseUpdate,
+  baseRemove,
+  buildServiceModule,
+  baseSearch,
+  checkContentTypeHeader,
+  checkProvenanceHeader,
+  populateProvenanceTarget
+};

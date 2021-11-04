@@ -72,24 +72,128 @@ describe('base.service', () => {
         .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance"}')
         .expect(201)
         .then(async response => {
           // Check the response
           expect(response.headers.location).toBeDefined();
+          expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+        });
+    });
+
+    test('test create with missing provenance header', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Patient')
+        .send(testPatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Ensure Provenance header is populated for this POST/PUT request`
+          );
+        });
+    });
+
+    test('test create with missing Provenance resourceType', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Patient')
+        .send(testPatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{}')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Expected resourceType 'Provenance' for Provenance header. Received undefined.`
+          );
+        });
+    });
+
+    test('test create with populated provenance target', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Patient')
+        .send(testPatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance", "target": [{"reference": "testRef"}]}')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `The 'target' attribute should not be populated in the provenance header`
+          );
         });
     });
   });
   describe('update', () => {
+    //*a put request*/
+
+    test('test update with populated provenance target', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/testPatient')
+        .send(updatePatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance", "target": [{"reference": "testRef"}]}')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `The 'target' attribute should not be populated in the provenance header`
+          );
+        });
+    });
+    test('test update with missing provenance header', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/testPatient')
+        .send(updatePatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Ensure Provenance header is populated for this POST/PUT request`
+          );
+        });
+    });
+
+    test('test update with missing Provenance resourceType', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/testPatient')
+        .send(updatePatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{}')
+        .expect(400)
+        .then(async response => {
+          // Check the response
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Expected resourceType 'Provenance' for Provenance header. Received undefined.`
+          );
+        });
+    });
     test('test update with correctHeaders and the id is in database', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance"}')
         .expect(200)
         .then(async response => {
           // Check the response
           expect(response.headers.location).toBeDefined();
+          expect(JSON.parse(response.headers['x-provenance']).target).toEqual([{ reference: 'Patient/testPatient' }]);
         });
     });
 
@@ -99,6 +203,7 @@ describe('base.service', () => {
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
+        .set('x-provenance', '{ "resourceType": "Provenance"}')
         .expect(400)
         .then(async response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
