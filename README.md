@@ -16,6 +16,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
   - [CRUD Operations](#crud-operations)
   - [Searches](#searches)
   - [Supported FHIR Operations](#supported-fhir-operations)
+  - [Bulk Data Access](#bulk-data-access)
 
 - [License](#license)
 
@@ -67,6 +68,8 @@ Once MongoDB is running on your machine, run the `npm start` command to start up
 
 For ease of testing, it is recommended to download [Insomnia API Client and Design Tool](https://insomnia.rest) for sending HTTP requests to the server and [Robo 3T](https://robomongo.org) as a GUI for viewing the Mongo database.
 
+When sending requests, ensure that the `"Content-type": "application/json+fhir"` header is set. For sending POST/PUT requests, ensure that the `"X-Provenance"` is populated with a valid JSON object with the `resourceType` key set to `"Provenance"`.
+
 ### Database Setup
 
 The following `npm` commands can be used to set up the database:
@@ -102,9 +105,9 @@ Required parameters include:
 
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject for which the measure will be calculated
+- `subject`: subject for which the measure will be calculated (unless a `population` `reportType` is specified)
 
-Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not supported by the test server.
+Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `individual` and `population` `reportTypes` are supported at this time.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
@@ -129,7 +132,14 @@ Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-
 
 #### `$data-requirements`
 
-This operation retrieves all the data requirements for a given measure as a FHIR library. To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
+This operation retrieves all the data requirements for a given measure as a FHIR library.
+
+Required parameters include:
+
+- `periodStart`: start of the measurement period
+- `periodEnd`: end of the measurement period
+
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
 
 Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more infomration.
 
@@ -138,6 +148,23 @@ Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measu
 This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data`.
 
 Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more infomration.
+
+### Bulk Data Access
+
+The server contains functionality for the FHIR Bulk Data Import operation using the [Ping and Pull Approach](https://github.com/smart-on-fhir/bulk-import/blob/master/import-pnp.md).
+
+To implement the bulk data import operation, first POST a valid transaction bundle. Then, POST a valid FHIR parameters object to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data` with the `"prefer": "respond-async"` header populated. This will kick off the "ping and pull" bulk import.
+
+For the bulk data import operation to be successful, the user must specify an export URL to a FHIR Bulk Data Export server in the request body of the FHIR parameters object. For example, in the `parameter` array of the FHIR parameters object, the user can include
+
+```bash
+{
+     "name": "exportURL",
+     "valueString": "https://example-export.com"
+}
+```
+
+with a valid kickoff endpoint URL for the `valueString`.
 
 ## License
 
