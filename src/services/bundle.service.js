@@ -14,11 +14,10 @@ const logger = loggers.get('default');
  * @param {*} type - bundle type
  * @param { boolean } xprovenanceIncluded - X-Provenance header was included and
  * should be accounted for
- * @returns transaction-response Bundle and (optionally) updated txn bundle target
+ * @returns transaction-response Bundle and updated txn bundle target (may be empty)
  */
 const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovenanceIncluded) => {
   const Bundle = resolveSchema(baseVersion, 'bundle');
-  console.log(xprovenanceIncluded);
   const bundle = new Bundle({ type: type, id: uuidv4() });
   bundle.link = {
     url: `${res.req.protocol}://${path.join(res.req.get('host'), res.req.baseUrl)}`,
