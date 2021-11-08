@@ -35,7 +35,7 @@ describe('uploadTransactionBundle Server errors', () => {
     }
   });
 });
-describe('Test transaction bundle upload', () => {
+describe.only('Test transaction bundle upload', () => {
   beforeAll(async () => {
     await client.connect();
   });
@@ -46,10 +46,11 @@ describe('Test transaction bundle upload', () => {
       .send(testBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
-      .set('x-provenance', '{ "resourceType": "Provenance"}')
+      .set('x-provenance', '{"resourceType": "Provenance"}')
       .expect(200)
       .then(async response => {
         // Check the response
+        console.log(response.headers['x-provenance']);
         expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
       });
   });

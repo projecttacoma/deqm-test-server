@@ -10,7 +10,7 @@ const config = buildConfig();
 const server = initialize(config);
 const updatePatient = { id: 'testPatient', name: 'anUpdate' };
 describe('base.service', () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
   describe('searchById', () => {
@@ -81,19 +81,16 @@ describe('base.service', () => {
         });
     });
 
-    test('test create with missing provenance header', async () => {
+    test('test create with without provenance header', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
-        .expect(400)
+        .expect(201)
         .then(async response => {
           // Check the response
-          expect(response.body.issue[0].code).toEqual('BadRequest');
-          expect(response.body.issue[0].details.text).toEqual(
-            `Ensure Provenance header is populated for this POST/PUT request`
-          );
+          expect(response.headers.location).toBeDefined();
         });
     });
 
@@ -150,19 +147,16 @@ describe('base.service', () => {
           );
         });
     });
-    test('test update with missing provenance header', async () => {
+    test('test update without provenance header', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
         .send(updatePatient)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
-        .expect(400)
+        .expect(200)
         .then(async response => {
           // Check the response
-          expect(response.body.issue[0].code).toEqual('BadRequest');
-          expect(response.body.issue[0].details.text).toEqual(
-            `Ensure Provenance header is populated for this POST/PUT request`
-          );
+          expect(response.headers.location).toBeDefined();
         });
     });
 
@@ -221,7 +215,7 @@ describe('base.service', () => {
     });
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await cleanUpDb();
   });
 });
