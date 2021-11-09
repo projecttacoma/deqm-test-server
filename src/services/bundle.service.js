@@ -90,18 +90,17 @@ async function uploadTransactionBundle(req, res) {
   }
   const { protocol, baseUrl } = req;
   const scrubbedEntries = replaceReferences(entries);
+  // define headers to be included in axios call
+  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
+  if (xprovenanceIncluded) {
+    entryHeaders['X-Provenance'] = req.headers['x-provenance'];
+  }
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    if (xprovenanceIncluded) {
-      return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-        headers: { 'Content-Type': 'application/json+fhir', 'X-Provenance': req.headers['x-provenance'] }
-      });
-    } else {
-      return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-        headers: { 'Content-Type': 'application/json+fhir' }
-      });
-    }
+    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
+      headers: entryHeaders
+    });
   });
   const requestResults = await Promise.all(requestsArray);
   const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
