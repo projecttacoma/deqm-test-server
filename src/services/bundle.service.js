@@ -12,9 +12,11 @@ const logger = loggers.get('default');
  * @param {*} results - request results
  * @param {*} res - an object containing the response
  * @param {*} type - bundle type
- * @returns transaction-response Bundle and updated txn bundle response
+ * @param { boolean } xprovenanceIncluded - X-Provenance header was included and
+ * should be accounted for
+ * @returns transaction-response Bundle and updated txn bundle target (may be empty)
  */
-const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
+const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovenanceIncluded) => {
   const Bundle = resolveSchema(baseVersion, 'bundle');
   const bundle = new Bundle({ type: type, id: uuidv4() });
   bundle.link = {
@@ -26,7 +28,9 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type) => {
   // array of reference objects from each resource
   const bundleProvenanceTarget = [];
   results.forEach(result => {
-    bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+    if (xprovenanceIncluded) {
+      bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+    }
     entries.push(
       new Bundle({
         response: {
@@ -79,14 +83,23 @@ async function uploadTransactionBundle(req, res) {
       ]
     });
   }
-  checkProvenanceHeader(req.headers);
+  let xprovenanceIncluded;
+  if (req.headers['x-provenance']) {
+    checkProvenanceHeader(req.headers);
+    xprovenanceIncluded = true;
+  }
   const { protocol, baseUrl } = req;
   const scrubbedEntries = replaceReferences(entries);
+  // define headers to be included in axios call
+  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
+  if (xprovenanceIncluded) {
+    entryHeaders['X-Provenance'] = req.headers['x-provenance'];
+  }
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
     return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-      headers: { 'Content-Type': 'application/json+fhir', 'X-Provenance': req.headers['x-provenance'] }
+      headers: entryHeaders
     });
   });
   const requestResults = await Promise.all(requestsArray);
@@ -94,9 +107,12 @@ async function uploadTransactionBundle(req, res) {
     requestResults,
     res,
     baseVersion,
-    'transaction-response'
+    'transaction-response',
+    xprovenanceIncluded
   );
-  populateProvenanceTarget(req.headers, res, bundleProvenanceTarget);
+  if (xprovenanceIncluded && bundleProvenanceTarget.length > 0) {
+    populateProvenanceTarget(req.headers, res, bundleProvenanceTarget);
+  }
   return bundle;
 }
 

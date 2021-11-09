@@ -46,7 +46,7 @@ describe('Test transaction bundle upload', () => {
       .send(testBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
-      .set('x-provenance', '{ "resourceType": "Provenance"}')
+      .set('x-provenance', '{"resourceType": "Provenance"}')
       .expect(200)
       .then(async response => {
         // Check the response

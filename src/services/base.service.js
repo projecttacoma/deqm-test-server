@@ -83,13 +83,14 @@ const qb = new QueryBuilder({
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
   checkContentTypeHeader(req.headers);
-  checkProvenanceHeader(req.headers);
-  const res = req.res;
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
-  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
-
+  if (req.headers['x-provenance']) {
+    checkProvenanceHeader(req.headers);
+    const res = req.res;
+    populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
+  }
   return createResource(data, resourceType);
 };
 
@@ -214,9 +215,8 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
   checkContentTypeHeader(req.headers);
-  checkProvenanceHeader(req.headers);
   const data = req.body;
-  const res = req.res;
+
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
@@ -233,7 +233,11 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-  populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
+  if (req.headers['x-provenance']) {
+    checkProvenanceHeader(req.headers);
+    const res = req.res;
+    populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
+  }
   return updateResource(args.id, data, resourceType);
 };
 
@@ -279,20 +283,6 @@ const checkContentTypeHeader = requestHeaders => {
  * @param {*} requestHeaders the headers from the request body
  */
 const checkProvenanceHeader = requestHeaders => {
-  if (!Object.keys(requestHeaders).includes('x-provenance')) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Ensure Provenance header is populated for this POST/PUT request`
-          }
-        }
-      ]
-    });
-  }
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
   if (provenanceRequest.resourceType !== 'Provenance') {
     throw new ServerError(null, {
