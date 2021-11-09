@@ -233,7 +233,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
       ]
     });
   }
-  if (Object.keys(req.headers).includes('x-provenance')) {
+  if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
