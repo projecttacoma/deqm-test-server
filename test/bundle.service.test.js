@@ -50,7 +50,6 @@ describe.only('Test transaction bundle upload', () => {
       .expect(200)
       .then(async response => {
         // Check the response
-        console.log(response.headers['x-provenance']);
         expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
       });
   });
