@@ -35,7 +35,7 @@ describe('uploadTransactionBundle Server errors', () => {
     }
   });
 });
-describe.only('Test transaction bundle upload', () => {
+describe('Test transaction bundle upload', () => {
   beforeAll(async () => {
     await client.connect();
   });
