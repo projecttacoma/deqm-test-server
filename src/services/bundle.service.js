@@ -84,7 +84,7 @@ async function uploadTransactionBundle(req, res) {
     });
   }
   let xprovenanceIncluded;
-  if (Object.keys(req.headers).includes('x-provenance')) {
+  if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     xprovenanceIncluded = true;
   }
