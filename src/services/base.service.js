@@ -86,7 +86,7 @@ const baseCreate = async ({ req }, resourceType) => {
   const data = req.body;
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
-  if (Object.keys(req.headers).includes('x-provenance')) {
+  if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
