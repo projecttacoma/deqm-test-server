@@ -1,6 +1,6 @@
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { getPatientDataBundle } = require('../util/bundleUtils');
+const { getPatientDataSearchSetBundle } = require('../util/bundleUtils');
 const { findResourcesWithQuery } = require('../util/mongo.controller');
 const logger = loggers.get('default');
 
@@ -66,20 +66,46 @@ const search = async (args, { req }) => {
  * @param {Object} req http request object
  */
 const patientEverything = async (args, { req }) => {
+  validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient
-    const patientBundle = await getPatientDataBundle(req.params.id);
+    const patientBundle = await getPatientDataSearchSetBundle(req.params.id, args, req);
     return patientBundle;
   } else {
     // return information for all patients
     const patients = await findResourcesWithQuery({}, 'Patient');
     let patientBundles = patients.map(async p => {
-      return getPatientDataBundle(p.id);
+      return getPatientDataSearchSetBundle(p.id, args, req);
     });
 
     patientBundles = await Promise.all(patientBundles);
     // want to create into a searchset bundle?
     return patientBundles;
+  }
+};
+
+const validatePatientEverythingParams = req => {
+  // These params are not supported. We should throw an error if we receive them
+  const UNSUPPORTED_PARAMS = ['start', 'end', '_since', '_type', '_count'];
+
+  // Returns a list of all unsupported params which are present
+  const presentUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
+
+  if (presentUnsupportedParams.length > 0) {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: `$everything functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
+              ', '
+            )}`
+          }
+        }
+      ]
+    });
   }
 };
 

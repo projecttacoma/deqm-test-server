@@ -12,7 +12,7 @@ const {
 } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
-  getPatientDataBundle,
+  getPatientDataCollectionBundle,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
@@ -272,7 +272,7 @@ const evaluateMeasure = async (args, { req }) => {
   if (req.query.reportType === 'population') {
     const patients = await findResourcesWithQuery({}, 'Patient');
     let patientBundles = patients.map(async p => {
-      return getPatientDataBundle(p.id, dataReq.results.dataRequirement);
+      return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
     });
 
     patientBundles = await Promise.all(patientBundles);
@@ -286,7 +286,7 @@ const evaluateMeasure = async (args, { req }) => {
   }
 
   const { periodStart, periodEnd, reportType = 'individual', subject } = req.query;
-  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
@@ -331,7 +331,7 @@ const careGaps = async (args, { req }) => {
 
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
-  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
   const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,

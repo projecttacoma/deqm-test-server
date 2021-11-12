@@ -189,6 +189,17 @@ async function getAllDependentLibraries(lib) {
   return results;
 }
 
+async function getPatientDataCollectionBundle(patientId, dataRequirements) {
+  const data = await getPatientData(patientId, dataRequirements);
+  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+}
+
+async function getPatientDataSearchSetBundle(patientId, args, req) {
+  const data = await getPatientData(patientId);
+  console.log(_.flattenDeep(data));
+  return mapArrayToSearchSetBundle(_.flattenDeep(data), 'Patient', args, req);
+}
+
 /**
  * Assemble the patient bundle to be used in our operations from fqm execution
  * @param {string} patientId patient ID of interest
@@ -196,7 +207,7 @@ async function getAllDependentLibraries(lib) {
  * used when we are concerned with a specific measure. Otherwise undefined
  * @returns patient bundle
  */
-async function getPatientDataBundle(patientId, dataRequirements) {
+async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
   let requiredTypes;
   if (dataRequirements) {
@@ -218,7 +229,7 @@ async function getPatientDataBundle(patientId, dataRequirements) {
 
   data.push(patient);
 
-  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+  return data;
 }
 
 /**
@@ -277,7 +288,8 @@ module.exports = {
   mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
-  getPatientDataBundle,
+  getPatientDataCollectionBundle,
+  getPatientDataSearchSetBundle,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 };

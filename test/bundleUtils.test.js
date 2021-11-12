@@ -1,4 +1,4 @@
-const { replaceReferences, getPatientDataBundle, getQueryFromReference } = require('../src/util/bundleUtils');
+const { replaceReferences, getPatientDataCollectionBundle, getQueryFromReference } = require('../src/util/bundleUtils');
 const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
@@ -71,7 +71,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200);
-    const patientBundle = await getPatientDataBundle('test-patient', testDataReq);
+    const patientBundle = await getPatientDataCollectionBundle('test-patient', testDataReq);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
     const reference = procedure.resource.subject;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
@@ -85,7 +85,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', '{ "resourceType": "Provenance"}')
       .expect(200);
-    const patientBundle = await getPatientDataBundle('test-patient', testDataReq);
+    const patientBundle = await getPatientDataCollectionBundle('test-patient', testDataReq);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
     const reference = procedure.resource.performer.actor;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
