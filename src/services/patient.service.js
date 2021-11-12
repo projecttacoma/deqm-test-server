@@ -79,7 +79,6 @@ const patientEverything = async (args, { req }) => {
     });
 
     patientBundles = await Promise.all(patientBundles);
-    // want to create into a searchset bundle?
     return patientBundles;
   }
 };
