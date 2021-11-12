@@ -3,6 +3,7 @@ const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
+const supportedResources = require('../util/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
 
@@ -191,12 +192,18 @@ async function getAllDependentLibraries(lib) {
 /**
  * Assemble the patient bundle to be used in our operations from fqm execution
  * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements obtained from fqm execution
+ * @param {Array} dataRequirements data requirements obtained from fqm execution,
+ * used when we are concerned with a specific measure. Otherwise undefined
  * @returns patient bundle
  */
 async function getPatientDataBundle(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
-  const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+  let requiredTypes;
+  if (dataRequirements) {
+    requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+  } else {
+    requiredTypes = supportedResources.filter(type => patientRefs[type]);
+  }
   const queries = requiredTypes.map(async type => {
     const allQueries = [];
     // for each resourceType, go through all keys that can reference patient
@@ -207,7 +214,6 @@ async function getPatientDataBundle(patientId, dataRequirements) {
     });
     return findResourcesWithQuery({ $or: allQueries }, type);
   });
-
   const data = await Promise.all(queries);
 
   data.push(patient);

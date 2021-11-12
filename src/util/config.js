@@ -15,6 +15,26 @@ const buildConfig = () => {
   };
   supportedResources.forEach(resourceType => {
     switch (resourceType) {
+      case 'Patient':
+        config.profiles['Patient'] = {
+          service: path.resolve('src', 'services', 'patient.service.js'),
+          versions: [VERSIONS['4_0_1']],
+          operation: [
+            {
+              name: 'patientEverything',
+              route: '/$everything',
+              method: 'GET',
+              reference: 'https://www.hl7.org/fhir/operation-patient-everything.html'
+            },
+            {
+              name: 'patientEverything',
+              route: '/:id/$everything',
+              method: 'GET',
+              reference: 'https://www.hl7.org/fhir/operation-patient-everything.html'
+            }
+          ]
+        };
+        break;
       case 'Measure':
         config.profiles['Measure'] = {
           service: path.resolve('src', 'services', 'measure.service.js'),
