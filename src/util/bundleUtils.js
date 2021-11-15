@@ -3,21 +3,24 @@ const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
+const supportedResources = require('../util/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
 
-function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
+function mapArrayToSearchSetBundle(resources, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
-  const DataType = resolveSchema(args.base_version, resourceType);
 
   return new Bundle({
     type: 'searchset',
     meta: { lastUpdated: new Date().toISOString() },
     total: resources.length,
-    entry: resources.map(r => ({
-      fullUrl: new url.URL(`${resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
-      resource: new DataType(r)
-    }))
+    entry: resources.map(r => {
+      const DataType = resolveSchema(args.base_version, r.resourceType);
+      return {
+        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
+        resource: new DataType(r)
+      };
+    })
   });
 }
 
@@ -189,14 +192,60 @@ async function getAllDependentLibraries(lib) {
 }
 
 /**
- * Assemble the patient bundle to be used in our operations from fqm execution
+ * Wrapper function to get patient data for a given patient id and its data
+ * requirements and map the resources to a collection bundle.
  * @param {string} patientId patient ID of interest
  * @param {Array} dataRequirements data requirements obtained from fqm execution
+ * @returns patient bundle as a collection bundle
+ */
+async function getPatientDataCollectionBundle(patientId, dataRequirements) {
+  const data = await getPatientData(patientId, dataRequirements);
+  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+}
+
+/**
+ * Wrapper function to get patient data for a given patient id and map
+ * the resources to a searchset bundle (used for Patient/$everything when
+ * we are not concerned with a specific measure)
+ * @param {string} patientId patient ID of interest
+ * @param {Object} args passed in arguments
+ * @param {Object} req http request body
+ * @returns patient bundle as a searchset bundle
+ */
+async function getPatientDataSearchSetBundle(patientId, args, req) {
+  const data = await getPatientData(patientId);
+  return mapArrayToSearchSetBundle(_.flattenDeep(data), args, req);
+}
+
+/**
+ * Assemble the patient bundle to be used in our operations from fqm execution
+ * @param {string} patientId patient ID of interest
+ * @param {Array} dataRequirements data requirements obtained from fqm execution,
+ * used when we are concerned with a specific measure. Otherwise undefined
  * @returns patient bundle
  */
-async function getPatientDataBundle(patientId, dataRequirements) {
+async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
-  const requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+  if (!patient) {
+    throw new ServerError(null, {
+      statusCode: 404,
+      issue: [
+        {
+          severity: 'error',
+          code: 'ResourceNotFound',
+          details: {
+            text: `Patient with id ${patientId} does not exist in the server`
+          }
+        }
+      ]
+    });
+  }
+  let requiredTypes;
+  if (dataRequirements) {
+    requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
+  } else {
+    requiredTypes = supportedResources.filter(type => patientRefs[type]);
+  }
   const queries = requiredTypes.map(async type => {
     const allQueries = [];
     // for each resourceType, go through all keys that can reference patient
@@ -207,12 +256,10 @@ async function getPatientDataBundle(patientId, dataRequirements) {
     });
     return findResourcesWithQuery({ $or: allQueries }, type);
   });
-
   const data = await Promise.all(queries);
-
   data.push(patient);
 
-  return mapResourcesToCollectionBundle(_.flattenDeep(data));
+  return data;
 }
 
 /**
@@ -271,7 +318,8 @@ module.exports = {
   mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
-  getPatientDataBundle,
+  getPatientDataCollectionBundle,
+  getPatientDataSearchSetBundle,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 };

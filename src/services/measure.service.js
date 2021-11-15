@@ -12,7 +12,7 @@ const {
 } = require('../util/measureOperationsUtils');
 const {
   getMeasureBundleFromId,
-  getPatientDataBundle,
+  getPatientDataCollectionBundle,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
@@ -27,7 +27,7 @@ const {
 const logger = loggers.get('default');
 
 /**
- * resulting function of sending a POST request to {BASE_URL}/4_0_0/Measure
+ * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
  * creates a new measure in the database
  * @param {*} _ unused arg
  * @param {*} data the measure data passed in with the request
@@ -38,7 +38,7 @@ const create = async (_, data) => {
 };
 
 /**
- * result of sending a GET request to {BASE_URL}/4_0_0/Measure/{id}
+ * result of sending a GET request to {BASE_URL}/4_0_1/Measure/{id}
  * searches for the measure with the passed in id
  * @param {*} args passed in arguments including the id of the sought after measure
  * @returns
@@ -48,7 +48,7 @@ const searchById = async args => {
 };
 
 /**
- * result of sending a PUT request to {BASE_URL}/4_0_0/Measure/{id}
+ * result of sending a PUT request to {BASE_URL}/4_0_1/Measure/{id}
  * updates the measure with the passed in id using the passed in data
  * @param {*} args passed in arguments including the id of the sought after measure
  * @param {*} data a map of the attributes to change and their new values
@@ -59,7 +59,7 @@ const update = async (args, data) => {
 };
 
 /**
- * result of sending a DELETE request to {BASE_URL}/4_0_0/Measure/{id}
+ * result of sending a DELETE request to {BASE_URL}/4_0_1/Measure/{id}
  * removes the measure with the passed in id from the database
  * @param {*} args passed in arguments including the id of the sought after measure
  * @returns
@@ -77,7 +77,7 @@ const SEARCH_PARAM_DEFS = {
 };
 
 /**
- * result of sending a GET request to {BASE_URL}/4_0_0/Measure
+ * result of sending a GET request to {BASE_URL}/4_0_1/Measure
  * queries for all measures matching the criteria, only name and version for now
  * @param {Object} args passed in arguments including the search parameters for the Measure
  * @param {Object} req http request object
@@ -272,7 +272,7 @@ const evaluateMeasure = async (args, { req }) => {
   if (req.query.reportType === 'population') {
     const patients = await findResourcesWithQuery({}, 'Patient');
     let patientBundles = patients.map(async p => {
-      return getPatientDataBundle(p.id, dataReq.results.dataRequirement);
+      return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
     });
 
     patientBundles = await Promise.all(patientBundles);
@@ -286,7 +286,7 @@ const evaluateMeasure = async (args, { req }) => {
   }
 
   const { periodStart, periodEnd, reportType = 'individual', subject } = req.query;
-  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
@@ -331,7 +331,7 @@ const careGaps = async (args, { req }) => {
 
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
-  const patientBundle = await getPatientDataBundle(subject, dataReq.results.dataRequirement);
+  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
   const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,

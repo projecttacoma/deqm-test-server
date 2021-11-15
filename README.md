@@ -147,7 +147,15 @@ Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measu
 
 This operation takes a Measure Report and a set of required data with which to calculate the measure, and the server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data`.
 
-Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more infomration.
+Check out the [$submit-data operation spec](https://www.hl7.org/fhir/measure-operation-submit-data.html) for more information.
+
+#### `Patient/$everything`
+
+This operation returns a searchset bundle containing all the information related to a patient. If no patient ID is specified, bundle will contain information for all patients.
+
+To use, first POST a bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Patient/<your-patient-id>/$everything` or `http://localhost:3000/4_0_1/Patient/$everything`.
+
+Check out the [Patient-everything operation spec](https://www.hl7.org/fhir/operation-patient-everything.html) for more information.
 
 ### Bulk Data Access
 
