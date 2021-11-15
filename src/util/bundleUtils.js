@@ -226,6 +226,20 @@ async function getPatientDataSearchSetBundle(patientId, args, req) {
  */
 async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
+  if (!patient) {
+    throw new ServerError(null, {
+      statusCode: 404,
+      issue: [
+        {
+          severity: 'error',
+          code: 'ResourceNotFound',
+          details: {
+            text: `Patient with id ${patientId} does not exist in the server`
+          }
+        }
+      ]
+    });
+  }
   let requiredTypes;
   if (dataRequirements) {
     requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
@@ -243,7 +257,6 @@ async function getPatientData(patientId, dataRequirements) {
     return findResourcesWithQuery({ $or: allQueries }, type);
   });
   const data = await Promise.all(queries);
-
   data.push(patient);
 
   return data;
