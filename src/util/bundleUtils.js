@@ -7,18 +7,20 @@ const supportedResources = require('../util/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
 
-function mapArrayToSearchSetBundle(resources, resourceType, args, req) {
+function mapArrayToSearchSetBundle(resources, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
-  const DataType = resolveSchema(args.base_version, resourceType);
 
   return new Bundle({
     type: 'searchset',
     meta: { lastUpdated: new Date().toISOString() },
     total: resources.length,
-    entry: resources.map(r => ({
-      fullUrl: new url.URL(`${resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
-      resource: new DataType(r)
-    }))
+    entry: resources.map(r => {
+      const DataType = resolveSchema(args.base_version, r.resourceType);
+      return {
+        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
+        resource: new DataType(r)
+      };
+    })
   });
 }
 
@@ -189,15 +191,30 @@ async function getAllDependentLibraries(lib) {
   return results;
 }
 
+/**
+ * Wrapper function to get patient data for a given patient id and its data
+ * requirements and map the resources to a collection bundle.
+ * @param {string} patientId patient ID of interest
+ * @param {Array} dataRequirements data requirements obtained from fqm execution
+ * @returns patient bundle as a collection bundle
+ */
 async function getPatientDataCollectionBundle(patientId, dataRequirements) {
   const data = await getPatientData(patientId, dataRequirements);
   return mapResourcesToCollectionBundle(_.flattenDeep(data));
 }
 
+/**
+ * Wrapper function to get patient data for a given patient id and map
+ * the resources to a searchset bundle (used for Patient/$everything when
+ * we are not concerned with a specific measure)
+ * @param {string} patientId patient ID of interest
+ * @param {Object} args passed in arguments
+ * @param {Object} req http request body
+ * @returns patient bundle as a searchset bundle
+ */
 async function getPatientDataSearchSetBundle(patientId, args, req) {
   const data = await getPatientData(patientId);
-  console.log(_.flattenDeep(data));
-  return mapArrayToSearchSetBundle(_.flattenDeep(data), 'Patient', args, req);
+  return mapArrayToSearchSetBundle(_.flattenDeep(data), args, req);
 }
 
 /**

@@ -83,6 +83,11 @@ const patientEverything = async (args, { req }) => {
   }
 };
 
+/**
+ * Checks if unsupported parameters are provided in the http request.
+ * If any unsupported parameters are present, a ServerError is thrown.
+ * @param {*} req http request object
+ */
 const validatePatientEverythingParams = req => {
   // These params are not supported. We should throw an error if we receive them
   const UNSUPPORTED_PARAMS = ['start', 'end', '_since', '_type', '_count'];
