@@ -222,7 +222,7 @@ async function getPatientDataSearchSetBundle(patientId, args, req) {
  * @param {string} patientId patient ID of interest
  * @param {Array} dataRequirements data requirements obtained from fqm execution,
  * used when we are concerned with a specific measure. Otherwise undefined
- * @returns patient bundle
+ * @returns array of resources
  */
 async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
@@ -320,6 +320,7 @@ module.exports = {
   replaceReferences,
   getPatientDataCollectionBundle,
   getPatientDataSearchSetBundle,
+  getPatientData,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 };

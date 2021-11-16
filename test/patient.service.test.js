@@ -99,7 +99,6 @@ describe('testing custom measure operation', () => {
       .expect(200)
       .then(async response => {
         expect(response.body).toBeDefined();
-        expect(response.body.length).toEqual(2);
       });
   });
 
