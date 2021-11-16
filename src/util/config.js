@@ -28,8 +28,20 @@ const buildConfig = () => {
             },
             {
               name: 'patientEverything',
+              route: '/$everything',
+              method: 'POST',
+              reference: 'https://www.hl7.org/fhir/operation-patient-everything.html'
+            },
+            {
+              name: 'patientEverything',
               route: '/:id/$everything',
               method: 'GET',
+              reference: 'https://www.hl7.org/fhir/operation-patient-everything.html'
+            },
+            {
+              name: 'patientEverything',
+              route: '/:id/$everything',
+              method: 'POST',
               reference: 'https://www.hl7.org/fhir/operation-patient-everything.html'
             }
           ]

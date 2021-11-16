@@ -1,8 +1,9 @@
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { getPatientDataSearchSetBundle } = require('../util/bundleUtils');
+const { getPatientDataSearchSetBundle, getPatientData, mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 const { findResourcesWithQuery } = require('../util/mongo.controller');
 const logger = loggers.get('default');
+const _ = require('lodash');
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient
@@ -74,12 +75,12 @@ const patientEverything = async (args, { req }) => {
   } else {
     // return information for all patients
     const patients = await findResourcesWithQuery({}, 'Patient');
-    let patientBundles = patients.map(async p => {
-      return getPatientDataSearchSetBundle(p.id, args, req);
+    let patientData = patients.map(async p => {
+      return getPatientData(p.id);
     });
 
-    patientBundles = await Promise.all(patientBundles);
-    return patientBundles;
+    patientData = await Promise.all(patientData);
+    return mapArrayToSearchSetBundle(_.flattenDeep(patientData), args, req);
   }
 };
 
