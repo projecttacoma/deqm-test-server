@@ -7,6 +7,7 @@ const { initialize } = require('./server/server');
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
 app.use(express.json({ limit: '50mb', type: 'application/fhir+json' }));
+app.set('json spaces', 2);
 
 const config = buildConfig();
 const server = initialize(config, app);
