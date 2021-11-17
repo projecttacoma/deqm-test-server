@@ -293,7 +293,7 @@ const evaluateMeasure = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     reportType: reportType
   });
-  return results;
+  return results[0];
 };
 
 /**
