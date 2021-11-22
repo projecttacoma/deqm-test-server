@@ -10,7 +10,6 @@ const {
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const { getSearchParameters } = require('@projecttacoma/node-fhir-server-core/dist/server/utils/params.utils');
-
 const logger = loggers.get('default');
 
 /**
