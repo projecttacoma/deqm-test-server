@@ -20,7 +20,7 @@ jest.mock('uuid', () => {
 
 const args = { base_version: '4_0_1' };
 
-describe.only('provenanceUtils tests', () => {
+describe('provenanceUtils tests', () => {
   beforeEach(() => {
     uuidv4.mockImplementationOnce(() => 'TEST_ID');
   });
