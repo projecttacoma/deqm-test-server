@@ -77,7 +77,7 @@ const SINGLE_AGENT_PROVENANCE = {
         ]
       },
       who: {
-        reference: 'Practitioner/456',
+        reference: 'Practitioner/123',
         type: 'Practitioner'
       }
     }
@@ -226,6 +226,7 @@ const ON_BEHALF_OF_PROVENANCE = {
 
 const SINGLE_AGENT_AUDIT = {
   resourceType: 'AuditEvent',
+  id: 'TEST_ID',
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',
@@ -278,7 +279,7 @@ const SINGLE_AGENT_AUDIT = {
   ],
   source: {
     observer: {
-      reference: 'Practitioner/456',
+      reference: 'Practitioner/123',
       type: 'Practitioner'
     }
   }
@@ -286,6 +287,7 @@ const SINGLE_AGENT_AUDIT = {
 
 const AMEDNING_AUDIT = {
   resourceType: 'AuditEvent',
+  id: 'TEST_ID',
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',
@@ -371,6 +373,7 @@ const AMEDNING_AUDIT = {
 
 const ON_BEHALF_OF_AUDIT = {
   resourceType: 'AuditEvent',
+  id: 'TEST_ID',
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',

@@ -47,9 +47,9 @@ const createAuditEventFromProvenance = (provenance, args) => {
     });
     audit.source = { observer: source };
   }
-  audit.id = uuidv4();
+  audit['id'] = uuidv4();
   const AuditEvent = resolveSchema(args.base_version, 'auditevent');
-  return new AuditEvent(audit);
+  return new AuditEvent(audit).toJSON();
 };
 
 const buildDelegator = reference => {
