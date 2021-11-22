@@ -4,7 +4,7 @@ const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhi
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('./base.service');
-
+const { validateResourceType } = require('../util/validator');
 const logger = loggers.get('default');
 
 /**
@@ -54,6 +54,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
+  validateResourceType(req.body);
   const { base_version: baseVersion } = req.params;
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {
@@ -98,7 +99,7 @@ async function uploadTransactionBundle(req, res) {
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
+    return axios[method.toLowerCase()](destinationUrl, entry.resource, true, {
       headers: entryHeaders
     });
   });

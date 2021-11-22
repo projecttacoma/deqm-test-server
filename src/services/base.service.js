@@ -10,7 +10,7 @@ const {
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const { getSearchParameters } = require('@projecttacoma/node-fhir-server-core/dist/server/utils/params.utils');
-
+const { validateResourceType } = require('../util/validator');
 const logger = loggers.get('default');
 
 /**
@@ -78,12 +78,16 @@ const qb = new QueryBuilder({
  * creates an object and generates an id for it regardless of the id passed in
  * @param {*} req an object containing the request body
  * @param {*} resourceType string which signifies which collection to add the data to
+ * @param {boolean} ignoreValidation boolean to determine whether to perform schema validation
  * @returns the id of the created object
  */
-const baseCreate = async ({ req }, resourceType) => {
+const baseCreate = async ({ req }, resourceType, ignoreValidation) => {
   logger.info(`${resourceType} >>> create`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
+  if (!ignoreValidation) {
+    validateResourceType(data);
+  }
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
   if (req.headers['x-provenance']) {
@@ -210,12 +214,16 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
  * @param {*} args the args added to the end of the url, contains id of desired resource
  * @param {*} req an object containing the request body
  * @param {*} resourceType string which signifies which collection to add the data to
+ * @param {boolean} ignoreValidation boolean to determine whether to perform schema validation
  * @returns the id of the updated/created document
  */
-const baseUpdate = async (args, { req }, resourceType) => {
+const baseUpdate = async (args, { req }, resourceType, ignoreValidation) => {
   logger.info(`${resourceType} >>> update`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
+  if (!ignoreValidation) {
+    validateResourceType(data);
+  }
 
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
