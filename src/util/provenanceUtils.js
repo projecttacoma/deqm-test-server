@@ -2,10 +2,10 @@ const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * Creates a raw JSONnAuditEvent resource from the X-Provenance headers of a submission request
+ * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
  * @param {*} provenance the provenance headers in string form from the request
  * @param {*} args the object containing the base_version parameter
- * @returns A JSON object represent an AuditEvent to be stored in the system
+ * @returns A JSON object representing an AuditEvent to be stored in the system
  */
 const createAuditEventFromProvenance = (provenance, args) => {
   provenance = JSON.parse(provenance);
