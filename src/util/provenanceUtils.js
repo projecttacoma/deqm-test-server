@@ -1,8 +1,13 @@
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 
+/**
+ * Creates a raw JSONnAuditEvent resource from the X-Provenance headers of a submission request
+ * @param {*} provenance the provenance headers in string form from the request
+ * @param {*} args the object containing the base_version parameter
+ * @returns A JSON object represent an AuditEvent to be stored in the system
+ */
 const createAuditEventFromProvenance = (provenance, args) => {
-  console.log(provenance);
   provenance = JSON.parse(provenance);
   const audit = {};
   audit.type = {
@@ -52,6 +57,12 @@ const createAuditEventFromProvenance = (provenance, args) => {
   return new AuditEvent(audit).toJSON();
 };
 
+/**
+ * In the event of an agent acting on behalf of another agent, this function
+ * wraps the reference to the delegating agent properly for storage in an AuditEvent resource
+ * @param {*} reference a fhir reference object to the delegating agent
+ * @returns a delegating agent to be added to an AuditEvent
+ */
 const buildDelegator = reference => {
   return {
     type: {
