@@ -3,8 +3,8 @@ const { v4: uuidv4 } = require('uuid');
 
 /**
  * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
- * @param {*} provenance the provenance headers in string form from the request
- * @param {*} args the object containing the base_version parameter
+ * @param {string} provenance the provenance headers in string form from the request
+ * @param {Object} args the object containing the base_version parameter
  * @returns A JSON object representing an AuditEvent to be stored in the system
  */
 const createAuditEventFromProvenance = (provenance, args) => {
@@ -17,16 +17,20 @@ const createAuditEventFromProvenance = (provenance, args) => {
   };
   audit.period = provenance.occurredPeriod;
   audit.recorded = provenance.recorded;
+  // 0 represents a successful request
+  // TODO: Add functionality for catching an unsuccessful request
   audit.outcome = 0;
   audit.purposeOfEvent = [];
   if (provenance.reason) {
     audit.purposeOfEvent.push(...provenance.reason);
   }
+
   switch (provenance?.activity?.coding?.[0]?.code) {
     case 'UPDATE':
       audit.action = 'U';
       break;
     default:
+      // Default to C for CREATE for now
       audit.action = 'C';
       break;
   }
@@ -46,6 +50,8 @@ const createAuditEventFromProvenance = (provenance, args) => {
 
       if (agent.onBehalfOf) {
         audit.agent.push(buildDelegator(agent.onBehalfOf));
+        // Change the onBehalfOf to undefined since we already store this info as
+        // another agent in the AuditEvent
         agent.onBehalfOf = undefined;
       }
       audit.agent.push(agent);
@@ -60,7 +66,7 @@ const createAuditEventFromProvenance = (provenance, args) => {
 /**
  * In the event of an agent acting on behalf of another agent, this function
  * wraps the reference to the delegating agent properly for storage in an AuditEvent resource
- * @param {*} reference a fhir reference object to the delegating agent
+ * @param {Object} reference a fhir reference object to the delegating agent
  * @returns a delegating agent to be added to an AuditEvent
  */
 const buildDelegator = reference => {
