@@ -41,7 +41,7 @@ describe('provenanceUtils tests', () => {
   });
   test('createAuditEventFromProvenance works with single agent updating a resource', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
-    expected = new expected(AMEDNING_AUDIT);
+    expected = new expected(AMENDING_AUDIT);
     expect(createAuditEventFromProvenance(JSON.stringify(AMENDING_PROVENANCE), args)).toEqual(expected.toJSON());
   });
 });
