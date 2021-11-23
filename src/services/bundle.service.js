@@ -3,7 +3,7 @@ const axios = require('axios').default;
 const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
-const { checkProvenanceHeader, populateProvenanceTarget } = require('./base.service');
+const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
 

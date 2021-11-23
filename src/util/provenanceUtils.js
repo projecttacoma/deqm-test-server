@@ -1,4 +1,4 @@
-const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 
 /**
@@ -94,4 +94,57 @@ const buildDelegator = reference => {
   };
 };
 
-module.exports = { createAuditEventFromProvenance, buildDelegator };
+/**
+ * Checks that provenance header is present, has Provenance resourceType,
+ * and does not yet have a populated target. Throws appropriate
+ * errors if needed,
+ * @param {*} requestHeaders the headers from the request body
+ */
+const checkProvenanceHeader = requestHeaders => {
+  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  if (provenanceRequest.resourceType !== 'Provenance') {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected resourceType 'Provenance' for Provenance header. Received ${provenanceRequest.resourceType}.`
+          }
+        }
+      ]
+    });
+  }
+  if (provenanceRequest.target) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `The 'target' attribute should not be populated in the provenance header`
+          }
+        }
+      ]
+    });
+  }
+};
+
+/**
+ * Populates 'target' attribute of provenance header with the desired reference
+ * to the ID that the server uses for a resource that was created via POST/PUT
+ *
+ * will probably need to change for multiple references
+ * @param {*} requestHeaders the headers from the request body
+ * @param {*} res the response body
+ * @param {*} target array of reference objects for provenance header
+ */
+const populateProvenanceTarget = (requestHeaders, res, target) => {
+  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  provenanceRequest.target = target;
+  res.setHeader('X-Provenance', JSON.stringify(provenanceRequest));
+};
+
+module.exports = { createAuditEventFromProvenance, buildDelegator, checkProvenanceHeader, populateProvenanceTarget };
