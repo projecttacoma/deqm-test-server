@@ -8,7 +8,7 @@ const {
   ON_BEHALF_OF_PROVENANCE,
   ON_BEHALF_OF_AUDIT,
   AMENDING_PROVENANCE,
-  AMEDNING_AUDIT
+  AMENDING_AUDIT
 } = require('./fixtures/testProvenanceUtils');
 const { v4: uuidv4 } = require('uuid');
 
