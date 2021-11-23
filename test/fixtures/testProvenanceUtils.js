@@ -285,7 +285,7 @@ const SINGLE_AGENT_AUDIT = {
   }
 };
 
-const AMEDNING_AUDIT = {
+const AMENDING_AUDIT = {
   resourceType: 'AuditEvent',
   id: 'TEST_ID',
   type: {
