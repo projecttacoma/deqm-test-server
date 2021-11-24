@@ -41,8 +41,8 @@ const SINGLE_AGENT_PROVENANCE = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }
@@ -97,8 +97,8 @@ const AMENDING_PROVENANCE = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }
@@ -177,8 +177,8 @@ const ON_BEHALF_OF_PROVENANCE = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }
@@ -244,8 +244,8 @@ const SINGLE_AGENT_AUDIT = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }
@@ -305,8 +305,8 @@ const AMENDING_AUDIT = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }
@@ -391,8 +391,8 @@ const ON_BEHALF_OF_AUDIT = {
       coding: [
         {
           system: 'http://terminology.hl7.org/CodeSystem/v3-ActReason',
-          code: 'CAREMGT',
-          display: 'care management'
+          code: 'HQUALIMP',
+          display: 'health quality improvement'
         }
       ]
     }

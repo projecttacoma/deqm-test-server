@@ -1,4 +1,4 @@
-const { resolveSchema } = require('@projecttacoma/node-fhir-server-core/dist/server/utils/schema.utils');
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { buildDelegator, createAuditEventFromProvenance } = require('../src/util/provenanceUtils');
 const {
   DELEGATOR_WHO,
