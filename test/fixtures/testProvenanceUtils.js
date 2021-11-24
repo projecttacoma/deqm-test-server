@@ -3,21 +3,12 @@ const DELEGATOR_WHO = {
   type: 'Practitioner'
 };
 const EXPECTED_DELEGATOR = {
-  type: {
-    coding: [
-      {
-        system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-        code: 'DELEGATOR',
-        display: 'delegator'
-      }
-    ]
-  },
   role: {
     coding: [
       {
-        system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-        code: 'DELEGATOR',
-        display: 'delegator'
+        system: 'http://terminology.hl7.org/CodeSystem/v3-RoleClass',
+        code: 'PROV',
+        display: 'healthcare provider'
       }
     ]
   },
@@ -252,15 +243,6 @@ const SINGLE_AGENT_AUDIT = {
   ],
   agent: [
     {
-      type: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/provenance-participant-type',
-            code: 'enterer',
-            display: 'Enterer'
-          }
-        ]
-      },
       role: {
         coding: [
           {
@@ -313,15 +295,6 @@ const AMENDING_AUDIT = {
   ],
   agent: [
     {
-      type: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/provenance-participant-type',
-            code: 'enterer',
-            display: 'Enterer'
-          }
-        ]
-      },
       role: {
         coding: [
           {
@@ -338,15 +311,6 @@ const AMENDING_AUDIT = {
       requestor: true
     },
     {
-      type: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/provenance-participant-type',
-            code: 'enterer',
-            display: 'Enterer'
-          }
-        ]
-      },
       role: {
         coding: [
           {
@@ -399,21 +363,12 @@ const ON_BEHALF_OF_AUDIT = {
   ],
   agent: [
     {
-      type: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-            code: 'DELEGATOR',
-            display: 'delegator'
-          }
-        ]
-      },
       role: {
         coding: [
           {
-            system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-            code: 'DELEGATOR',
-            display: 'delegator'
+            system: 'http://terminology.hl7.org/CodeSystem/v3-RoleClass',
+            code: 'PROV',
+            display: 'healthcare provider'
           }
         ]
       },
@@ -424,15 +379,6 @@ const ON_BEHALF_OF_AUDIT = {
       requestor: true
     },
     {
-      type: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/provenance-participant-type',
-            code: 'enterer',
-            display: 'Enterer'
-          }
-        ]
-      },
       role: {
         coding: [
           {

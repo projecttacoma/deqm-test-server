@@ -20,8 +20,8 @@ const createAuditEventFromProvenance = (provenance, args) => {
   // 0 represents a successful request
   // TODO: Add functionality for catching an unsuccessful request
   audit.outcome = 0;
-  audit.purposeOfEvent = [];
   if (provenance.reason) {
+    audit.purposeOfEvent = [];
     audit.purposeOfEvent.push(...provenance.reason);
   }
 
@@ -36,28 +36,29 @@ const createAuditEventFromProvenance = (provenance, args) => {
   }
   let source = {};
   audit.agent = [];
-  if (provenance.agent) {
-    provenance.agent.forEach(agent => {
-      agent['requestor'] = true;
+  provenance.agent.forEach(agent => {
+    agent['requestor'] = true;
 
-      if (agent.role.coding.filter(role => role.code === 'AGNT').length > 0) {
-        agent['requestor'] = false;
-        source = agent.who;
-      }
-      if (agent.role.coding.filter(role => role.code === 'ASSIGNED').length > 0) {
-        source = agent.who;
-      }
+    if (agent.role.coding.some(role => role.code === 'AGNT')) {
+      agent['requestor'] = false;
+      source = agent.who;
+    }
+    if (agent.role.coding.some(role => role.code === 'ASSIGNED')) {
+      source = agent.who;
+    }
 
-      if (agent.onBehalfOf) {
-        audit.agent.push(buildDelegator(agent.onBehalfOf));
-        // Change the onBehalfOf to undefined since we already store this info as
-        // another agent in the AuditEvent
-        agent.onBehalfOf = undefined;
-      }
-      audit.agent.push(agent);
-    });
-    audit.source = { observer: source };
-  }
+    if (agent.onBehalfOf) {
+      audit.agent.push(buildDelegator(agent.onBehalfOf));
+      // Change the onBehalfOf to undefined since we already store this info as
+      // another agent in the AuditEvent
+      delete agent.onBehalfOf;
+    }
+    // We're currently not supporting storage of type designations
+    delete agent.type;
+
+    audit.agent.push(agent);
+  });
+  audit.source = { observer: source };
   audit['id'] = uuidv4();
   const AuditEvent = resolveSchema(args.base_version, 'auditevent');
   return new AuditEvent(audit).toJSON();
@@ -71,21 +72,12 @@ const createAuditEventFromProvenance = (provenance, args) => {
  */
 const buildDelegator = reference => {
   return {
-    type: {
-      coding: [
-        {
-          system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-          code: 'DELEGATOR',
-          display: 'delegator'
-        }
-      ]
-    },
     role: {
       coding: [
         {
-          system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
-          code: 'DELEGATOR',
-          display: 'delegator'
+          system: 'http://terminology.hl7.org/CodeSystem/v3-RoleClass',
+          code: 'PROV',
+          display: 'healthcare provider'
         }
       ]
     },
@@ -116,6 +108,7 @@ const checkProvenanceHeader = requestHeaders => {
       ]
     });
   }
+
   if (provenanceRequest.target) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -125,6 +118,21 @@ const checkProvenanceHeader = requestHeaders => {
           code: 'BadRequest',
           details: {
             text: `The 'target' attribute should not be populated in the provenance header`
+          }
+        }
+      ]
+    });
+  }
+
+  if (!provenanceRequest.agent || provenanceRequest.agent.length === 0) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `The provenance header must specify at least 1 agent in the agent attribute`
           }
         }
       ]
