@@ -49,7 +49,7 @@ const createAuditEventFromProvenance = (provenance, args) => {
 
     if (agent.onBehalfOf) {
       audit.agent.push(buildDelegator(agent.onBehalfOf));
-      // Change the onBehalfOf to undefined since we already store this info as
+      // Delete onBehalfOf since we already store this info as
       // another agent in the AuditEvent
       delete agent.onBehalfOf;
     }
