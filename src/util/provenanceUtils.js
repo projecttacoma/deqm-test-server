@@ -90,7 +90,7 @@ const buildDelegator = reference => {
  * Checks that provenance header is present, has Provenance resourceType,
  * and does not yet have a populated target. Throws appropriate
  * errors if needed,
- * @param {*} requestHeaders the headers from the request body
+ * @param {Object} requestHeaders the headers from the request body
  */
 const checkProvenanceHeader = requestHeaders => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
