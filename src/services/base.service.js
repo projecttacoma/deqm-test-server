@@ -10,8 +10,8 @@ const {
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const { getSearchParameters } = require('@projecttacoma/node-fhir-server-core/dist/server/utils/params.utils');
-
 const logger = loggers.get('default');
+const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 
 /**
  * Query Builder Parameter Definitions for all resources
@@ -277,59 +277,6 @@ const checkContentTypeHeader = requestHeaders => {
 };
 
 /**
- * Checks that provenance header is present, has Provenance resourceType,
- * and does not yet have a populated target. Throws appropriate
- * errors if needed,
- * @param {*} requestHeaders the headers from the request body
- */
-const checkProvenanceHeader = requestHeaders => {
-  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
-  if (provenanceRequest.resourceType !== 'Provenance') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected resourceType 'Provenance' for Provenance header. Received ${provenanceRequest.resourceType}.`
-          }
-        }
-      ]
-    });
-  }
-  if (provenanceRequest.target) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `The 'target' attribute should not be populated in the provenance header`
-          }
-        }
-      ]
-    });
-  }
-};
-
-/**
- * Populates 'target' attribute of provenance header with the desired reference
- * to the ID that the server uses for a resource that was created via POST/PUT
- *
- * will probably need to change for multiple references
- * @param {*} requestHeaders the headers from the request body
- * @param {*} res the response body
- * @param {*} target array of reference objects for provenance header
- */
-const populateProvenanceTarget = (requestHeaders, res, target) => {
-  const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
-  provenanceRequest.target = target;
-  res.setHeader('X-Provenance', JSON.stringify(provenanceRequest));
-};
-
-/**
  * Build a basic service module for a given resource type. Supports basic CRUD operations.
  *
  * @param {string} resourceType Name of the resource to make a basic resource for.
@@ -352,7 +299,5 @@ module.exports = {
   baseRemove,
   buildServiceModule,
   baseSearch,
-  checkContentTypeHeader,
-  checkProvenanceHeader,
-  populateProvenanceTarget
+  checkContentTypeHeader
 };

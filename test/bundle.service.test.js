@@ -5,6 +5,7 @@ const { cleanUpDb } = require('./populateTestData');
 const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
+const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
 const config = buildConfig();
 const server = initialize(config);
 
@@ -46,7 +47,7 @@ describe('Test transaction bundle upload', () => {
       .send(testBundle)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
-      .set('x-provenance', '{"resourceType": "Provenance"}')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200)
       .then(async response => {
         // Check the response

@@ -21,8 +21,10 @@ const {
   addPendingBulkImportRequest,
   failBulkImportRequest,
   completeBulkImportRequest,
-  findResourcesWithQuery
+  findResourcesWithQuery,
+  createResource
 } = require('../util/mongo.controller');
+const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
 
@@ -161,6 +163,10 @@ const submitData = async (args, { req }) => {
   });
   req.body = tb.toJSON();
   const output = await uploadTransactionBundle(req, req.res);
+  if (req.headers['x-provenance']) {
+    const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], args);
+    await createResource(auditEvent, 'AuditEvent');
+  }
   return output;
 };
 

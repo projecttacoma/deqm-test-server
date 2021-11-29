@@ -8,6 +8,7 @@ const supertest = require('supertest');
 const { buildConfig } = require('../src/util/config');
 const { initialize } = require('../src/server/server');
 const { client } = require('../src/util/mongo');
+const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
 
 const config = buildConfig();
 const server = initialize(config);
@@ -23,7 +24,7 @@ describe('measure.service CRUD operations', () => {
       .send(testPatient)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
-      .set('x-provenance', '{ "resourceType": "Provenance"}')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(201)
       .then(response => {
         expect(response.headers.location).toBeDefined();
@@ -47,7 +48,7 @@ describe('measure.service CRUD operations', () => {
       .send(updatePatient)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
-      .set('x-provenance', '{ "resourceType": "Provenance"}')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200)
       .then(async response => {
         // Check the response
