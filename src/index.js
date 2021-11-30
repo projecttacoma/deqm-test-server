@@ -1,7 +1,7 @@
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const express = require('express');
-const mongoUtil = require('./util/mongo');
-const { buildConfig } = require('./util/config');
+const mongoUtil = require('./database/connection');
+const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 
 const app = express();

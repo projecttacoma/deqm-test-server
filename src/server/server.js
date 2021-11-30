@@ -1,7 +1,7 @@
 const { Server } = require('@projecttacoma/node-fhir-server-core');
-const configTransaction = require('../services/bundle.controller');
-const configBulkStatus = require('../services/bulkstatus.controller');
 const configBulkImport = require('../services/import.controller');
+const configTransaction = require('../controllers/bundle.controller');
+const configBulkStatus = require('../controllers/bulkstatus.controller');
 
 class DEQMServer extends Server {
   enableTransactionRoute() {

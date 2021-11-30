@@ -1,4 +1,4 @@
-const service = require('./bundle.service.js');
+const service = require('../services/bundle.service.js');
 
 /**
  * @name exports

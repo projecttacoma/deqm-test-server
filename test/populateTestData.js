@@ -1,4 +1,4 @@
-const { db, client } = require('../src/util/mongo');
+const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const createTestResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);

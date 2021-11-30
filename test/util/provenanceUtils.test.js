@@ -1,5 +1,5 @@
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
-const { buildDelegator, createAuditEventFromProvenance } = require('../src/util/provenanceUtils');
+const { buildDelegator, createAuditEventFromProvenance } = require('../../src/util/provenanceUtils');
 const {
   DELEGATOR_WHO,
   EXPECTED_DELEGATOR,
@@ -9,7 +9,7 @@ const {
   ON_BEHALF_OF_AUDIT,
   AMENDING_PROVENANCE,
   AMENDING_AUDIT
-} = require('./fixtures/testProvenanceUtils');
+} = require('../fixtures/provenanceFixtures');
 const { v4: uuidv4 } = require('uuid');
 
 jest.mock('uuid', () => {

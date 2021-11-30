@@ -2,6 +2,7 @@ const DELEGATOR_WHO = {
   reference: 'Practitioner/456',
   type: 'Practitioner'
 };
+
 const EXPECTED_DELEGATOR = {
   role: {
     coding: [

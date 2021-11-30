@@ -1,9 +1,9 @@
+const _ = require('lodash');
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { getPatientDataSearchSetBundle, getPatientData, mapArrayToSearchSetBundle } = require('../util/bundleUtils');
-const { findResourcesWithQuery } = require('../util/mongo.controller');
+const { findResourcesWithQuery } = require('../database/dbOperations');
 const logger = loggers.get('default');
-const _ = require('lodash');
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient

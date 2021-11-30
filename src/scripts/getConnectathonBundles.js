@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const mongoUtil = require('../util/mongo');
-const { createResource } = require('../util/mongo.controller');
+const mongoUtil = require('../database/connection');
+const { createResource } = require('../database/dbOperations');
 
 const connectathonPath = path.resolve(path.join(__dirname, '../../connectathon/fhir401/bundles/measure/'));
 // bundles that are not the latest available version

@@ -2,7 +2,7 @@ const {
   checkRequiredParams,
   validateEvalMeasureParams,
   validateCareGapsParams
-} = require('../src/util/measureOperationsUtils');
+} = require('../../src/util/measureOperationsUtils');
 
 describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {

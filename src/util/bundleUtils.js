@@ -2,8 +2,8 @@ const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
-const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../util/mongo.controller');
-const supportedResources = require('../util/supportedResources');
+const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../database/dbOperations');
+const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
 

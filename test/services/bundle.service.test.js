@@ -1,12 +1,13 @@
-const { uploadTransactionBundle } = require('../src/services/bundle.service');
-const testBundle = require('./fixtures/testBundle.json');
-const testParamResource = require('./fixtures/parametersObjs/paramNoExportResource.json');
-const { client } = require('../src/util/mongo');
-const { cleanUpDb } = require('./populateTestData');
 const supertest = require('supertest');
-const { buildConfig } = require('../src/util/config');
-const { initialize } = require('../src/server/server');
-const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
+const { uploadTransactionBundle } = require('../../src/services/bundle.service');
+const { client } = require('../../src/database/connection');
+const { cleanUpDb } = require('../populateTestData');
+const { buildConfig } = require('../../src/config/profileConfig');
+const { initialize } = require('../../src/server/server');
+const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
+const testBundle = require('../fixtures/fhir-resources/testBundle.json');
+const testParamResource = require('../fixtures/parametersObjs/paramNoExportResource.json');
+
 const config = buildConfig();
 const server = initialize(config);
 
@@ -14,6 +15,7 @@ const NON_BUNDLE_REQ = {
   body: { resourceType: 'invalidType', type: 'transaction' },
   params: { base_version: '4_0_1' }
 };
+
 const NON_TXN_REQ = { body: { resourceType: 'Bundle', type: 'invalidType' }, params: { base_version: '4_0_1' } };
 
 describe('uploadTransactionBundle Server errors', () => {

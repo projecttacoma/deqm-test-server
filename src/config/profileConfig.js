@@ -1,8 +1,9 @@
 const { constants } = require('@projecttacoma/node-fhir-server-core');
-const { VERSIONS } = constants;
-const supportedResources = require('./supportedResources');
-const { buildServiceModule } = require('../services/base.service');
 const path = require('path');
+const supportedResources = require('../server/supportedResources');
+const { buildServiceModule } = require('../services/base.service');
+
+const { VERSIONS } = constants;
 
 /**
  * Build configuration object to pass to the core FHIR server

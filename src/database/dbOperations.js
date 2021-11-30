@@ -1,5 +1,6 @@
-const { db } = require('./mongo');
 const { v4: uuidv4 } = require('uuid');
+const { db } = require('./connection.js');
+
 /**
  * creates a new document in the specified collection
  * @param {*} data the data of the document to be created
