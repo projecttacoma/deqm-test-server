@@ -269,7 +269,7 @@ async function getPatientData(patientId, dataRequirements) {
  * Modify the request type to PUT after forcing the IDs. This will not affect return results, just internal representation
  *
  * @param {Array} entries array of bundle entries
- * @returns new array of entries with replaced reverences
+ * @returns new array of entries with replaced references
  */
 function replaceReferences(entries) {
   // Add metadata for old IDs and newly created ones of POST entries

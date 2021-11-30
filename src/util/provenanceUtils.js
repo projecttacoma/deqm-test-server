@@ -4,10 +4,10 @@ const { v4: uuidv4 } = require('uuid');
 /**
  * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
  * @param {string} provenance the provenance headers in string form from the request
- * @param {Object} args the object containing the base_version parameter
+ * @param {Object} version base_version from parameter
  * @returns A JSON object representing an AuditEvent to be stored in the system
  */
-const createAuditEventFromProvenance = (provenance, args) => {
+const createAuditEventFromProvenance = (provenance, version) => {
   provenance = JSON.parse(provenance);
   const audit = {};
   audit.type = {
@@ -36,9 +36,10 @@ const createAuditEventFromProvenance = (provenance, args) => {
   }
   let source = {};
   audit.agent = [];
-  provenance.agent.forEach(agent => {
+  provenance?.agent?.forEach(agent => {
     agent['requestor'] = true;
 
+    // TODO: should these be safe-accessed?
     if (agent.role.coding.some(role => role.code === 'AGNT')) {
       agent['requestor'] = false;
       source = agent.who;
@@ -60,7 +61,7 @@ const createAuditEventFromProvenance = (provenance, args) => {
   });
   audit.source = { observer: source };
   audit['id'] = uuidv4();
-  const AuditEvent = resolveSchema(args.base_version, 'auditevent');
+  const AuditEvent = resolveSchema(version, 'auditevent');
   return new AuditEvent(audit).toJSON();
 };
 

@@ -63,6 +63,31 @@ const updateResource = async (id, data, resourceType) => {
 };
 
 /**
+ * searches for a document and updates it by pushing to existing if found, creates it if not
+ * @param {*} id id of resource to be updated
+ * @param {*} data the new data to push in the document
+ * @param {*} resourceType the collection the document is in
+ * @returns the id of the updated/created document
+ */
+ const pushToResource = async (id, data, resourceType) => {
+  const collection = db.collection(resourceType);
+
+  // TODO: multiple requires an $each i.e. data = { scores: { $each: [ 90, 92, 85 ] } }
+  // should $each be passed in as data, or is that bad modularization?
+  const results = await collection.findOneAndUpdate({ id: id }, { $push: data });
+
+  // If the document cannot be created with the passed id, Mongo will throw an error
+  // before here, so should be ok to just return the passed id
+  if (results.value === null) {
+    // null value indicates a newly created document
+    return { id: id, created: true };
+  }
+
+  // value being present indicates an update, so set created flag to false
+  return { id: results.value.id, created: false };
+};
+
+/**
  * searches the database for the desired resource and removes it from the db
  * @param {*} id id of resource to be removed
  * @param {*} resourceType type of desired resource, signifies collection resource is stored in
@@ -149,6 +174,7 @@ module.exports = {
   createResource,
   removeResource,
   updateResource,
+  pushToResource,
   findResourcesWithAggregation,
   addPendingBulkImportRequest,
   getBulkImportStatus,
