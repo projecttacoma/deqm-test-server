@@ -1,6 +1,7 @@
 const { Server } = require('@projecttacoma/node-fhir-server-core');
 const configTransaction = require('../services/bundle.controller');
 const configBulkStatus = require('../services/bulkstatus.controller');
+const configBulkImport = require('../services/import.controller');
 
 class DEQMServer extends Server {
   enableTransactionRoute() {
@@ -10,6 +11,10 @@ class DEQMServer extends Server {
   }
   enableBulkStatusRoute() {
     this.app.get('/:base_version/bulkstatus/:client_id', configBulkStatus.bulkstatus);
+    return this;
+  }
+  enableImportRoute() {
+    this.app.post('/:base_version/([$])import/', configBulkImport.bulkImport);
     return this;
   }
 }
@@ -23,6 +28,7 @@ function initialize(config, app) {
     .setPublicDirectory()
     .enableTransactionRoute()
     .enableBulkStatusRoute()
+    .enableImportRoute()
     .setProfileRoutes()
     .setErrorRoutes();
 }
