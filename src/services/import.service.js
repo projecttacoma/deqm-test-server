@@ -10,6 +10,12 @@ const { handleSubmitDataBundles } = require('./bundle.service');
 
 const logger = loggers.get('default');
 
+/**
+ * Executes an import of all the resources on the passed in server.
+ * @param {Object} req The request object passed in by the client
+ * @param {Object} res The response object returned to the client by the server
+ * @returns void
+ */
 async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
   // ID assigned to the requesting client
