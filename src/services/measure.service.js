@@ -159,7 +159,7 @@ const submitData = async (args, { req }) => {
 
     tb.addEntryFromResource(param.resource, 'POST');
   });
-  const output = await handleSubmitDataBundles([tb],req);
+  const output = await handleSubmitDataBundles([tb], req);
   // expect exactly one output because uses exactly one transaction bundle
   return output[0];
 };
@@ -226,7 +226,7 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) 
     ).catch(async e => {
       await failBulkImportRequest(clientEntryId, e);
     });
-    const pendingTransactionBundles = handleSubmitDataBundles(transactionBundles, req)
+    const pendingTransactionBundles = handleSubmitDataBundles(transactionBundles, req);
     await Promise.all(pendingTransactionBundles);
     await completeBulkImportRequest(clientEntryId);
   } catch (e) {

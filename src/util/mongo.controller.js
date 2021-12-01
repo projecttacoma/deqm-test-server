@@ -69,7 +69,7 @@ const updateResource = async (id, data, resourceType) => {
  * @param {*} resourceType the collection the document is in
  * @returns the id of the updated/created document
  */
- const pushToResource = async (id, data, resourceType) => {
+const pushToResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
 
   // TODO: multiple requires an $each i.e. data = { scores: { $each: [ 90, 92, 85 ] } }

@@ -4,7 +4,7 @@ const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhi
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { createResource, pushToResource } = require('../util/mongo.controller')
+const { createResource, pushToResource } = require('../util/mongo.controller');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
@@ -48,14 +48,14 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 };
 
 /**
- * Handles transaction bundles used for submit data. 
+ * Handles transaction bundles used for submit data.
  * Creates an audit event and uploads the transaction bundles.
  * @param {*} req - an object containing the request body
  * @param {*} res - an object containing the response
  * @returns array of transaction-response bundle
  */
 // TODO: does this need to be async?
-async function handleSubmitDataBundles(transactionBundles, req){
+async function handleSubmitDataBundles(transactionBundles, req) {
   var auditID;
   const { base_version: baseVersion } = req.params;
   if (req.headers['x-provenance']) {
@@ -73,27 +73,25 @@ async function handleSubmitDataBundles(transactionBundles, req){
 
     // TODO: checkProvenanceHeader before creating audit event
     const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], baseVersion);
-    auditID = (await createResource(auditEvent, 'AuditEvent')).id
+    auditID = (await createResource(auditEvent, 'AuditEvent')).id;
   }
 
   // upload transaction bundles and add resources to auditevent from those successfully uploaded
   return transactionBundles.map(async tb => {
-
     // Check upload succeeds
     //TODO: does this need to be toJSON or not? (might depend on what's calling it and need to be fixed on the calling side)
     req.body = tb.toJSON();
-    const bundleResponse =  await uploadTransactionBundle(req, req.res);
-    
-    if(auditID) {
+    const bundleResponse = await uploadTransactionBundle(req, req.res);
+
+    if (auditID) {
       // save resources to the AuditEvent
-      
+
       const entities = bundleResponse.entry.map(entry => {
-        return {what: {reference: entry.response.location.replace(`${baseVersion}/`,'')} } // TODO: remove '4_0_1'
+        return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } }; // TODO: remove '4_0_1'
       });
       // use $each to push multiple
-      await pushToResource(auditID, {entity:{ $each: entities }}, 'AuditEvent')
+      await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
     }
-
 
     return bundleResponse;
   });
