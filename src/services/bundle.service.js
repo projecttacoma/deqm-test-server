@@ -72,7 +72,7 @@ async function handleSubmitDataBundles(transactionBundles, req) {
     if (auditID) {
       // save resources to the AuditEvent
       const entities = bundleResponse.entry.map(entry => {
-        return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } }; // TODO: remove '4_0_1'
+        return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
       });
       // use $each to push multiple
       await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');

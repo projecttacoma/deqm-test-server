@@ -72,8 +72,6 @@ const updateResource = async (id, data, resourceType) => {
 const pushToResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
 
-  // TODO: multiple requires an $each i.e. data = { scores: { $each: [ 90, 92, 85 ] } }
-  // should $each be passed in as data, or is that bad modularization?
   const results = await collection.findOneAndUpdate({ id: id }, { $push: data });
 
   // If the document cannot be created with the passed id, Mongo will throw an error

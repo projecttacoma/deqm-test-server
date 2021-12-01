@@ -39,12 +39,11 @@ const createAuditEventFromProvenance = (provenance, version) => {
   provenance.agent.forEach(agent => {
     agent['requestor'] = true;
 
-    // TODO: should these be safe-accessed?
-    if (agent.role.coding.some(role => role.code === 'AGNT')) {
+    if (agent.role?.coding?.some(role => role.code === 'AGNT')) {
       agent['requestor'] = false;
       source = agent.who;
     }
-    if (agent.role.coding.some(role => role.code === 'ASSIGNED')) {
+    if (agent.role?.coding?.some(role => role.code === 'ASSIGNED')) {
       source = agent.who;
     }
 
