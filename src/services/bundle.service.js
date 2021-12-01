@@ -50,28 +50,15 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 /**
  * Handles transaction bundles used for submit data.
  * Creates an audit event and uploads the transaction bundles.
+ * @param {*} transactionBundles - an array of transactionBundles to handle
  * @param {*} req - an object containing the request body
- * @param {*} res - an object containing the response
  * @returns array of transaction-response bundle
  */
-// TODO: does this need to be async?
 async function handleSubmitDataBundles(transactionBundles, req) {
   var auditID;
   const { base_version: baseVersion } = req.params;
   if (req.headers['x-provenance']) {
-    // create AuditEvent
-    // const { base_version: baseVersion } = req.params;
-    // const AuditEvent = resolveSchema(baseVersion, 'AuditEvent');
-    // const auditEvent = new AuditEvent({id: uuidv4()});
-    // const typeCoding = {system:"http://www.hl7.org/fhir/codesystem-audit-event-type.html", code:"110107", display:"Import"}; //Audit event: Data has been imported into the system
-    // auditEvent.type = typeCoding;
-    // auditEvent.recorded = new Date().toISOString(); // instant type
-    // auditEvent.agent = [{requestor:true}];
-    // auditEvent.source = {observer:{}}; // note: observer needs to be a reference once we fill this from xprovenance
-    // auditEvent.entity = []; //start with empty entity
-    // TODO: populate further from req's xprovenance header
-
-    // TODO: checkProvenanceHeader before creating audit event
+    checkProvenanceHeader(req.headers);
     const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], baseVersion);
     auditID = (await createResource(auditEvent, 'AuditEvent')).id;
   }
@@ -79,13 +66,11 @@ async function handleSubmitDataBundles(transactionBundles, req) {
   // upload transaction bundles and add resources to auditevent from those successfully uploaded
   return transactionBundles.map(async tb => {
     // Check upload succeeds
-    //TODO: does this need to be toJSON or not? (might depend on what's calling it and need to be fixed on the calling side)
     req.body = tb.toJSON();
     const bundleResponse = await uploadTransactionBundle(req, req.res);
 
     if (auditID) {
       // save resources to the AuditEvent
-
       const entities = bundleResponse.entry.map(entry => {
         return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } }; // TODO: remove '4_0_1'
       });

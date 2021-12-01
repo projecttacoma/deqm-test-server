@@ -36,7 +36,7 @@ const createAuditEventFromProvenance = (provenance, version) => {
   }
   let source = {};
   audit.agent = [];
-  provenance?.agent?.forEach(agent => {
+  provenance.agent.forEach(agent => {
     agent['requestor'] = true;
 
     // TODO: should these be safe-accessed?

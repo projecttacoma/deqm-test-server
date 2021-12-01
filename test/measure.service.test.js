@@ -110,31 +110,6 @@ describe('bulkImport with exportURL', () => {
   });
 });
 
-describe('testing submit data with a resource', () => {
-  beforeAll(async () => {
-    await testSetup(testMeasure, testPatient, testLibrary);
-  });
-  test('$submit-data uploads txn bundle for valid parameters request with resource', async () => {
-    // uuidv4.mockImplementationOnce(() => `testid`);
-    // uuidv4.mockImplementationOnce(() => `encounterid`);
-    await supertest(server.app)
-      .post('/4_0_1/Measure/$submit-data')
-      .send(testParamResource)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(async response => {
-        expect(response.body.entry[0].response.status).toEqual('201 Created');
-        expect(response.body.resourceType).toEqual('Bundle');
-        expect(response.body.type).toEqual('transaction-response');
-      });
-  });
-  afterAll(async () => {
-    await cleanUpDb();
-  });
-});
-
 describe('testing custom measure operation', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
@@ -189,6 +164,21 @@ describe('testing custom measure operation', () => {
     await supertest(server.app)
       .post('/4_0_1/Measure/$submit-data')
       .send(testParam)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200)
+      .then(async response => {
+        expect(response.body.entry[0].response.status).toEqual('201 Created');
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.type).toEqual('transaction-response');
+      });
+  });
+
+  test('$submit-data uploads txn bundle for valid parameters request with resource', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParamResource)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
