@@ -12,11 +12,11 @@ const logger = loggers.get('default');
 
 async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
-  // id of inserted client
+  // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest();
   const parameters = req.body.parameter;
   const exportURL = retrieveExportURL(parameters);
-
+  //When we move to a job queue, remove --forceExist from test script in package.json
   executePingAndPull(clientEntry, exportURL, req);
   res.status(202);
   res.status = () => res;

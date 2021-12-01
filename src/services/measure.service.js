@@ -198,6 +198,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
 
+  // After updating to job queue, remove --forceExit in test script in package.json
   executePingAndPull(clientEntry, exportURL, measureBundle, req);
   res.status(202);
   res.status = () => res;
