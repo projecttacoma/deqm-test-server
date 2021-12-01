@@ -61,6 +61,7 @@ const createAuditEventFromProvenance = (provenance, version) => {
   });
   audit.source = { observer: source };
   audit['id'] = uuidv4();
+  audit.entity = [];
   const AuditEvent = resolveSchema(version, 'auditevent');
   return new AuditEvent(audit).toJSON();
 };

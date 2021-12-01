@@ -57,8 +57,8 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 // TODO: does this need to be async?
 async function handleSubmitDataBundles(transactionBundles, req){
   var auditID;
+  const { base_version: baseVersion } = req.params;
   if (req.headers['x-provenance']) {
-    const { base_version: baseVersion } = req.params;
     // create AuditEvent
     // const { base_version: baseVersion } = req.params;
     // const AuditEvent = resolveSchema(baseVersion, 'AuditEvent');
@@ -77,7 +77,7 @@ async function handleSubmitDataBundles(transactionBundles, req){
   }
 
   // upload transaction bundles and add resources to auditevent from those successfully uploaded
-  const temp = transactionBundles.map(async tb => {
+  return transactionBundles.map(async tb => {
 
     // Check upload succeeds
     //TODO: does this need to be toJSON or not? (might depend on what's calling it and need to be fixed on the calling side)
@@ -88,7 +88,7 @@ async function handleSubmitDataBundles(transactionBundles, req){
       // save resources to the AuditEvent
       
       const entities = bundleResponse.entry.map(entry => {
-        return {what: {reference: entry.response.location} } // TODO: remove '4_0_1'
+        return {what: {reference: entry.response.location.replace(`${baseVersion}/`,'')} } // TODO: remove '4_0_1'
       });
       // use $each to push multiple
       await pushToResource(auditID, {entity:{ $each: entities }}, 'AuditEvent')
@@ -97,7 +97,6 @@ async function handleSubmitDataBundles(transactionBundles, req){
 
     return bundleResponse;
   });
-  return temp;
 }
 
 /**

@@ -218,6 +218,7 @@ const ON_BEHALF_OF_PROVENANCE = {
 const SINGLE_AGENT_AUDIT = {
   resourceType: 'AuditEvent',
   id: 'TEST_ID',
+  entity: [],
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',
@@ -270,6 +271,7 @@ const SINGLE_AGENT_AUDIT = {
 const AMENDING_AUDIT = {
   resourceType: 'AuditEvent',
   id: 'TEST_ID',
+  entity: [],
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',
@@ -338,6 +340,7 @@ const AMENDING_AUDIT = {
 const ON_BEHALF_OF_AUDIT = {
   resourceType: 'AuditEvent',
   id: 'TEST_ID',
+  entity: [],
   type: {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',

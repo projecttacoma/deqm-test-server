@@ -73,10 +73,9 @@ describe('Test handle submit data bundle', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(500)
+      .expect(200)
       .then(async response => {
         // Check the response
-        expect(response.body).toEqual("");
         expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
       });
     // Check for AuditEvent with resources
@@ -89,6 +88,9 @@ describe('Test handle submit data bundle', () => {
           expect(response.body.type).toEqual('searchset');
           expect(response.body.total).toEqual(1);
           expect(response.body.entry[0].resource.resourceType).toEqual('AuditEvent');
+          const entities = response.body.entry[0].resource.entity;
+          expect(entities.some(ent => ent.what.reference.startsWith("MeasureReport"))).toBe(true);
+          expect(entities.some(ent => ent.what.reference.startsWith("Encounter"))).toBe(true);
         });
   });
 
