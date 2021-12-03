@@ -3,7 +3,7 @@ const { BulkImportWrappers } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
-const { uploadTransactionBundle } = require('./bundle.service');
+const { handleSubmitDataBundles } = require('./bundle.service');
 const {
   retrieveExportURL,
   validateEvalMeasureParams,
@@ -21,10 +21,8 @@ const {
   addPendingBulkImportRequest,
   failBulkImportRequest,
   completeBulkImportRequest,
-  findResourcesWithQuery,
-  createResource
+  findResourcesWithQuery
 } = require('../util/mongo.controller');
-const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
 
@@ -161,13 +159,9 @@ const submitData = async (args, { req }) => {
 
     tb.addEntryFromResource(param.resource, 'POST');
   });
-  req.body = tb.toJSON();
-  const output = await uploadTransactionBundle(req, req.res);
-  if (req.headers['x-provenance']) {
-    const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], args);
-    await createResource(auditEvent, 'AuditEvent');
-  }
-  return output;
+  const output = await handleSubmitDataBundles([tb], req);
+  // expect exactly one output because uses exactly one transaction bundle
+  return output[0];
 };
 
 /**
@@ -217,7 +211,7 @@ const bulkImport = async (args, { req }) => {
 /**
  * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
  * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
- * Finally, uploads the resulting transaction bundles to the server and updateed the bulkstatus endpoint
+ * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
  * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
  * @param {*} exportUrl The url of the bulk export fhir server
  * @param {*} measureBundle The measure bundle for which to retrieve data requirements
@@ -232,9 +226,7 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) 
     ).catch(async e => {
       await failBulkImportRequest(clientEntryId, e);
     });
-    const pendingTransactionBundles = transactionBundles.map(async tb => {
-      return uploadTransactionBundle({ ...req, body: tb }, req.res);
-    });
+    const pendingTransactionBundles = handleSubmitDataBundles(transactionBundles, req);
     await Promise.all(pendingTransactionBundles);
     await completeBulkImportRequest(clientEntryId);
   } catch (e) {

@@ -63,6 +63,19 @@ const updateResource = async (id, data, resourceType) => {
 };
 
 /**
+ * searches for a document and updates it by pushing to existing
+ * should not be called for document that doesn't exist or for data that doesn't already exist
+ * @param {string} id id of resource to be updated
+ * @param {Object} data the new data to push in the document
+ * @param {string} resourceType the collection the document is in
+ * @returns the id of the updated/created document
+ */
+const pushToResource = async (id, data, resourceType) => {
+  const collection = db.collection(resourceType);
+  await collection.findOneAndUpdate({ id: id }, { $push: data });
+};
+
+/**
  * searches the database for the desired resource and removes it from the db
  * @param {*} id id of resource to be removed
  * @param {*} resourceType type of desired resource, signifies collection resource is stored in
@@ -149,6 +162,7 @@ module.exports = {
   createResource,
   removeResource,
   updateResource,
+  pushToResource,
   findResourcesWithAggregation,
   addPendingBulkImportRequest,
   getBulkImportStatus,

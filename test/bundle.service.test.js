@@ -1,5 +1,6 @@
 const { uploadTransactionBundle } = require('../src/services/bundle.service');
 const testBundle = require('./fixtures/testBundle.json');
+const testParamResource = require('./fixtures/parametersObjs/paramNoExportResource.json');
 const { client } = require('../src/util/mongo');
 const { cleanUpDb } = require('./populateTestData');
 const supertest = require('supertest');
@@ -52,6 +53,44 @@ describe('Test transaction bundle upload', () => {
       .then(async response => {
         // Check the response
         expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+      });
+  });
+
+  afterAll(async () => {
+    await cleanUpDb();
+  });
+});
+
+describe('Test handle submit data bundle', () => {
+  beforeAll(async () => {
+    await client.connect();
+  });
+
+  test('Submit data bundle with resources creates AuditEvent with resources', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParamResource)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200)
+      .then(async response => {
+        // Check the response
+        expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+      });
+    // Check for AuditEvent with resources
+    await supertest(server.app)
+      .get('/4_0_1/AuditEvent')
+      .set('Accept', 'application/json+fhir')
+      .expect(200)
+      .then(async response => {
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.type).toEqual('searchset');
+        expect(response.body.total).toEqual(1);
+        expect(response.body.entry[0].resource.resourceType).toEqual('AuditEvent');
+        const entities = response.body.entry[0].resource.entity;
+        expect(entities.some(ent => ent.what.reference.startsWith('MeasureReport'))).toBe(true);
+        expect(entities.some(ent => ent.what.reference.startsWith('Encounter'))).toBe(true);
       });
   });
 

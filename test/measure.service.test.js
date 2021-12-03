@@ -3,6 +3,7 @@ const testMeasure = require('./fixtures/testMeasure.json');
 const testLibrary = require('./fixtures/testLibrary.json');
 const testPatient = require('./fixtures/testPatient.json');
 const testParam = require('./fixtures/parametersObjs/paramNoExport.json');
+const testParamResource = require('./fixtures/parametersObjs/paramNoExportResource.json');
 const testParamTwoExports = require('./fixtures/parametersObjs/paramTwoExports.json');
 const testParamNoValString = require('./fixtures/parametersObjs/paramNoValueString.json');
 const testParamInvalidResourceType = require('./fixtures/parametersObjs/paramInvalidType.json');
@@ -173,6 +174,22 @@ describe('testing custom measure operation', () => {
         expect(response.body.type).toEqual('transaction-response');
       });
   });
+
+  test('$submit-data uploads txn bundle for valid parameters request with resource', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(testParamResource)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200)
+      .then(async response => {
+        expect(response.body.entry[0].response.status).toEqual('201 Created');
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.type).toEqual('transaction-response');
+      });
+  });
+
   test('$evaluate-measure returns 200 when subject is omitted and reportType is set to population', async () => {
     const { Calculator } = require('fqm-execution');
     const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {

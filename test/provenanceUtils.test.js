@@ -32,16 +32,22 @@ describe('provenanceUtils tests', () => {
   test('createAuditEventFromProvenance works with single agent acting by itself', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
     expected = new expected(SINGLE_AGENT_AUDIT);
-    expect(createAuditEventFromProvenance(JSON.stringify(SINGLE_AGENT_PROVENANCE), args)).toEqual(expected.toJSON());
+    expect(createAuditEventFromProvenance(JSON.stringify(SINGLE_AGENT_PROVENANCE), args.base_version)).toEqual(
+      expected.toJSON()
+    );
   });
   test('createAuditEventFromProvenance works with single agent acting on behalf of another', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
     expected = new expected(ON_BEHALF_OF_AUDIT);
-    expect(createAuditEventFromProvenance(JSON.stringify(ON_BEHALF_OF_PROVENANCE), args)).toEqual(expected.toJSON());
+    expect(createAuditEventFromProvenance(JSON.stringify(ON_BEHALF_OF_PROVENANCE), args.base_version)).toEqual(
+      expected.toJSON()
+    );
   });
   test('createAuditEventFromProvenance works with single agent updating a resource', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
     expected = new expected(AMENDING_AUDIT);
-    expect(createAuditEventFromProvenance(JSON.stringify(AMENDING_PROVENANCE), args)).toEqual(expected.toJSON());
+    expect(createAuditEventFromProvenance(JSON.stringify(AMENDING_PROVENANCE), args.base_version)).toEqual(
+      expected.toJSON()
+    );
   });
 });

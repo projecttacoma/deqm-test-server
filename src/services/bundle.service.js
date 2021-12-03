@@ -4,6 +4,8 @@ const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhi
 const { v4: uuidv4 } = require('uuid');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
+const { createResource, pushToResource } = require('../util/mongo.controller');
+const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
 
@@ -46,6 +48,41 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 };
 
 /**
+ * Handles transaction bundles used for submit data.
+ * Creates an audit event and uploads the transaction bundles.
+ * @param {Array} transactionBundles - an array of transactionBundles to handle
+ * @param {Object} req - an object containing the request body
+ * @returns array of transaction-response bundle
+ */
+async function handleSubmitDataBundles(transactionBundles, req) {
+  let auditID;
+  const { base_version: baseVersion } = req.params;
+  if (req.headers['x-provenance']) {
+    checkProvenanceHeader(req.headers);
+    const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], baseVersion);
+    auditID = (await createResource(auditEvent, 'AuditEvent')).id;
+  }
+
+  // upload transaction bundles and add resources to auditevent from those successfully uploaded
+  return transactionBundles.map(async tb => {
+    // Check upload succeeds
+    req.body = tb.toJSON();
+    const bundleResponse = await uploadTransactionBundle(req, req.res);
+
+    if (auditID) {
+      // save resources to the AuditEvent
+      const entities = bundleResponse.entry.map(entry => {
+        return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
+      });
+      // use $each to push multiple
+      await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
+    }
+
+    return bundleResponse;
+  });
+}
+
+/**
  * Supports Bundle upload to the server using transaction
  * @param {*} req - an object containing the request body
  * @param {*} res - an object containing the response
@@ -55,6 +92,7 @@ async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
+  // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {
       statusCode: 400,
@@ -116,4 +154,4 @@ async function uploadTransactionBundle(req, res) {
   return bundle;
 }
 
-module.exports = { uploadTransactionBundle };
+module.exports = { uploadTransactionBundle, handleSubmitDataBundles };
