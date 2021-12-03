@@ -16,7 +16,7 @@ describe('Testing $import with no specified measure bundle', () => {
   beforeEach(async () => {
     await client.connect();
   });
-  test('Returns 202 on Valid Request', async () => {
+  test.skip('Returns 202 on Valid Request', async () => {
     await supertest(server.app)
       .post('/4_0_1/$import')
       .send(validParam)
