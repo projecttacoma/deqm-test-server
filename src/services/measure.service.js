@@ -199,7 +199,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
   const exportURL = retrieveExportURL(parameters);
 
   // After updating to job queue, remove --forceExit in test script in package.json
-  executePingAndPull(clientEntry, exportURL, measureBundle, req);
+  executePingAndPull(clientEntry, exportURL, req, measureBundle);
   res.status(202);
   res.status = () => res;
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);

@@ -14,7 +14,6 @@ const logger = loggers.get('default');
  * Executes an import of all the resources on the passed in server.
  * @param {Object} req The request object passed in by the client
  * @param {Object} res The response object returned to the client by the server
- * @returns void
  */
 async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
@@ -40,7 +39,8 @@ async function bulkImport(req, res) {
  * @param {*} measureBundle The measure bundle for which to retrieve data requirements
  * @param {*} req The request object passed in by the user
  */
-const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) => {
+
+const executePingAndPull = async (clientEntryId, exportUrl, req, measureBundle) => {
   try {
     const transactionBundles = await BulkImportWrappers.executeBulkImport(
       measureBundle,

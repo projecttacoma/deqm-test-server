@@ -161,7 +161,9 @@ Check out the [Patient-everything operation spec](https://www.hl7.org/fhir/opera
 
 The server contains functionality for the FHIR Bulk Data Import operation using the [Ping and Pull Approach](https://github.com/smart-on-fhir/bulk-import/blob/master/import-pnp.md).
 
-To implement the bulk data import operation, first POST a valid transaction bundle. Then, POST a valid FHIR parameters object to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data` with the `"prefer": "respond-async"` header populated. This will kick off the "ping and pull" bulk import.
+To implement a bulk data import operation of all the resources on a FHIR Bulk Data Export server, POST a valid FHIR parameters object to `http://localhost:3000/$import`. Use the parameter format below to specify a bulk export server.
+
+To implement the bulk data import operation from the data requirements for a specific measure, first POST a valid transaction bundle. Then, POST a valid FHIR parameters object to `http://localhost:3000/4_0_1/Measure/$submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$submit-data` with the `"prefer": "respond-async"` header populated. This will kick off the "ping and pull" bulk import.
 
 For the bulk data import operation to be successful, the user must specify an export URL to a FHIR Bulk Data Export server in the request body of the FHIR parameters object. For example, in the `parameter` array of the FHIR parameters object, the user can include
 
@@ -173,6 +175,8 @@ For the bulk data import operation to be successful, the user must specify an ex
 ```
 
 with a valid kickoff endpoint URL for the `valueString`.
+
+The user can check the status of an $import or async $submit-data request by copying the content-location header in the response, and sending a GET request to `http://localhost:3000/<content-location-header>`.
 
 ## License
 
