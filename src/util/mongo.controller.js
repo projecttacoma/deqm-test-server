@@ -64,9 +64,9 @@ const updateResource = async (id, data, resourceType) => {
 
 /**
  * searches for a document and updates it by pushing to existing if found, creates it if not
- * @param {*} id id of resource to be updated
- * @param {*} data the new data to push in the document
- * @param {*} resourceType the collection the document is in
+ * @param {string} id id of resource to be updated
+ * @param {Object} data the new data to push in the document
+ * @param {string} resourceType the collection the document is in
  * @returns the id of the updated/created document
  */
 const pushToResource = async (id, data, resourceType) => {

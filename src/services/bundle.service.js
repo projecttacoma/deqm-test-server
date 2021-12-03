@@ -50,12 +50,12 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 /**
  * Handles transaction bundles used for submit data.
  * Creates an audit event and uploads the transaction bundles.
- * @param {*} transactionBundles - an array of transactionBundles to handle
- * @param {*} req - an object containing the request body
+ * @param {Array} transactionBundles - an array of transactionBundles to handle
+ * @param {Object} req - an object containing the request body
  * @returns array of transaction-response bundle
  */
 async function handleSubmitDataBundles(transactionBundles, req) {
-  var auditID;
+  let auditID;
   const { base_version: baseVersion } = req.params;
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
