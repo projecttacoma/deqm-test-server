@@ -63,7 +63,8 @@ const updateResource = async (id, data, resourceType) => {
 };
 
 /**
- * searches for a document and updates it by pushing to existing if found, creates it if not
+ * searches for a document and updates it by pushing to existing
+ * should not be called for document that doesn't exist or for data that doesn't already exist
  * @param {string} id id of resource to be updated
  * @param {Object} data the new data to push in the document
  * @param {string} resourceType the collection the document is in
@@ -71,18 +72,7 @@ const updateResource = async (id, data, resourceType) => {
  */
 const pushToResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
-
-  const results = await collection.findOneAndUpdate({ id: id }, { $push: data });
-
-  // If the document cannot be created with the passed id, Mongo will throw an error
-  // before here, so should be ok to just return the passed id
-  if (results.value === null) {
-    // null value indicates a newly created document
-    return { id: id, created: true };
-  }
-
-  // value being present indicates an update, so set created flag to false
-  return { id: results.value.id, created: false };
+  await collection.findOneAndUpdate({ id: id }, { $push: data });
 };
 
 /**
