@@ -43,14 +43,15 @@ async function bulkImport(req, res) {
 const executePingAndPull = async (clientEntryId, exportUrl, req, measureBundle) => {
   try {
     const transactionBundles = await BulkImportWrappers.executeBulkImport(
-      measureBundle,
       exportUrl,
-      clientEntryId
+      clientEntryId,
+      measureBundle
     ).catch(async e => {
       await failBulkImportRequest(clientEntryId, e);
     });
-    const pendingTransactionBundles = handleSubmitDataBundles(transactionBundles, req);
+    const pendingTransactionBundles = await handleSubmitDataBundles(transactionBundles, req);
     await Promise.all(pendingTransactionBundles);
+
     await completeBulkImportRequest(clientEntryId);
   } catch (e) {
     await failBulkImportRequest(clientEntryId, e);
