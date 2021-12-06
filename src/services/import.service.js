@@ -3,7 +3,7 @@ const {
   failBulkImportRequest,
   completeBulkImportRequest,
   addPendingBulkImportRequest
-} = require('../util/mongo.controller');
+} = require('../database/dbOperations');
 const { retrieveExportURL } = require('../util/measureOperationsUtils');
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const { handleSubmitDataBundles } = require('./bundle.service');

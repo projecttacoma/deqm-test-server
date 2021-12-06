@@ -1,5 +1,5 @@
 const { Server } = require('@projecttacoma/node-fhir-server-core');
-const configBulkImport = require('../services/import.controller');
+const configBulkImport = require('../controllers/import.controller');
 const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 

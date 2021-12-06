@@ -1,4 +1,4 @@
-const service = require('./import.service');
+const service = require('../services/import.service');
 
 /**
  * @name exports

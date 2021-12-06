@@ -6,7 +6,7 @@ const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
-const testParamResource = require('../fixtures/parametersObjs/paramNoExportResource.json');
+const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 
 const config = buildConfig();
 const server = initialize(config);
