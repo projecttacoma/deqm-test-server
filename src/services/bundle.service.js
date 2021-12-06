@@ -62,10 +62,11 @@ async function handleSubmitDataBundles(transactionBundles, req) {
     const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], baseVersion);
     auditID = (await createResource(auditEvent, 'AuditEvent')).id;
   }
-
+  const tbTemplate = resolveSchema(baseVersion, 'bundle');
   // upload transaction bundles and add resources to auditevent from those successfully uploaded
   return transactionBundles.map(async tb => {
     // Check upload succeeds
+    tb = new tbTemplate(tb);
     req.body = tb.toJSON();
     const bundleResponse = await uploadTransactionBundle(req, req.res);
 
@@ -77,7 +78,6 @@ async function handleSubmitDataBundles(transactionBundles, req) {
       // use $each to push multiple
       await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
     }
-
     return bundleResponse;
   });
 }

@@ -84,7 +84,6 @@ function validateEvalMeasureParams(req) {
  */
 const retrieveExportURL = parameters => {
   const exportURLArray = parameters.filter(param => param.name === 'exportURL');
-
   if (exportURLArray.length === 0) {
     throw new ServerError(null, {
       statusCode: 400,

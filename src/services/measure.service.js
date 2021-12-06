@@ -1,9 +1,10 @@
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
-const { BulkImportWrappers } = require('bulk-data-utilities');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
+const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
+
 const {
   retrieveExportURL,
   validateEvalMeasureParams,
@@ -19,8 +20,6 @@ const {
 const {
   findOneResourceWithQuery,
   addPendingBulkImportRequest,
-  failBulkImportRequest,
-  completeBulkImportRequest,
   findResourcesWithQuery
 } = require('../util/mongo.controller');
 
@@ -149,7 +148,7 @@ const submitData = async (args, { req }) => {
 
   // check if we want to do a bulk import
   if (req.headers['prefer'] === 'respond-async') {
-    return await bulkImport(args, { req });
+    return await bulkImportFromRequirements(args, { req });
   }
 
   const { base_version: baseVersion } = req.params;
@@ -165,14 +164,13 @@ const submitData = async (args, { req }) => {
 };
 
 /**
- * "TO-DO: add bulk import funtionality" (sic)
  * Retrieves measure bundle from the measure ID and
  * maps data requirements into an export request, which is
  * returned to the intiial import client.
  * @param {*} args the args object passed in by the user
  * @param {*} req the request object passed in by the user
  */
-const bulkImport = async (args, { req }) => {
+const bulkImportFromRequirements = async (args, { req }) => {
   logger.info('Measure >>> $bulk-import');
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
@@ -200,38 +198,13 @@ const bulkImport = async (args, { req }) => {
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
 
-  executePingAndPull(clientEntry, exportURL, measureBundle, req);
+  // After updating to job queue, remove --forceExit in test script in package.json
+  executePingAndPull(clientEntry, exportURL, req, measureBundle);
   res.status(202);
   res.status = () => res;
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
 
   return;
-};
-
-/**
- * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
- * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
- * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
- * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
- * @param {*} exportUrl The url of the bulk export fhir server
- * @param {*} measureBundle The measure bundle for which to retrieve data requirements
- * @param {*} req The request object passed in by the user
- */
-const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, req) => {
-  try {
-    const transactionBundles = await BulkImportWrappers.executeBulkImport(
-      measureBundle,
-      exportUrl,
-      clientEntryId
-    ).catch(async e => {
-      await failBulkImportRequest(clientEntryId, e);
-    });
-    const pendingTransactionBundles = handleSubmitDataBundles(transactionBundles, req);
-    await Promise.all(pendingTransactionBundles);
-    await completeBulkImportRequest(clientEntryId);
-  } catch (e) {
-    await failBulkImportRequest(clientEntryId, e);
-  }
 };
 
 /**
