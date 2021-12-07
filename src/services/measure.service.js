@@ -18,13 +18,9 @@ const {
 } = require('../util/bundleUtils');
 const {
   addPendingBulkImportRequest,
-  completeBulkImportRequest,
-  createResource,
-  failBulkImportRequest,
   findOneResourceWithQuery,
   findResourcesWithQuery
 } = require('../database/dbOperations');
-const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
 
