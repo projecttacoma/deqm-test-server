@@ -146,9 +146,9 @@ const checkProvenanceHeader = requestHeaders => {
  * to the ID that the server uses for a resource that was created via POST/PUT
  *
  * will probably need to change for multiple references
- * @param {*} requestHeaders the headers from the request body
- * @param {*} res the response body
- * @param {*} target array of reference objects for provenance header
+ * @param {Object} requestHeaders the headers from the request body
+ * @param {Object} res the response body
+ * @param {Array} target array of reference objects for provenance header
  */
 const populateProvenanceTarget = (requestHeaders, res, target) => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);

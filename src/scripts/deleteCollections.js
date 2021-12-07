@@ -1,5 +1,8 @@
 const mongoUtil = require('../database/connection');
 
+/**
+ * Deletes all collections stored in mongo
+ */
 async function main() {
   // Use connect method to connect to the server
   await mongoUtil.client.connect();

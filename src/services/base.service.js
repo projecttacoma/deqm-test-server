@@ -76,8 +76,8 @@ const qb = new QueryBuilder({
 
 /**
  * creates an object and generates an id for it regardless of the id passed in
- * @param {*} req an object containing the request body
- * @param {*} resourceType string which signifies which collection to add the data to
+ * @param {Object} req an object containing the request body
+ * @param {string} resourceType string which signifies which collection to add the data to
  * @returns the id of the created object
  */
 const baseCreate = async ({ req }, resourceType) => {
@@ -96,8 +96,8 @@ const baseCreate = async ({ req }, resourceType) => {
 
 /**
  * Searches for the object of the requested type with the requested id
- * @param {*} args the args added to the end of the url, contains id of desired resource
- * @param {*} resourceType string which signifies which collection to search for
+ * @param {Object} args the args added to the end of the url, contains id of desired resource
+ * @param {string} resourceType string which signifies which collection to search for
  * the data and which FHIR type to cast the result to
  * @returns the object with the desired id cast to the requested type
  */
@@ -124,10 +124,10 @@ const baseSearchById = async (args, resourceType) => {
 
 /**
  * Searches using query parameters.
- * @param {*} args The args from the request.
- * @param {*} req The Express request object. This is used by the query builder.
- * @param {*} resourceType The resource type we are searching on.
- * @param {*} paramDefs Optional parameter definitions for the specific resource types. Specific
+ * @param {Object} args The args from the request.
+ * @param {Object} req The Express request object. This is used by the query builder.
+ * @param {string} resourceType The resource type we are searching on.
+ * @param {Object} paramDefs Optional parameter definitions for the specific resource types. Specific
  *                      resource services should call this and pass along supported params
  * @returns Search set result bundle
  */
@@ -207,9 +207,9 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 /**
  * updates the document of the specified resource type with the passed in id or creates a new
  * document if no document with passed id is found
- * @param {*} args the args added to the end of the url, contains id of desired resource
- * @param {*} req an object containing the request body
- * @param {*} resourceType string which signifies which collection to add the data to
+ * @param {Object} args the args added to the end of the url, contains id of desired resource
+ * @param {Object} req an object containing the request body
+ * @param {string} resourceType string which signifies which collection to add the data to
  * @returns the id of the updated/created document
  */
 const baseUpdate = async (args, { req }, resourceType) => {
@@ -243,8 +243,8 @@ const baseUpdate = async (args, { req }, resourceType) => {
 
 /**
  * removes the document of the specified type with the specified id from the collection
- * @param {*} args the args added to the end of the url, contains id of desired resource
- * @param {*} resourceType string which signifies which collection to add the data to
+ * @param {Object} args the args added to the end of the url, contains id of desired resource
+ * @param {string} resourceType string which signifies which collection to add the data to
  * @returns an object containing deletedCount: the number of documents deleted
  */
 const baseRemove = async (args, resourceType) => {
@@ -254,7 +254,7 @@ const baseRemove = async (args, resourceType) => {
 
 /**
  * Checks if the content-type header is incorrect and throws and error with guidance if so
- * @param {*} requestHeaders the headers from the request body
+ * @param {Object} requestHeaders the headers from the request body
  */
 const checkContentTypeHeader = requestHeaders => {
   if (

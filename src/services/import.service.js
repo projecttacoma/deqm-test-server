@@ -24,7 +24,6 @@ async function bulkImport(req, res) {
   //When we move to a job queue, remove --forceExist from test script in package.json
   executePingAndPull(clientEntry, exportURL, req);
   res.status(202);
-  res.status = () => res;
   res.setHeader('Content-Location', `${req.params.base_version}/bulkstatus/${clientEntry}`);
 
   return;

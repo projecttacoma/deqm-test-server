@@ -90,7 +90,7 @@ const search = async (args, { req }) => {
  * takes a measureReport and a set of required data with which to calculate the measure and
  * creates new documents for the measureReport and requirements in the appropriate collections.
  *
- * If 'prefer': 'respond-async' header is present, calls bulkImport.
+ * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  * @returns a transaction-response bundle
@@ -200,7 +200,6 @@ const bulkImportFromRequirements = async (args, { req }) => {
   // After updating to job queue, remove --forceExit in test script in package.json
   executePingAndPull(clientEntry, exportURL, req, measureBundle);
   res.status(202);
-  res.status = () => res;
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
 
   return;

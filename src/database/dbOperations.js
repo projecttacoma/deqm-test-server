@@ -89,7 +89,7 @@ const removeResource = async (id, resourceType) => {
 
 /**
  * Run an aggregation query on the database.
- * @param {Object[]} query Mongo aggregation pipeline array.
+ * @param {Array} query Mongo aggregation pipeline array.
  * @param {string} resourceType The resource type (collection) to aggregate on.
  * @returns Array promise of results.
  */

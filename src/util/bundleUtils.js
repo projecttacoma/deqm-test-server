@@ -7,6 +7,13 @@ const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
 
+/**
+ * Converts an array of FHIR resources to a fhir searchset bundle
+ * @param {Array} resources and array of FHIR resources
+ * @param {Object} args the arguments passed in through the client's request
+ * @param {Object} req the request passed in by the client
+ * @returns a FHIR searchset bundle containing the properly formatted resources
+ */
 function mapArrayToSearchSetBundle(resources, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
 
@@ -26,7 +33,7 @@ function mapArrayToSearchSetBundle(resources, args, req) {
 
 /**
  * Transform array of arbitrary resources into collection bundle
- * @param {Array} resources the list of resources to map
+ * @param {Array} resources an array of FHIR resources to map
  * @returns {Object} FHIR collection bundle of all resources
  */
 function mapResourcesToCollectionBundle(resources) {
@@ -105,7 +112,7 @@ async function getMeasureBundleFromId(measureId) {
 /**
  * Takes in a measure resource, finds all dependent library resources and bundles them
  * together with the measure in a collection bundle
- * @param {*} measure a fhir measure resource
+ * @param {Object} measure a fhir measure resource
  * @returns FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
 async function assembleCollectionBundleFromMeasure(measure) {
@@ -195,7 +202,7 @@ async function getAllDependentLibraries(lib) {
  * Wrapper function to get patient data for a given patient id and its data
  * requirements and map the resources to a collection bundle.
  * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements obtained from fqm execution
+ * @param {Array} dataRequirements data requirements array obtained from fqm execution
  * @returns patient bundle as a collection bundle
  */
 async function getPatientDataCollectionBundle(patientId, dataRequirements) {
@@ -220,7 +227,7 @@ async function getPatientDataSearchSetBundle(patientId, args, req) {
 /**
  * Assemble the patient bundle to be used in our operations from fqm execution
  * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements obtained from fqm execution,
+ * @param {Array } dataRequirements data requirements array obtained from fqm execution,
  * used when we are concerned with a specific measure. Otherwise undefined
  * @returns array of resources
  */
