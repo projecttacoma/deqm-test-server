@@ -7,6 +7,6 @@ const service = require('../services/bulkstatus.service.js');
 module.exports.bulkstatus = (req, res, next) => {
   return service
     .checkBulkStatus(req, res)
-    .then(result => res.status(200).json(result))
+    .then(result => res.json(result))
     .catch(err => next(err));
 };
