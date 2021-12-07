@@ -11,7 +11,7 @@ const logger = loggers.get('default');
 
 /**
  * Creates transaction-response Bundle
- * @param {Array} results - ran array of equest result objects
+ * @param {Array} results - an array of equest result objects
  * @param {Object} res - an object containing the response
  * @param {string} type - bundle type
  * @param {boolean} xprovenanceIncluded - X-Provenance header was included and
