@@ -1,23 +1,28 @@
-const { replaceReferences, getPatientDataCollectionBundle, getQueryFromReference } = require('../src/util/bundleUtils');
 const supertest = require('supertest');
-const { buildConfig } = require('../src/util/config');
-const { initialize } = require('../src/server/server');
-const { client } = require('../src/util/mongo');
-const { cleanUpDb } = require('./populateTestData');
+const {
+  replaceReferences,
+  getPatientDataCollectionBundle,
+  getQueryFromReference
+} = require('../../src/util/bundleUtils');
+const { buildConfig } = require('../../src/config/profileConfig');
+const { initialize } = require('../../src/server/server');
+const { client } = require('../../src/database/connection');
+const { cleanUpDb } = require('../populateTestData');
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
   BOTH_REPLACE_REFERENCES_ENTRIES,
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
   EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
-} = require('./bundleUtilFixtures');
+} = require('../fixtures/bundleUtilFixtures');
 const config = buildConfig();
 const server = initialize(config);
-const testBundle = require('./fixtures/testBundle.json');
-const testDataReq = require('./fixtures/testDataReq.json');
-const testNestedBundle = require('./fixtures/testNestedBundle.json');
-const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
+const testBundle = require('../fixtures/fhir-resources/testBundle.json');
+const testNestedBundle = require('../fixtures/fhir-resources/testNestedBundle.json');
+const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const { v4: uuidv4 } = require('uuid');
+
+const DATA_REQ = [{ type: 'Procedure', codeFilter: [] }];
 
 jest.mock('uuid', () => {
   return {
@@ -72,7 +77,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200);
-    const patientBundle = await getPatientDataCollectionBundle('test-patient', testDataReq);
+    const patientBundle = await getPatientDataCollectionBundle('test-patient', DATA_REQ);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
     const reference = procedure.resource.subject;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
@@ -86,7 +91,7 @@ describe('Testing dynamic querying for patient references using compartment defi
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200);
-    const patientBundle = await getPatientDataCollectionBundle('test-patient', testDataReq);
+    const patientBundle = await getPatientDataCollectionBundle('test-patient', DATA_REQ);
     const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
     const reference = procedure.resource.performer.actor;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });

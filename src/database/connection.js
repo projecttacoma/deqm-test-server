@@ -1,6 +1,5 @@
-/* eslint-disable no-undef */
 const { MongoClient } = require('mongodb');
-require('./dbconfig');
+require('../config/envConfig');
 
 // Connection URL
 const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;

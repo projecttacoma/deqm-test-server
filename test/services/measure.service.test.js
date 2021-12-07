@@ -1,24 +1,25 @@
-require('../src/util/dbconfig');
-const testMeasure = require('./fixtures/testMeasure.json');
-const testLibrary = require('./fixtures/testLibrary.json');
-const testPatient = require('./fixtures/testPatient.json');
-const testParam = require('./fixtures/parametersObjs/paramNoExport.json');
-const testParamResource = require('./fixtures/parametersObjs/paramNoExportResource.json');
-const testParamTwoExports = require('./fixtures/parametersObjs/paramTwoExports.json');
-const testParamNoValString = require('./fixtures/parametersObjs/paramNoValueString.json');
-const testParamInvalidResourceType = require('./fixtures/parametersObjs/paramInvalidType.json');
-const testEmptyParam = require('./fixtures/parametersObjs/emptyParam.json');
-const testParamTwoMeasureReports = require('./fixtures/parametersObjs/paramTwoMeasureReports.json');
-const testCareGapsMeasureReport = require('./fixtures/testCareGapsMeasureReport.json');
-const { testSetup, cleanUpDb } = require('./populateTestData');
+require('../../src/config/envConfig');
 const supertest = require('supertest');
-const { buildConfig } = require('../src/util/config');
-const { initialize } = require('../src/server/server');
-const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
+const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
+const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
+const testPatient = require('../fixtures/fhir-resources/testPatient.json');
+const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
+const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
+const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueString.json');
+const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
+const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
+const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
+const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
+const { testSetup, cleanUpDb } = require('../populateTestData');
+const { buildConfig } = require('../../src/config/profileConfig');
+const { initialize } = require('../../src/server/server');
+const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
+const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 
 const config = buildConfig();
 const server = initialize(config);
 const updateMeasure = { id: 'testMeasure', name: 'anUpdate' };
+
 describe('measure.service CRUD operations', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);

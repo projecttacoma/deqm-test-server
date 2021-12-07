@@ -1,4 +1,4 @@
-const mongoUtil = require('../util/mongo');
+const mongoUtil = require('../database/connection');
 
 async function main() {
   // Use connect method to connect to the server

@@ -1,9 +1,10 @@
-const { bulkStatusSetup, cleanUpDb } = require('./populateTestData');
-const { buildConfig } = require('../src/util/config');
-const { initialize } = require('../src/server/server');
+const supertest = require('supertest');
+const { bulkStatusSetup, cleanUpDb } = require('../populateTestData');
+const { buildConfig } = require('../../src/config/profileConfig');
+const { initialize } = require('../../src/server/server');
+
 const config = buildConfig();
 const server = initialize(config);
-const supertest = require('supertest');
 
 describe('checkBulkStatus logic', () => {
   beforeAll(bulkStatusSetup);

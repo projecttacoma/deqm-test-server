@@ -4,7 +4,6 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = requi
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
-
 const {
   retrieveExportURL,
   validateEvalMeasureParams,
@@ -18,10 +17,10 @@ const {
   getQueryFromReference
 } = require('../util/bundleUtils');
 const {
-  findOneResourceWithQuery,
   addPendingBulkImportRequest,
+  findOneResourceWithQuery,
   findResourcesWithQuery
-} = require('../util/mongo.controller');
+} = require('../database/dbOperations');
 
 const logger = loggers.get('default');
 

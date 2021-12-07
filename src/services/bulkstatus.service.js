@@ -1,5 +1,5 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
-const { getBulkImportStatus } = require('../util/mongo.controller');
+const { getBulkImportStatus } = require('../database/dbOperations');
 
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;

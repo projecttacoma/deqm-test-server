@@ -1,10 +1,10 @@
 const path = require('path');
-const axios = require('axios').default;
-const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
+const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { createResource, pushToResource } = require('../util/mongo.controller');
+const { createResource, pushToResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');

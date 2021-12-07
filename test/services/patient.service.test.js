@@ -1,14 +1,14 @@
-require('../src/util/dbconfig');
-const testMeasure = require('./fixtures/testMeasure.json');
-const testLibrary = require('./fixtures/testLibrary.json');
-const testPatient = require('./fixtures/testPatient.json');
-const testPatient2 = require('./fixtures/testPatient2.json');
-const { testSetup, cleanUpDb, createTestResource } = require('./populateTestData');
+require('../../src/config/envConfig');
 const supertest = require('supertest');
-const { buildConfig } = require('../src/util/config');
-const { initialize } = require('../src/server/server');
-const { client } = require('../src/util/mongo');
-const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/testProvenanceUtils');
+const { testSetup, cleanUpDb, createTestResource } = require('../populateTestData');
+const { buildConfig } = require('../../src/config/profileConfig');
+const { initialize } = require('../../src/server/server');
+const { client } = require('../../src/database/connection');
+const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
+const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
+const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
+const testPatient = require('../fixtures/fhir-resources/testPatient.json');
+const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
 
 const config = buildConfig();
 const server = initialize(config);

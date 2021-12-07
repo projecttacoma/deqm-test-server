@@ -1,4 +1,4 @@
-const service = require('./bulkstatus.service.js');
+const service = require('../services/bulkstatus.service.js');
 
 /**
  * @name exports
