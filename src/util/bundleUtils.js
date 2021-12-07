@@ -227,7 +227,7 @@ async function getPatientDataSearchSetBundle(patientId, args, req) {
 /**
  * Assemble the patient bundle to be used in our operations from fqm execution
  * @param {string} patientId patient ID of interest
- * @param {Array } dataRequirements data requirements array obtained from fqm execution,
+ * @param {Array} dataRequirements data requirements array obtained from fqm execution,
  * used when we are concerned with a specific measure. Otherwise undefined
  * @returns array of resources
  */
