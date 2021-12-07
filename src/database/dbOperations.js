@@ -3,8 +3,8 @@ const { db } = require('./connection.js');
 
 /**
  * creates a new document in the specified collection
- * @param {*} data the data of the document to be created
- * @param {*} resourceType type of desired resource, signifies collection resource is stored in
+ * @param {Object} data the data of the document to be created
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
  * @returns an object with the id of the created document
  */
 const createResource = async (data, resourceType) => {
@@ -15,8 +15,8 @@ const createResource = async (data, resourceType) => {
 
 /**
  * searches the database for the desired resource and returns the data
- * @param {*} id id of desired resource
- * @param {*} resourceType type of desired resource, signifies collection resource is stored in
+ * @param {string} id id of desired resource
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
  * @returns the data of the found document
  */
 const findResourceById = async (id, resourceType) => {
@@ -42,9 +42,9 @@ const findResourcesWithQuery = async (query, resourceType) => {
 
 /**
  * searches for a document and updates it if found, creates it if not
- * @param {*} id id of resource to be updated
- * @param {*} data the updated data to add to/edit in the document
- * @param {*} resourceType the collection the document is in
+ * @param {string} id id of resource to be updated
+ * @param {Object} data the updated data to add to/edit in the document
+ * @param {string} resourceType the collection the document is in
  * @returns the id of the updated/created document
  */
 const updateResource = async (id, data, resourceType) => {
@@ -78,8 +78,8 @@ const pushToResource = async (id, data, resourceType) => {
 
 /**
  * searches the database for the desired resource and removes it from the db
- * @param {*} id id of resource to be removed
- * @param {*} resourceType type of desired resource, signifies collection resource is stored in
+ * @param {string} id id of resource to be removed
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
  * @returns an object containing deletedCount: the number of documents deleted
  */
 const removeResource = async (id, resourceType) => {
@@ -89,8 +89,8 @@ const removeResource = async (id, resourceType) => {
 
 /**
  * Run an aggregation query on the database.
- * @param {*[]} query Mongo aggregation pipeline array.
- * @param {*} resourceType The resource type (collection) to aggregate on.
+ * @param {Object[]} query Mongo aggregation pipeline array.
+ * @param {string} resourceType The resource type (collection) to aggregate on.
  * @returns Array promise of results.
  */
 const findResourcesWithAggregation = async (query, resourceType) => {
@@ -120,7 +120,7 @@ const addPendingBulkImportRequest = async () => {
 
 /**
  * Updates the bulk import status entry for a successful import
- * @param {*} clientId The ID for the bulkImportStatus entry
+ * @param {string} clientId The ID for the bulkImportStatus entry
  */
 const completeBulkImportRequest = async clientId => {
   const collection = db.collection('bulkImportStatuses');
@@ -132,7 +132,7 @@ const completeBulkImportRequest = async clientId => {
 
 /**
  * Updates the bulk import status entry for a successful import
- * @param {*} clientId The ID for the bulkImportStatus entry
+ * @param {string} clientId The ID for the bulkImportStatus entry
  */
 const failBulkImportRequest = async (clientId, error) => {
   const collection = db.collection('bulkImportStatuses');

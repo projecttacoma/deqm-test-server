@@ -8,8 +8,8 @@ const logger = loggers.get('default');
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient
  * creates a new patient in the database
- * @param {*} _ unused arg
- * @param {*} data the measure data passed in with the request
+ * @param {undefined} _ unused arg
+ * @param {Object} data the measure data passed in with the request
  * @returns an object with the created measure's id
  */
 const create = async (_, data) => {
@@ -19,7 +19,7 @@ const create = async (_, data) => {
 /**
  * result of sending a GET request to {BASE_URL}/4_0_1/Patient/{id}
  * searches for the patient with the passed in id
- * @param {*} args passed in arguments including the id of the sought after patient
+ * @param {Object} args passed in arguments including the id of the sought after patient
  * @returns
  */
 const searchById = async args => {
@@ -29,8 +29,8 @@ const searchById = async args => {
 /**
  * result of sending a PUT request to {BASE_URL}/4_0_1/Patient/{id}
  * updates the patient with the passed in id using the passed in data
- * @param {*} args passed in arguments including the id of the sought after patient
- * @param {*} data a map of the attributes to change and their new values
+ * @param {Object} args passed in arguments including the id of the sought after patient
+ * @param {Object} data a map of the attributes to change and their new values
  * @returns
  */
 const update = async (args, data) => {
@@ -40,7 +40,7 @@ const update = async (args, data) => {
 /**
  * result of sending a DELETE request to {BASE_URL}/4_0_1/Patient/{id}
  * removes the measure with the passed in id from the database
- * @param {*} args passed in arguments including the id of the sought after patient
+ * @param {Object} args passed in arguments including the id of the sought after patient
  * @returns
  */
 const remove = async args => {
@@ -87,7 +87,7 @@ const patientEverything = async (args, { req }) => {
 /**
  * Checks if unsupported parameters are provided in the http request.
  * If any unsupported parameters are present, a ServerError is thrown.
- * @param {*} req http request object
+ * @param {Object} req http request object
  */
 const validatePatientEverythingParams = req => {
   // These params are not supported. We should throw an error if we receive them

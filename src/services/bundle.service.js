@@ -11,10 +11,10 @@ const logger = loggers.get('default');
 
 /**
  * Creates transaction-response Bundle
- * @param {*} results - request results
- * @param {*} res - an object containing the response
- * @param {*} type - bundle type
- * @param { boolean } xprovenanceIncluded - X-Provenance header was included and
+ * @param {Object[]} results - request results
+ * @param {Object} res - an object containing the response
+ * @param {string} type - bundle type
+ * @param {boolean} xprovenanceIncluded - X-Provenance header was included and
  * should be accounted for
  * @returns transaction-response Bundle and updated txn bundle target (may be empty)
  */
@@ -50,7 +50,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
 /**
  * Handles transaction bundles used for submit data.
  * Creates an audit event and uploads the transaction bundles.
- * @param {Array} transactionBundles - an array of transactionBundles to handle
+ * @param {Object[]} transactionBundles - an array of transactionBundles to handle
  * @param {Object} req - an object containing the request body
  * @returns array of transaction-response bundle
  */
@@ -84,8 +84,8 @@ async function handleSubmitDataBundles(transactionBundles, req) {
 
 /**
  * Supports Bundle upload to the server using transaction
- * @param {*} req - an object containing the request body
- * @param {*} res - an object containing the response
+ * @param {Object} req - an object containing the request body
+ * @param {Object} res - an object containing the response
  * @returns transaction-response bundle
  */
 async function uploadTransactionBundle(req, res) {
