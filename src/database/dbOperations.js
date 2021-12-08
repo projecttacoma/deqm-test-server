@@ -36,9 +36,9 @@ const findOneResourceWithQuery = async (query, resourceType) => {
 };
 
 /**
- * searches the database for all resources based on the mongo query and returns the dat
- * @param {Object} query
- * @param {string} resourceType
+ * searches the database for all resources based on the mongo query and returns the data
+ * @param {Object} query the mongo query to use
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
  * @returns {Array} an array of found objects which match the input query
  */
 const findResourcesWithQuery = async (query, resourceType) => {

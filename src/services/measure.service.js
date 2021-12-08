@@ -311,8 +311,8 @@ const careGaps = async (args, { req }) => {
 
 /**
  * Determines the type of identifier used by the client to identify the measure and returns it
- * @param {Object} req
- * @returns {Object} and object containing the measure identifier with the appropropriate key
+ * @param {Object} req http request object
+ * @returns {Object} an object containing the measure identifier with the appropriate key
  */
 const retrieveSearchTerm = req => {
   const { measureId, measureIdentifier, measureUrl } = req.query;

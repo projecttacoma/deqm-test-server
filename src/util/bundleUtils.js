@@ -145,7 +145,7 @@ async function assembleCollectionBundleFromMeasure(measure) {
 /**
  * Go through the relatedArtifact ValueSets and query for them from the database
  * @param {Object} lib FHIR library to grab ValueSets for
- * @returns {Array} list of ValueSet resources required by the library
+ * @returns {Array} array of ValueSet resources required by the library
  */
 async function getDependentValueSets(lib) {
   if (hasNoDependencies(lib)) {
