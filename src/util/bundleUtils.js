@@ -12,7 +12,7 @@ const patientRefs = require('../compartment-definition/patient-references');
  * @param {Array} resources and array of FHIR resources
  * @param {Object} args the arguments passed in through the client's request
  * @param {Object} req the request passed in by the client
- * @returns a FHIR searchset bundle containing the properly formatted resources
+ * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
 function mapArrayToSearchSetBundle(resources, args, req) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -49,7 +49,7 @@ function mapResourcesToCollectionBundle(resources) {
 /**
  * Utility function for checking if a given string is a canonical URL
  * @param {string} s the string to check
- * @returns true if the string is a url, false otherwise
+ * @returns {boolean} true if the string is a url, false otherwise
  */
 function isCanonicalUrl(s) {
   const urlRegex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
@@ -59,7 +59,7 @@ function isCanonicalUrl(s) {
 /**
  * Utility function for checking if a library has any dependencies
  * @param {Object} lib FHIR Library resource to check dependencies of
- * @returns true if there are any other Library/ValueSet resources that this library depends on, false otherwise
+ * @returns {boolean} true if there are any other Library/ValueSet resources that this library depends on, false otherwise
  */
 function hasNoDependencies(lib) {
   return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
@@ -68,7 +68,7 @@ function hasNoDependencies(lib) {
 /**
  * Assemble a mongo query based on a reference to another resource
  * @param {string} reference either a canonical or resourceType/id reference
- * @returns mongo query to pass in to mongo controller to search for the referenced resource
+ * @returns {Object} mongo query to pass in to mongo controller to search for the referenced resource
  */
 function getQueryFromReference(reference) {
   // References could be canonical or resourceType/id
@@ -88,7 +88,7 @@ function getQueryFromReference(reference) {
 /**
  * Assemble a measure bundle with necessary FHIR Library resources
  * @param {string} measureId id of the measure to assemble bundle for
- * @returns FHIR Bundle of Measure resource and all dependent FHIR Library resources
+ * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
 async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
@@ -113,7 +113,7 @@ async function getMeasureBundleFromId(measureId) {
  * Takes in a measure resource, finds all dependent library resources and bundles them
  * together with the measure in a collection bundle
  * @param {Object} measure a fhir measure resource
- * @returns FHIR Bundle of Measure resource and all dependent FHIR Library resources
+ * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
 async function assembleCollectionBundleFromMeasure(measure) {
   const [mainLibraryRef] = measure.library;
@@ -145,7 +145,7 @@ async function assembleCollectionBundleFromMeasure(measure) {
 /**
  * Go through the relatedArtifact ValueSets and query for them from the database
  * @param {Object} lib FHIR library to grab ValueSets for
- * @returns list of ValueSet resources required by the library
+ * @returns {Array} list of ValueSet resources required by the library
  */
 async function getDependentValueSets(lib) {
   if (hasNoDependencies(lib)) {
@@ -167,7 +167,7 @@ async function getDependentValueSets(lib) {
 /**
  * Iterate through relatedArtifact of library and return list of all dependent libraries used
  * @param {Object} lib FHIR library resources to traverse dependencies from
- * @returns array of all libraries
+ * @returns {Array} array of all libraries
  */
 async function getAllDependentLibraries(lib) {
   // Kick off function with current library and any ValueSets it uses
@@ -203,7 +203,7 @@ async function getAllDependentLibraries(lib) {
  * requirements and map the resources to a collection bundle.
  * @param {string} patientId patient ID of interest
  * @param {Array} dataRequirements data requirements array obtained from fqm execution
- * @returns patient bundle as a collection bundle
+ * @returns {Object} patient bundle as a collection bundle
  */
 async function getPatientDataCollectionBundle(patientId, dataRequirements) {
   const data = await getPatientData(patientId, dataRequirements);
@@ -217,7 +217,7 @@ async function getPatientDataCollectionBundle(patientId, dataRequirements) {
  * @param {string} patientId patient ID of interest
  * @param {Object} args passed in arguments
  * @param {Object} req http request body
- * @returns patient bundle as a searchset bundle
+ * @returns {Object} patient bundle as a searchset bundle
  */
 async function getPatientDataSearchSetBundle(patientId, args, req) {
   const data = await getPatientData(patientId);
@@ -229,7 +229,7 @@ async function getPatientDataSearchSetBundle(patientId, args, req) {
  * @param {string} patientId patient ID of interest
  * @param {Array} dataRequirements data requirements array obtained from fqm execution,
  * used when we are concerned with a specific measure. Otherwise undefined
- * @returns array of resources
+ * @returns {Array} array of resources
  */
 async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
@@ -276,7 +276,7 @@ async function getPatientData(patientId, dataRequirements) {
  * Modify the request type to PUT after forcing the IDs. This will not affect return results, just internal representation
  *
  * @param {Array} entries array of bundle entries
- * @returns new array of entries with replaced references
+ * @returns {Array} new array of entries with replaced references
  */
 function replaceReferences(entries) {
   // Add metadata for old IDs and newly created ones of POST entries

@@ -12,7 +12,7 @@ const IGNORED_REFS = ['where(resolve() is Patient)'];
 /**
  * Parse FHIR model info XML and output a map of resourceType => patient reference attributes
  * @param {string} xml the string content of the model info XML to parse
- * @return object whose keys are resourceTypes and values are arrays of strings to use to reference a patient
+ * @return {Object} object whose keys are resourceTypes and values are arrays of strings to use to reference a patient
  */
 async function parse(xml) {
   const { modelInfo } = await xml2js.parseStringPromise(xml);

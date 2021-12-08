@@ -5,7 +5,7 @@ const { db } = require('./connection.js');
  * creates a new document in the specified collection
  * @param {Object} data the data of the document to be created
  * @param {string} resourceType type of desired resource, signifies collection resource is stored in
- * @returns an object with the id of the created document
+ * @returns {Object} an object with the id of the created document
  */
 const createResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
@@ -17,7 +17,7 @@ const createResource = async (data, resourceType) => {
  * searches the database for the desired resource and returns the data
  * @param {string} id id of desired resource
  * @param {string} resourceType type of desired resource, signifies collection resource is stored in
- * @returns the data of the found document
+ * @returns {Object} the data of the found document
  */
 const findResourceById = async (id, resourceType) => {
   const collection = db.collection(resourceType);
@@ -28,13 +28,19 @@ const findResourceById = async (id, resourceType) => {
  * searches the database for the one resource based on a mongo query and returns the data
  * @param {Object} query the mongo query to use
  * @param {string} resourceType type of desired resource, signifies collection resource is stored in
- * @returns the data of the found document
+ * @returns {Object} the data of the found document
  */
 const findOneResourceWithQuery = async (query, resourceType) => {
   const collection = db.collection(resourceType);
   return collection.findOne(query);
 };
 
+/**
+ * searches the database for all resources based on the mongo query and returns the dat
+ * @param {Object} query
+ * @param {string} resourceType
+ * @returns {Array} an array of found objects which match the input query
+ */
 const findResourcesWithQuery = async (query, resourceType) => {
   const collection = db.collection(resourceType);
   return (await collection.find(query)).toArray();
@@ -45,7 +51,7 @@ const findResourcesWithQuery = async (query, resourceType) => {
  * @param {string} id id of resource to be updated
  * @param {Object} data the updated data to add to/edit in the document
  * @param {string} resourceType the collection the document is in
- * @returns the id of the updated/created document
+ * @returns {string} the id of the updated/created document
  */
 const updateResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
@@ -69,7 +75,7 @@ const updateResource = async (id, data, resourceType) => {
  * @param {string} id id of resource to be updated
  * @param {Object} data the new data to push in the document
  * @param {string} resourceType the collection the document is in
- * @returns the id of the updated/created document
+ * @returns {string} the id of the updated/created document
  */
 const pushToResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
@@ -80,7 +86,7 @@ const pushToResource = async (id, data, resourceType) => {
  * searches the database for the desired resource and removes it from the db
  * @param {string} id id of resource to be removed
  * @param {string} resourceType type of desired resource, signifies collection resource is stored in
- * @returns an object containing deletedCount: the number of documents deleted
+ * @returns {Object} an object containing deletedCount: the number of documents deleted
  */
 const removeResource = async (id, resourceType) => {
   const collection = db.collection(resourceType);
@@ -91,7 +97,7 @@ const removeResource = async (id, resourceType) => {
  * Run an aggregation query on the database.
  * @param {Array} query Mongo aggregation pipeline array.
  * @param {string} resourceType The resource type (collection) to aggregate on.
- * @returns Array promise of results.
+ * @returns {Array} Array promise of results.
  */
 const findResourcesWithAggregation = async (query, resourceType) => {
   const collection = db.collection(resourceType);
@@ -101,7 +107,7 @@ const findResourcesWithAggregation = async (query, resourceType) => {
 /**
  * Called as a result of bulkImport request. Adds a new clientId to db
  * which can be queried to get updates on the status of the bulk import
- * @returns the id of the inserted client
+ * @returns {string} the id of the inserted client
  */
 const addPendingBulkImportRequest = async () => {
   const collection = db.collection('bulkImportStatuses');
@@ -149,7 +155,7 @@ const failBulkImportRequest = async (clientId, error) => {
 /**
  * Wrapper for the findResourceById function that only searches bulkImportStatuses db
  * @param {string} clientId The id signifying the bulk status request
- * @returns The bulkstatus entry for the passed in clientId
+ * @returns {Object} The bulkstatus entry for the passed in clientId
  */
 const getBulkImportStatus = async clientId => {
   const status = await findResourceById(clientId, 'bulkImportStatuses');

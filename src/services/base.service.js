@@ -78,7 +78,7 @@ const qb = new QueryBuilder({
  * creates an object and generates an id for it regardless of the id passed in
  * @param {Object} req an object containing the request body
  * @param {string} resourceType string which signifies which collection to add the data to
- * @returns the id of the created object
+ * @returns {string} the id of the created object
  */
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
@@ -99,7 +99,7 @@ const baseCreate = async ({ req }, resourceType) => {
  * @param {Object} args the args added to the end of the url, contains id of desired resource
  * @param {string} resourceType string which signifies which collection to search for
  * the data and which FHIR type to cast the result to
- * @returns the object with the desired id cast to the requested type
+ * @returns {Object} the object with the desired id cast to the requested type
  */
 const baseSearchById = async (args, resourceType) => {
   logger.info(`${resourceType} >>> read`);
@@ -129,7 +129,7 @@ const baseSearchById = async (args, resourceType) => {
  * @param {string} resourceType The resource type we are searching on.
  * @param {Object} paramDefs Optional parameter definitions for the specific resource types. Specific
  *                      resource services should call this and pass along supported params
- * @returns Search set result bundle
+ * @returns {Object} Search set result bundle
  */
 const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   logger.info(`${resourceType} >>> search`);
@@ -210,7 +210,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
  * @param {Object} args the args added to the end of the url, contains id of desired resource
  * @param {Object} req an object containing the request body
  * @param {string} resourceType string which signifies which collection to add the data to
- * @returns the id of the updated/created document
+ * @returns {string} the id of the updated/created document
  */
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
@@ -245,7 +245,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
  * removes the document of the specified type with the specified id from the collection
  * @param {Object} args the args added to the end of the url, contains id of desired resource
  * @param {string} resourceType string which signifies which collection to add the data to
- * @returns an object containing deletedCount: the number of documents deleted
+ * @returns {Object} an object containing deletedCount: the number of documents deleted
  */
 const baseRemove = async (args, resourceType) => {
   logger.info(`${resourceType} >>> delete`);
@@ -280,7 +280,7 @@ const checkContentTypeHeader = requestHeaders => {
  * Build a basic service module for a given resource type. Supports basic CRUD operations.
  *
  * @param {string} resourceType Name of the resource to make a basic resource for.
- * @returns The resource service module.
+ * @returns {Object} The resource service module.
  */
 const buildServiceModule = resourceType => {
   return {

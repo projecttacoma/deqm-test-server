@@ -29,7 +29,7 @@ const logger = loggers.get('default');
  * creates a new measure in the database
  * @param {undefined} _ unused arg
  * @param {Object} data the measure data passed in with the request
- * @returns an object with the created measure's id
+ * @returns {Object} an object with the created measure's id
  */
 const create = async (_, data) => {
   return baseCreate(data, 'Measure');
@@ -39,7 +39,7 @@ const create = async (_, data) => {
  * result of sending a GET request to {BASE_URL}/4_0_1/Measure/{id}
  * searches for the measure with the passed in id
  * @param {Object} args passed in arguments including the id of the sought after measure
- * @returns
+ * @returns {Object} the FHIR resource with the specified id
  */
 const searchById = async args => {
   return baseSearchById(args, 'Measure');
@@ -50,7 +50,7 @@ const searchById = async args => {
  * updates the measure with the passed in id using the passed in data
  * @param {Object} args passed in arguments including the id of the sought after measure
  * @param {Object} data a map of the attributes to change and their new values
- * @returns
+ * @returns {string} the id of the updated/created resource
  */
 const update = async (args, data) => {
   return baseUpdate(args, data, 'Measure');
@@ -60,7 +60,7 @@ const update = async (args, data) => {
  * result of sending a DELETE request to {BASE_URL}/4_0_1/Measure/{id}
  * removes the measure with the passed in id from the database
  * @param {Object} args passed in arguments including the id of the sought after measure
- * @returns
+ * @returns {Object} an object containing deletedCount: the number of documents deleted
  */
 const remove = async args => {
   return baseRemove(args, 'Measure');
@@ -79,7 +79,7 @@ const SEARCH_PARAM_DEFS = {
  * queries for all measures matching the criteria, only name and version for now
  * @param {Object} args passed in arguments including the search parameters for the Measure
  * @param {Object} req http request object
- * @returns
+ * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
   logger.info('Measure >>> search');
@@ -93,7 +93,7 @@ const search = async (args, { req }) => {
  * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
- * @returns a transaction-response bundle
+ * @returns {Object} a transaction-response bundle
  */
 const submitData = async (args, { req }) => {
   logger.info('Measure >>> $submit-data');
@@ -208,7 +208,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
 /**
  * Get all data requirements for a given measure as a FHIR Library
  * @param {Object} args the args object passed in by the user, includes measure id
- * @returns FHIR Library with all data requirements
+ * @returns {Object} FHIR Library with all data requirements
  */
 const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
@@ -227,7 +227,7 @@ const dataRequirements = async (args, { req }) => {
  * Execute the measure for a given Patient
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns FHIR MeasureReport with population results
+ * @returns {Object} FHIR MeasureReport with population results
  */
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
@@ -269,7 +269,7 @@ const evaluateMeasure = async (args, { req }) => {
  * Calculate the gaps in care for a given Patient
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns FHIR MeasureReport with population results
+ * @returns {Object} FHIR MeasureReport with population results
  */
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
@@ -309,6 +309,11 @@ const careGaps = async (args, { req }) => {
   return results;
 };
 
+/**
+ * Determines the type of identifier used by the client to identify the measure and returns it
+ * @param {Object} req
+ * @returns {Object} and object containing the measure identifier with the appropropriate key
+ */
 const retrieveSearchTerm = req => {
   const { measureId, measureIdentifier, measureUrl } = req.query;
 

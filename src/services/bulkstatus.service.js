@@ -6,7 +6,7 @@ const { getBulkImportStatus } = require('../database/dbOperations');
  * formats the information held there to return to the user
  * @param {Object} req The express request object passed in by the user
  * @param {Object} res The express response object to be returned to the user
- * @returns
+ * @returns {Object} an object summarizing the status of the bulk data request
  */
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
