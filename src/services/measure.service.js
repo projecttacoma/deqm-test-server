@@ -87,7 +87,7 @@ const search = async (args, { req }) => {
 };
 
 /**
- * takes a measureReport and a set of required data with which to calculate the measure and
+ * Takes a measureReport and a set of required data as part of the request. Calculates the measure and
  * creates new documents for the measureReport and requirements in the appropriate collections.
  *
  * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
