@@ -9,7 +9,7 @@ const patientRefs = require('../compartment-definition/patient-references');
 
 /**
  * Converts an array of FHIR resources to a fhir searchset bundle
- * @param {Array} resources and array of FHIR resources
+ * @param {Array} resources an array of FHIR resources
  * @param {Object} args the arguments passed in through the client's request
  * @param {Object} req the request passed in by the client
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources

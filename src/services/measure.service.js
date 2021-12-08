@@ -88,7 +88,7 @@ const search = async (args, { req }) => {
 
 /**
  * Takes a measureReport and a set of required data as part of the request. Calculates the measure and
- * creates new documents for the measureReport and requirements in the appropriate collections.
+ * creates new documents for the measureReport and required data in the appropriate collections.
  *
  * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
  * @param {Object} args the args object passed in by the user
@@ -165,7 +165,7 @@ const submitData = async (args, { req }) => {
 /**
  * Retrieves measure bundle from the measure ID and
  * maps data requirements into an export request, which is
- * returned to the intiial import client.
+ * returned to the initial import client.
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  */
