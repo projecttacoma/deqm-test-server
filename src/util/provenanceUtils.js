@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
  * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
  * @param {string} provenance the provenance headers in string form from the request
  * @param {Object} version base_version from parameter
- * @returns A JSON object representing an AuditEvent to be stored in the system
+ * @returns {Object} A JSON object representing an AuditEvent to be stored in the system
  */
 const createAuditEventFromProvenance = (provenance, version) => {
   provenance = JSON.parse(provenance);
@@ -69,7 +69,7 @@ const createAuditEventFromProvenance = (provenance, version) => {
  * In the event of an agent acting on behalf of another agent, this function
  * wraps the reference to the delegating agent properly for storage in an AuditEvent resource
  * @param {Object} reference a fhir reference object to the delegating agent
- * @returns a delegating agent to be added to an AuditEvent
+ * @returns {Object} a delegating agent to be added to an AuditEvent
  */
 const buildDelegator = reference => {
   return {
@@ -146,9 +146,9 @@ const checkProvenanceHeader = requestHeaders => {
  * to the ID that the server uses for a resource that was created via POST/PUT
  *
  * will probably need to change for multiple references
- * @param {*} requestHeaders the headers from the request body
- * @param {*} res the response body
- * @param {*} target array of reference objects for provenance header
+ * @param {Object} requestHeaders the headers from the request body
+ * @param {Object} res the response body
+ * @param {Array} target array of reference objects for provenance header
  */
 const populateProvenanceTarget = (requestHeaders, res, target) => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);

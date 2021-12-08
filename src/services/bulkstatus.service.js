@@ -1,6 +1,13 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
 
+/**
+ * Searches for the bulkStatus entry with the passed in client id and interprets and
+ * formats the information held there to return to the user
+ * @param {Object} req The express request object passed in by the user
+ * @param {Object} res The express response object to be returned to the user
+ * @returns {Object} an object summarizing the status of the bulk data request
+ */
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
 
@@ -25,9 +32,6 @@ async function checkBulkStatus(req, res) {
     //TODO set these responses dynamically?
     res.set('X-Progress', 'Retrieving export files');
     res.set('Retry-After', 120);
-
-    //TODO: replace this once we have asymmetrik fork
-    res.status = () => res;
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');

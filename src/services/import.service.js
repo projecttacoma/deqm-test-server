@@ -24,20 +24,19 @@ async function bulkImport(req, res) {
   //When we move to a job queue, remove --forceExist from test script in package.json
   executePingAndPull(clientEntry, exportURL, req);
   res.status(202);
-  res.status = () => res;
   res.setHeader('Content-Location', `${req.params.base_version}/bulkstatus/${clientEntry}`);
 
   return;
 }
 
-/*
+/**
  * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
  * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
  * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
- * @param {*} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
- * @param {*} exportUrl The url of the bulk export fhir server
- * @param {*} measureBundle The measure bundle for which to retrieve data requirements
- * @param {*} req The request object passed in by the user
+ * @param {string} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
+ * @param {string} exportUrl The url of the bulk export fhir server
+ * @param {Object} measureBundle The measure bundle for which to retrieve data requirements
+ * @param {Object} req The request object passed in by the user
  */
 
 const executePingAndPull = async (clientEntryId, exportUrl, req, measureBundle) => {

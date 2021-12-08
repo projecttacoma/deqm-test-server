@@ -11,7 +11,7 @@ const { getSearchParameters } = require('@asymmetrik/node-fhir-server-core/dist/
 /**
  * Parse Patient compartment definition for search parameter keywords
  * @param {string} compartmentJson the string content of the patient compartment definition json file
- * @return object whose keys are resourceTypes and values are arrays of strings to use to reference a patient
+ * @return {Object} object whose keys are resourceTypes and values are arrays of strings to use to reference a patient
  */
 async function parse(compartmentJson) {
   const compartmentDefinition = await JSON.parse(compartmentJson);

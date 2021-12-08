@@ -13,7 +13,7 @@ const bundleFiles = [];
  * Retrieves EXM bundle files from the connectathon repo using a regular expression.
  * Uses recursion to parse through all available subdirectories.
  * @param {string} directory - directory path to start at
- * @returns array of string paths that represent the bundle files of interest
+ * @returns {Array} array of string paths that represent the bundle files of interest
  */
 const getBundleFiles = directory => {
   const fileNameRegExp = new RegExp(/(^EXM.*.json$)/);

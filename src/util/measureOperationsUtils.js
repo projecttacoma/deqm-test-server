@@ -79,7 +79,7 @@ function validateEvalMeasureParams(req) {
 /**
  * Uses request body parameter to search for the export server URL. Validates that
  * only one URL is present.
- * @param {*} parameters - request body parameter
+ * @param {Object} parameters - request body parameter
  * @returns export server URL string
  */
 const retrieveExportURL = parameters => {
@@ -132,7 +132,7 @@ const retrieveExportURL = parameters => {
 
 /**
  * Checks that all required parameters for care-gaps are present. Throws an error if not.
- * @param {*} req the request passed in by the client
+ * @param {Object} req the request passed in by the client
  * @returns void but throws a detailed error if it finds an issue
  */
 const validateCareGapsParams = req => {
@@ -196,7 +196,7 @@ const validateCareGapsParams = req => {
 
 /**
  * Checks that the parameters passed in for $data-requirements are valid
- * @param {*} req the request passed in by the user
+ * @param {Object} req the request passed in by the user
  * @returns void but throws a detailed error if necessary
  */
 const validateDataRequirementsParams = req => {
@@ -206,9 +206,9 @@ const validateDataRequirementsParams = req => {
 
 /**
  * Dynamic function for checking the presence of required params for all validation functions
- * @param {*} query the query passed in through the client's request
- * @param {*} requiredParams  an array of strings detailing which params are required
- * @param {*} functionName the name of the function we are checking for more detailed error message
+ * @param {Object} query the query passed in through the client's request
+ * @param {Array} requiredParams  an array of strings detailing which params are required
+ * @param {string} functionName the name of the function we are checking for more detailed error message
  * @returns void, but throws a detailed error when necessary
  */
 const checkRequiredParams = ({ query }, requiredParams, functionName) => {

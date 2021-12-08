@@ -8,8 +8,8 @@ const logger = loggers.get('default');
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient
  * creates a new patient in the database
- * @param {*} _ unused arg
- * @param {*} data the measure data passed in with the request
+ * @param {undefined} _ unused arg
+ * @param {Object} data the measure data passed in with the request
  * @returns an object with the created measure's id
  */
 const create = async (_, data) => {
@@ -19,8 +19,8 @@ const create = async (_, data) => {
 /**
  * result of sending a GET request to {BASE_URL}/4_0_1/Patient/{id}
  * searches for the patient with the passed in id
- * @param {*} args passed in arguments including the id of the sought after patient
- * @returns
+ * @param {Object} args passed in arguments including the id of the sought after patient
+ * @returns {Object} the object with the desired id cast to Patient
  */
 const searchById = async args => {
   return baseSearchById(args, 'Patient');
@@ -29,9 +29,9 @@ const searchById = async args => {
 /**
  * result of sending a PUT request to {BASE_URL}/4_0_1/Patient/{id}
  * updates the patient with the passed in id using the passed in data
- * @param {*} args passed in arguments including the id of the sought after patient
- * @param {*} data a map of the attributes to change and their new values
- * @returns
+ * @param {Object} args passed in arguments including the id of the sought after patient
+ * @param {Object} data a map of the attributes to change and their new values
+ * @returns {string} the id of the created/updated patient
  */
 const update = async (args, data) => {
   return baseUpdate(args, data, 'Patient');
@@ -40,8 +40,8 @@ const update = async (args, data) => {
 /**
  * result of sending a DELETE request to {BASE_URL}/4_0_1/Patient/{id}
  * removes the measure with the passed in id from the database
- * @param {*} args passed in arguments including the id of the sought after patient
- * @returns
+ * @param {Object} args passed in arguments including the id of the sought after patient
+ * @returns {Object} an object containing the number of items deleted
  */
 const remove = async args => {
   return baseRemove(args, 'Patient');
@@ -52,7 +52,7 @@ const remove = async args => {
  * queries for all measures matching the criteria, only name and version for now
  * @param {Object} args passed in arguments including the search parameters for the Patient
  * @param {Object} req http request object
- * @returns
+ * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
   logger.info('Patient >>> search');
@@ -65,6 +65,7 @@ const search = async (args, { req }) => {
  * patients in db (if no id is specified)
  * @param {Object} args passed in arguments
  * @param {Object} req http request object
+ * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
 const patientEverything = async (args, { req }) => {
   validatePatientEverythingParams(req);
@@ -87,7 +88,7 @@ const patientEverything = async (args, { req }) => {
 /**
  * Checks if unsupported parameters are provided in the http request.
  * If any unsupported parameters are present, a ServerError is thrown.
- * @param {*} req http request object
+ * @param {Object} req http request object
  */
 const validatePatientEverythingParams = req => {
   // These params are not supported. We should throw an error if we receive them
