@@ -111,7 +111,7 @@ Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not su
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
-Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more infomration.
+Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more information.
 
 #### `$care-gaps`
 
