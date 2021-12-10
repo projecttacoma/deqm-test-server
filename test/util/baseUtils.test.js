@@ -7,4 +7,7 @@ describe('Testing base utility functions', () => {
   test('Throws error for unsupported resource', () => {
     expect(() => checkSupportedResource('INVALID')).toThrow();
   });
+  test('Throws error for undefined resource', () => {
+    expect(() => checkSupportedResource(undefined)).toThrow();
+  });
 });

@@ -218,9 +218,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
-  if (data.resourceType !== undefined) {
-    checkSupportedResource(data.resourceType);
-  }
+  checkSupportedResource(data.resourceType);
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
