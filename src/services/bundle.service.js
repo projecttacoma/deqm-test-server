@@ -71,8 +71,11 @@ async function handleSubmitDataBundles(transactionBundles, req) {
 
     if (auditID) {
       // save resources to the AuditEvent
+
       const entities = bundleResponse.entry
-        .filter(entry => entry.response.status === 200 || entry.response.staus === 201)
+        .filter(entry => {
+          return entry.response.status === '200 OK' || entry.response.status === '201 Created';
+        })
         .map(entry => {
           return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
         });
@@ -137,7 +140,6 @@ async function uploadTransactionBundle(req, res) {
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    console.log('reached');
     return axios[method.toLowerCase()](destinationUrl, entry.resource, {
       headers: entryHeaders
     }).catch(e => {
