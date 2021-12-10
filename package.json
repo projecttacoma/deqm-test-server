@@ -16,7 +16,7 @@
     "db:reset": "npm run db:delete && npm run db:setup",
     "parse-references": "node src/scripts/parseCompartmentDefinition.js",
     "connectathon-upload": "node src/scripts/getConnectathonBundles.js",
-    "test": "jest --runInBand --forceExit",
+    "test": "jest --silent --runInBand --forceExit",
     "test:coverage": "jest --collectCoverage --silent --runInBand",
     "test:watch": "jest --watchAll --runInBand",
     "test:watch:coverage": "jest --watchAll --runInBand --collectCoverage"
