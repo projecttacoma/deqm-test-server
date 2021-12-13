@@ -10,6 +10,7 @@ const {
   findResourcesWithAggregation
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
+const { checkSupportedResource } = require('../util/baseUtils');
 
 const logger = loggers.get('default');
 
@@ -84,6 +85,7 @@ const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
+  checkSupportedResource(data.resourceType);
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
   if (req.headers['x-provenance']) {
@@ -216,7 +218,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
-
+  checkSupportedResource(data.resourceType);
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {

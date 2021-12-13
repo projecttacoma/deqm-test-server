@@ -10,7 +10,7 @@ const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 
 const config = buildConfig();
 const server = initialize(config);
-const updatePatient = { id: 'testPatient', name: 'anUpdate' };
+const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
 
 describe('base.service', () => {
   beforeEach(async () => {

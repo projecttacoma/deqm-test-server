@@ -30,17 +30,16 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   // array of reference objects from each resource
   const bundleProvenanceTarget = [];
   results.forEach(result => {
-    if (xprovenanceIncluded) {
-      bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+    const entry = new Bundle({ response: { status: `${result.status} ${result.statusText}` } });
+    if (result.status === 200 || result.status === 201) {
+      if (xprovenanceIncluded) {
+        bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+      }
+      entry.response.location = result.headers.location;
+    } else {
+      entry.response.outcome = result.data;
     }
-    entries.push(
-      new Bundle({
-        response: {
-          status: `${result.status} ${result.statusText}`,
-          location: result.headers.location
-        }
-      })
-    );
+    entries.push(entry);
   });
 
   bundle.entry = entries;
@@ -72,9 +71,14 @@ async function handleSubmitDataBundles(transactionBundles, req) {
 
     if (auditID) {
       // save resources to the AuditEvent
-      const entities = bundleResponse.entry.map(entry => {
-        return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
-      });
+
+      const entities = bundleResponse.entry
+        .filter(entry => {
+          return entry.response.status === '200 OK' || entry.response.status === '201 Created';
+        })
+        .map(entry => {
+          return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
+        });
       // use $each to push multiple
       await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
     }
@@ -138,6 +142,8 @@ async function uploadTransactionBundle(req, res) {
     const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
     return axios[method.toLowerCase()](destinationUrl, entry.resource, {
       headers: entryHeaders
+    }).catch(e => {
+      return e.response;
     });
   });
   const requestResults = await Promise.all(requestsArray);

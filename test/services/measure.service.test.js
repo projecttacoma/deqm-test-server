@@ -18,7 +18,7 @@ const testParamResource = require('../fixtures/fhir-resources/parameters/paramNo
 
 const config = buildConfig();
 const server = initialize(config);
-const updateMeasure = { id: 'testMeasure', name: 'anUpdate' };
+const updateMeasure = { resourceType: 'Measure', id: 'testMeasure', name: 'anUpdate' };
 
 describe('measure.service CRUD operations', () => {
   beforeAll(async () => {

@@ -12,8 +12,8 @@ const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
 
 const config = buildConfig();
 const server = initialize(config);
-const updatePatient = { id: 'testPatient', name: 'anUpdate' };
-describe('measure.service CRUD operations', () => {
+const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
+describe('patient.service CRUD operations', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
