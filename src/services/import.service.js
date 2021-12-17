@@ -1,5 +1,5 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
-const { retrieveExportURL } = require('../util/measureOperationsUtils');
+const { retrieveExportURL } = require('../util/exportUtils');
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 
 const logger = loggers.get('default');

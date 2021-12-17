@@ -6,12 +6,12 @@ const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
 const importQueue = require('../resources/importQueue');
 const _ = require('lodash');
+const { retrieveExportURL } = require('../util/exportUtils');
 const {
-  retrieveExportURL,
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams
-} = require('../util/measureOperationsUtils');
+} = require('../util/validationUtils');
 const {
   getMeasureBundleFromId,
   getPatientDataCollectionBundle,
@@ -220,7 +220,7 @@ const dataRequirements = async (args, { req }) => {
 
   const id = args.id;
 
-  validateDataRequirementsParams(req);
+  validateDataRequirementsParams(req.query);
 
   const measureBundle = await getMeasureBundleFromId(id);
 
@@ -241,7 +241,7 @@ const evaluateMeasure = async (args, { req }) => {
 
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
-  validateEvalMeasureParams(req);
+  validateEvalMeasureParams(req.query);
 
   if (req.query.reportType === 'population') {
     const patients = await findResourcesWithQuery({}, 'Patient');
@@ -279,7 +279,7 @@ const evaluateMeasure = async (args, { req }) => {
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
 
-  validateCareGapsParams(req);
+  validateCareGapsParams(req.query);
 
   const { periodStart, periodEnd, subject } = req.query;
   const searchTerm = retrieveSearchTerm(req);
