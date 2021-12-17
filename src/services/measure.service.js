@@ -14,10 +14,10 @@ const {
 } = require('../util/validationUtils');
 const {
   getMeasureBundleFromId,
-  getPatientDataCollectionBundle,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
+const { getPatientDataCollectionBundle } = require('../util/patientUtils');
 const {
   addPendingBulkImportRequest,
   findOneResourceWithQuery,

@@ -1,14 +1,5 @@
-const supertest = require('supertest');
-const {
-  replaceReferences,
-  getPatientDataCollectionBundle,
-  getQueryFromReference
-} = require('../../src/util/bundleUtils');
-const { buildConfig } = require('../../src/config/profileConfig');
-const { initialize } = require('../../src/server/server');
-const { client } = require('../../src/database/connection');
-const { cleanUpTest } = require('../populateTestData');
-const queue = require('../../src/resources/importQueue');
+const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
+
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
@@ -16,14 +7,8 @@ const {
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
   EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
 } = require('../fixtures/bundleUtilFixtures');
-const config = buildConfig();
-const server = initialize(config);
-const testBundle = require('../fixtures/fhir-resources/testBundle.json');
-const testNestedBundle = require('../fixtures/fhir-resources/testNestedBundle.json');
-const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
-const { v4: uuidv4 } = require('uuid');
 
-const DATA_REQ = [{ type: 'Procedure', codeFilter: [] }];
+const { v4: uuidv4 } = require('uuid');
 
 jest.mock('uuid', () => {
   return {
@@ -64,40 +49,6 @@ describe('Testing functionality of all functions which run uuidv4', () => {
   afterAll(async () => {
     await queue.close();
   });
-});
-describe('Testing dynamic querying for patient references using compartment definition', () => {
-  beforeAll(async () => {
-    await client.connect();
-  });
-
-  test('Check that patient reference can be found at one level', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/')
-      .send(testBundle)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200);
-    const patientBundle = await getPatientDataCollectionBundle('test-patient', DATA_REQ);
-    const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
-    const reference = procedure.resource.subject;
-    expect(reference).toEqual({ reference: 'Patient/test-patient' });
-  });
-
-  test('Check that patient reference can be found when nested', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/')
-      .send(testNestedBundle)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200);
-    const patientBundle = await getPatientDataCollectionBundle('test-patient', DATA_REQ);
-    const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
-    const reference = procedure.resource.performer.actor;
-    expect(reference).toEqual({ reference: 'Patient/test-patient' });
-  });
-  afterAll(cleanUpTest);
 });
 
 describe('Testing getQueryFromReference', () => {

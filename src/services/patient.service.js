@@ -1,7 +1,8 @@
 const _ = require('lodash');
 const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { getPatientDataSearchSetBundle, getPatientData, mapArrayToSearchSetBundle } = require('../util/bundleUtils');
+const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
+const { getPatientData, getPatientDataSearchSetBundle } = require('../util/patientUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
 const logger = loggers.get('default');
 
@@ -71,7 +72,7 @@ const patientEverything = async (args, { req }) => {
   validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient
-    const patientBundle = await getPatientDataSearchSetBundle(req.params.id, args, req);
+    const patientBundle = await getPatientDataSearchSetBundle(req.params.id, args, req.headers.host);
     return patientBundle;
   } else {
     // return information for all patients
@@ -81,7 +82,7 @@ const patientEverything = async (args, { req }) => {
     });
 
     patientData = await Promise.all(patientData);
-    return mapArrayToSearchSetBundle(_.flattenDeep(patientData), args, req);
+    return mapArrayToSearchSetBundle(_.flattenDeep(patientData), args, req.headers.host);
   }
 };
 

@@ -2,19 +2,16 @@ const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
-const { findResourceById, findOneResourceWithQuery, findResourcesWithQuery } = require('../database/dbOperations');
-const supportedResources = require('../server/supportedResources');
-// lookup from patient compartment-definition
-const patientRefs = require('../compartment-definition/patient-references');
+const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
 
 /**
  * Converts an array of FHIR resources to a fhir searchset bundle
  * @param {Array} resources an array of FHIR resources
  * @param {Object} args the arguments passed in through the client's request
- * @param {Object} req the request passed in by the client
+ * @param {String} host host specified in request headers
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
-function mapArrayToSearchSetBundle(resources, args, req) {
+function mapArrayToSearchSetBundle(resources, args, host) {
   const Bundle = resolveSchema(args.base_version, 'bundle');
 
   return new Bundle({
@@ -24,7 +21,7 @@ function mapArrayToSearchSetBundle(resources, args, req) {
     entry: resources.map(r => {
       const DataType = resolveSchema(args.base_version, r.resourceType);
       return {
-        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${req.headers.host}/${args.base_version}/`),
+        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${host}/${args.base_version}/`),
         resource: new DataType(r)
       };
     })
@@ -199,77 +196,6 @@ async function getAllDependentLibraries(lib) {
 }
 
 /**
- * Wrapper function to get patient data for a given patient id and its data
- * requirements and map the resources to a collection bundle.
- * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements array obtained from fqm execution
- * @returns {Object} patient bundle as a collection bundle
- */
-async function getPatientDataCollectionBundle(patientId, dataRequirements) {
-  const data = await getPatientData(patientId, dataRequirements);
-  return mapResourcesToCollectionBundle(_.flattenDeep(data));
-}
-
-/**
- * Wrapper function to get patient data for a given patient id and map
- * the resources to a searchset bundle (used for Patient/$everything when
- * we are not concerned with a specific measure)
- * @param {string} patientId patient ID of interest
- * @param {Object} args passed in arguments
- * @param {Object} req http request body
- * @returns {Object} patient bundle as a searchset bundle
- */
-async function getPatientDataSearchSetBundle(patientId, args, req) {
-  const data = await getPatientData(patientId);
-  return mapArrayToSearchSetBundle(_.flattenDeep(data), args, req);
-}
-
-/**
- * Assemble the patient bundle to be used in our operations from fqm execution
- * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements array obtained from fqm execution,
- * used when we are concerned with a specific measure. Otherwise undefined
- * @returns {Array} array of resources
- */
-async function getPatientData(patientId, dataRequirements) {
-  const patient = await findResourceById(patientId, 'Patient');
-  if (!patient) {
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: `Patient with id ${patientId} does not exist in the server`
-          }
-        }
-      ]
-    });
-  }
-  let requiredTypes;
-  if (dataRequirements) {
-    requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
-  } else {
-    requiredTypes = supportedResources.filter(type => patientRefs[type]);
-  }
-  const queries = requiredTypes.map(async type => {
-    const allQueries = [];
-    // for each resourceType, go through all keys that can reference patient
-    patientRefs[type].forEach(refKey => {
-      const query = {};
-      query[`${refKey}.reference`] = `Patient/${patientId}`;
-      allQueries.push(query);
-    });
-    return findResourcesWithQuery({ $or: allQueries }, type);
-  });
-  const data = await Promise.all(queries);
-  data.push(patient);
-
-  return data;
-}
-
-/**
  * For entries in a transaction bundle whose IDs will be auto-generated, replace all instances of an existing reference
  * to the old id with a reference to the newly generated one.
  *
@@ -325,9 +251,7 @@ module.exports = {
   mapArrayToSearchSetBundle,
   getMeasureBundleFromId,
   replaceReferences,
-  getPatientDataCollectionBundle,
-  getPatientDataSearchSetBundle,
-  getPatientData,
   assembleCollectionBundleFromMeasure,
-  getQueryFromReference
+  getQueryFromReference,
+  mapResourcesToCollectionBundle
 };
