@@ -5,23 +5,23 @@ const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
 
 /**
- * Converts an array of FHIR resources to a fhir searchset bundle
+ * Converts an array of FHIR resources to a FHIR searchset bundle
  * @param {Array} resources an array of FHIR resources
- * @param {Object} args the arguments passed in through the client's request
- * @param {String} host host specified in request headers
+ * @param {string} base_version base version from args passed in through client request
+ * @param {string} host host specified in request headers
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
-function mapArrayToSearchSetBundle(resources, args, host) {
-  const Bundle = resolveSchema(args.base_version, 'bundle');
+function mapArrayToSearchSetBundle(resources, base_version, host) {
+  const Bundle = resolveSchema(base_version, 'bundle');
 
   return new Bundle({
     type: 'searchset',
     meta: { lastUpdated: new Date().toISOString() },
     total: resources.length,
     entry: resources.map(r => {
-      const DataType = resolveSchema(args.base_version, r.resourceType);
+      const DataType = resolveSchema(base_version, r.resourceType);
       return {
-        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${host}/${args.base_version}/`),
+        fullUrl: new url.URL(`${r.resourceType}/${r.id}`, `http://${host}/${base_version}/`),
         resource: new DataType(r)
       };
     })
@@ -29,7 +29,7 @@ function mapArrayToSearchSetBundle(resources, args, host) {
 }
 
 /**
- * Transform array of arbitrary resources into collection bundle
+ * Transforms array of arbitrary resources into collection bundle
  * @param {Array} resources an array of FHIR resources to map
  * @returns {Object} FHIR collection bundle of all resources
  */

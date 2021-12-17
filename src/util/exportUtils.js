@@ -8,6 +8,16 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
  */
 const retrieveExportURL = parameters => {
   const exportURLArray = parameters.filter(param => param.name === 'exportURL');
+  checkExportURLArray(exportURLArray);
+  const exportURL = exportURLArray[0].valueString;
+  return exportURL;
+};
+
+/**
+ * Checks whether the export URL array contains exactly one exportURL
+ * @param {Array} exportURLArray array of export URLs provided in request
+ */
+const checkExportURLArray = exportURLArray => {
   if (exportURLArray.length === 0) {
     throw new ServerError(null, {
       statusCode: 400,
@@ -36,8 +46,8 @@ const retrieveExportURL = parameters => {
       ]
     });
   }
-  const exportURL = exportURLArray[0].valueString;
-  if (!exportURL) {
+  // if one export URL exists, check that value string exists
+  if (!exportURLArray[0].valueString) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -51,7 +61,6 @@ const retrieveExportURL = parameters => {
       ]
     });
   }
-  return exportURL;
 };
 
 module.exports = { retrieveExportURL };

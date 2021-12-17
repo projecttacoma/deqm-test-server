@@ -72,7 +72,7 @@ const patientEverything = async (args, { req }) => {
   validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient
-    const patientBundle = await getPatientDataSearchSetBundle(req.params.id, args, req.headers.host);
+    const patientBundle = await getPatientDataSearchSetBundle(req.params.id, args.base_version, req.headers.host);
     return patientBundle;
   } else {
     // return information for all patients
@@ -82,7 +82,7 @@ const patientEverything = async (args, { req }) => {
     });
 
     patientData = await Promise.all(patientData);
-    return mapArrayToSearchSetBundle(_.flattenDeep(patientData), args, req.headers.host);
+    return mapArrayToSearchSetBundle(_.flattenDeep(patientData), args.base_version, req.headers.host);
   }
 };
 
