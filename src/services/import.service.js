@@ -9,6 +9,8 @@ const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const { handleSubmitDataBundles } = require('./bundle.service');
 
 const logger = loggers.get('default');
+const _ = require('lodash');
+const importQueue = require('../resources/importQueue');
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -19,10 +21,19 @@ async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest();
-  const parameters = req.body.parameter;
-  const exportURL = retrieveExportURL(parameters);
+  const exportURL = retrieveExportURL(req.body.parameter);
+  const requestInfo = _.pick(req, 'params', 'body', 'headers', 'protocol', 'baseUrl');
+
+  const jobData = {
+    clientEntry,
+    exportURL,
+    requestInfo
+  };
+  await importQueue.createJob(jobData).save();
+
   //When we move to a job queue, remove --forceExist from test script in package.json
-  executePingAndPull(clientEntry, exportURL, req);
+
+  //executePingAndPull(clientEntry, exportURL, req);
   res.status(202);
   res.setHeader('Content-Location', `${req.params.base_version}/bulkstatus/${clientEntry}`);
 
