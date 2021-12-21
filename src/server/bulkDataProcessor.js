@@ -1,3 +1,5 @@
+// Sets up queue which processes the jobs pushed to Redis
+// This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const { BulkImportWrappers } = require('bulk-data-utilities');
 const { failBulkImportRequest, completeBulkImportRequest } = require('../database/dbOperations');
@@ -46,8 +48,6 @@ const executePingAndPull = async (clientEntryId, exportUrl, { headers, baseUrl, 
       tb = new tbTemplate(tb).toJSON();
       return uploadResourcesFromBundle(tb.entry, headers, baseUrl, baseVersion, protocol, false);
     });
-    process.send('reached');
-    //const pendingTransactionBundles = await handleSubmitDataBundles(transactionBundles, req);
     await Promise.all(pendingTransactionBundles);
     await completeBulkImportRequest(clientEntryId);
   } catch (e) {
