@@ -128,7 +128,7 @@ Currently, `topic`, `practitioner`, `organization`, and `program` are not suppor
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/$care-gaps` with the required parameters.
 
-Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html) for more infomration.
+Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html) for more information.
 
 #### `$data-requirements`
 
@@ -141,7 +141,7 @@ Required parameters include:
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
 
-Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more infomration.
+Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more information.
 
 #### `$submit-data`
 
