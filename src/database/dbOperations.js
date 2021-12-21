@@ -133,9 +133,7 @@ const completeBulkImportRequest = async clientId => {
   const update = {
     status: 'Completed'
   };
-  console.log(`updating...${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $set: update });
-  console.log('updated');
 };
 
 /**

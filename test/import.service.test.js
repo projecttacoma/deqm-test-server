@@ -7,7 +7,7 @@ const testParamTwoExports = require('./fixtures/fhir-resources/parameters/paramT
 const testParamNoValString = require('./fixtures/fhir-resources/parameters/paramNoValueString.json');
 const { SINGLE_AGENT_PROVENANCE } = require('./fixtures/provenanceFixtures');
 const { client } = require('../src/database/connection');
-const { cleanUpDb } = require('./populateTestData');
+const { cleanUpTest } = require('./populateTestData');
 
 const config = buildConfig();
 const server = initialize(config);
@@ -62,7 +62,5 @@ describe('Testing $import with no specified measure bundle', () => {
       .set('prefer', 'respond-async')
       .expect(400);
   });
-  afterEach(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });

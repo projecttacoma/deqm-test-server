@@ -3,6 +3,7 @@ const { BulkImportWrappers } = require('bulk-data-utilities');
 const { failBulkImportRequest, completeBulkImportRequest } = require('../database/dbOperations');
 const { uploadResourcesFromBundle } = require('../services/bundle.service');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const mongoUtil = require('../database/connection');
 
 console.log('Bulk Data Processor Connected!');
 const importQueue = new Queue('import', {
@@ -11,10 +12,12 @@ const importQueue = new Queue('import', {
 
 // This handler pulls down the jobs on Redis to handle
 importQueue.process(async job => {
+  await mongoUtil.client.connect();
   // Payload of createJob exists on job.data
   const { clientEntry, exportURL, requestInfo, measureBundle } = job.data;
   // Call the existing export ndjson function that writes the files
   await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
+  await mongoUtil.client.close();
 });
 
 /**
@@ -46,7 +49,6 @@ const executePingAndPull = async (clientEntryId, exportUrl, { headers, baseUrl, 
     process.send('reached');
     //const pendingTransactionBundles = await handleSubmitDataBundles(transactionBundles, req);
     await Promise.all(pendingTransactionBundles);
-    console.log('awaited');
     await completeBulkImportRequest(clientEntryId);
   } catch (e) {
     await failBulkImportRequest(clientEntryId, e);

@@ -1,5 +1,5 @@
 const supertest = require('supertest');
-const { bulkStatusSetup, cleanUpDb } = require('../populateTestData');
+const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 
@@ -58,5 +58,5 @@ describe('checkBulkStatus logic', () => {
         expect(response.body.issue[0].details.text).toEqual('Could not find bulk import request with id: INVALID_ID');
       });
   });
-  afterAll(cleanUpDb);
+  afterAll(cleanUpTest);
 });

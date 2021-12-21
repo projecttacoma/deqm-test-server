@@ -15,10 +15,6 @@ const logger = loggers.get('default');
 
 childProcess.fork('./src/server/bulkDataProcessor.js');
 
-// process.on('SIGINT', () => {
-//   child.kill('SIGINT');
-// });
-
 server.listen(3000, async () => {
   logger.info('Starting the FHIR Server at localhost:3000');
   await mongoUtil.client.connect();

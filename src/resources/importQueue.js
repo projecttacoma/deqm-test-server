@@ -1,11 +1,5 @@
 const Queue = require('bee-queue');
 
-//const { executePingAndPull } = require('../services/import.service');
-
-// const queueOptions = {
-//   removeOnSuccess: true
-// };
-
 // Create a new queue to establish new Redis connection
 const importQueue = new Queue('import', {
   removeOnSuccess: true,
