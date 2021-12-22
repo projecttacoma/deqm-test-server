@@ -13,7 +13,9 @@ const config = buildConfig();
 const server = initialize(config, app);
 const logger = loggers.get('default');
 
-childProcess.fork('./src/server/bulkDataProcessor.js');
+for (let i = 0; i < process.env.IMPORT_PROCESSORS; i++) {
+  childProcess.fork('./src/server/bulkDataProcessor.js');
+}
 
 server.listen(3000, async () => {
   logger.info('Starting the FHIR Server at localhost:3000');

@@ -14,9 +14,10 @@ const importQueue = new Queue('import', {
 
 // This handler pulls down the jobs on Redis to handle
 importQueue.process(async job => {
-  await mongoUtil.client.connect();
   // Payload of createJob exists on job.data
   const { clientEntry, exportURL, requestInfo, measureBundle } = job.data;
+  console.log(`Processing bulk import request: ${clientEntry}`);
+  await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
   await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
   await mongoUtil.client.close();
