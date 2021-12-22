@@ -21,6 +21,7 @@ importQueue.process(async job => {
   // Call the existing export ndjson function that writes the files
   await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
   await mongoUtil.client.close();
+  console.log(`import-worker-${process.pid}: Completed Import Request: ${clientEntry}`);
 });
 
 /**
