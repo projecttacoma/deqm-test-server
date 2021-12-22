@@ -16,7 +16,7 @@ const importQueue = new Queue('import', {
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
   const { clientEntry, exportURL, requestInfo, measureBundle } = job.data;
-  console.log(`Processing bulk import request: ${clientEntry}`);
+  console.log(`Bulk import processor: ${process.pid} processing request: ${clientEntry}`);
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
   await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
