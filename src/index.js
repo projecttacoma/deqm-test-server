@@ -14,7 +14,7 @@ const server = initialize(config, app);
 const logger = loggers.get('default');
 
 for (let i = 0; i < process.env.IMPORT_PROCESSORS; i++) {
-  childProcess.fork('./src/server/bulkDataProcessor.js');
+  childProcess.fork('./src/server/importWorker.js');
 }
 
 server.listen(3000, async () => {
