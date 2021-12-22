@@ -19,9 +19,13 @@ importQueue.process(async job => {
   console.log(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
-  await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
+  const result = await executePingAndPull(clientEntry, exportURL, requestInfo, measureBundle);
+  if (result) {
+    console.log(`import-worker-${process.pid}: Completed Import Request: ${clientEntry}`);
+  } else {
+    console.log(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
+  }
   await mongoUtil.client.close();
-  console.log(`import-worker-${process.pid}: Completed Import Request: ${clientEntry}`);
 });
 
 /**
@@ -52,7 +56,9 @@ const executePingAndPull = async (clientEntryId, exportUrl, { headers, baseUrl, 
     });
     await Promise.all(pendingTransactionBundles);
     await completeBulkImportRequest(clientEntryId);
+    return true;
   } catch (e) {
     await failBulkImportRequest(clientEntryId, e);
+    return false;
   }
 };
