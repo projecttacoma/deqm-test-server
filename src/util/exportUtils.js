@@ -10,7 +10,17 @@ const retrieveExportUrl = parameters => {
   const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
   checkExportUrlArray(exportUrlArray);
   const exportUrl = exportUrlArray[0].valueString;
-  return exportUrl;
+
+  // Retrieve comma-delimited list of type filters from parameters
+  const typesString = parameters
+    .filter(param => param.name === '_type')
+    .map(function (type) {
+      return type.valueString;
+    })
+    .toString();
+
+  const exportUrlWithParams = `${exportUrl}?_type=${typesString}`;
+  return exportUrlWithParams;
 };
 
 /**
