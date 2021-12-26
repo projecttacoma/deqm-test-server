@@ -9,7 +9,7 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const retrieveExportUrl = parameters => {
   const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
   checkExportUrlArray(exportUrlArray);
-  const exportUrl = exportUrlArray[0].valueString;
+  let exportUrl = exportUrlArray[0].valueString;
 
   // Retrieve comma-delimited list of type filters from parameters
   const typesString = parameters
@@ -19,8 +19,11 @@ const retrieveExportUrl = parameters => {
     })
     .toString();
 
-  const exportUrlWithParams = `${exportUrl}?_type=${typesString}`;
-  return exportUrlWithParams;
+  if (typesString) {
+    exportUrl = `${exportUrl}?_type=${typesString}`;
+  }
+
+  return exportUrl;
 };
 
 /**
