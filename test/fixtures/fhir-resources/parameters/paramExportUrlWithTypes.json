@@ -1,0 +1,21 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "exportUrl",
+      "valueString": "http://example.com/$export"
+    },
+    {
+      "name": "_type",
+      "valueString": "Patient"
+    },
+    {
+      "name": "_type",
+      "valueString": "Encounter"
+    },
+    {
+      "name": "_type",
+      "valueString": "Condition"
+    }
+  ]
+}
