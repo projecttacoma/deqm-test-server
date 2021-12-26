@@ -6,19 +6,19 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
  * @param {Object} parameters - request body parameter
  * @returns export server URL string
  */
-const retrieveExportURL = parameters => {
-  const exportURLArray = parameters.filter(param => param.name === 'exportURL');
-  checkExportURLArray(exportURLArray);
-  const exportURL = exportURLArray[0].valueString;
-  return exportURL;
+const retrieveExportUrl = parameters => {
+  const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
+  checkExportUrlArray(exportUrlArray);
+  const exportUrl = exportUrlArray[0].valueString;
+  return exportUrl;
 };
 
 /**
- * Checks whether the export URL array contains exactly one exportURL
- * @param {Array} exportURLArray array of export URLs provided in request
+ * Checks whether the export URL array contains exactly one exportUrl
+ * @param {Array} exportUrlArray array of export URLs provided in request
  */
-const checkExportURLArray = exportURLArray => {
-  if (exportURLArray.length === 0) {
+const checkExportUrlArray = exportUrlArray => {
+  if (exportUrlArray.length === 0) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -26,13 +26,13 @@ const checkExportURLArray = exportURLArray => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `No exportURL parameter was found.`
+            text: `No exportUrl parameter was found.`
           }
         }
       ]
     });
   }
-  if (exportURLArray.length !== 1) {
+  if (exportUrlArray.length !== 1) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -40,14 +40,14 @@ const checkExportURLArray = exportURLArray => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `Expected exactly one export URL. Received: ${exportURLArray.length}`
+            text: `Expected exactly one export URL. Received: ${exportUrlArray.length}`
           }
         }
       ]
     });
   }
   // if one export URL exists, check that value string exists
-  if (!exportURLArray[0].valueString) {
+  if (!exportUrlArray[0].valueString) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -55,7 +55,7 @@ const checkExportURLArray = exportURLArray => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `Expected a valueString for the exportURL, but none was found`
+            text: `Expected a valueString for the exportUrl, but none was found`
           }
         }
       ]
@@ -63,4 +63,4 @@ const checkExportURLArray = exportURLArray => {
   }
 };
 
-module.exports = { retrieveExportURL };
+module.exports = { retrieveExportUrl };

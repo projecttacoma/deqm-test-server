@@ -193,7 +193,7 @@ For the bulk data import operation to be successful, the user must specify an ex
 
 ```bash
 {
-     "name": "exportURL",
+     "name": "exportUrl",
      "valueString": "https://example-export.com"
 }
 ```

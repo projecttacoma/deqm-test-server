@@ -34,7 +34,7 @@ describe('Testing $import with no specified measure bundle', () => {
         expect(response.headers['content-location']).toBeDefined();
       });
   });
-  test('Returns 400 on missing exportURL', async () => {
+  test('Returns 400 on missing exportUrl', async () => {
     await supertest(server.app)
       .post('/4_0_1/$import')
       .send(paramNoExport)
