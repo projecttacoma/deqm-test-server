@@ -10,7 +10,7 @@ const testParamInvalidResourceType = require('../fixtures/fhir-resources/paramet
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
-const { testSetup, cleanUpDb } = require('../populateTestData');
+const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -67,9 +67,7 @@ describe('measure.service CRUD operations', () => {
     await supertest(server.app).delete('/4_0_1/Measure/testMeasure').expect(204);
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });
 
 describe('bulkImport with exportURL', () => {
@@ -106,9 +104,7 @@ describe('bulkImport with exportURL', () => {
       .expect(400);
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });
 
 describe('testing custom measure operation', () => {
@@ -349,7 +345,5 @@ describe('testing custom measure operation', () => {
       });
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });

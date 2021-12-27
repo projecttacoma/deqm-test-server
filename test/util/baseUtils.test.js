@@ -1,4 +1,5 @@
 const { checkSupportedResource } = require('../../src/util/baseUtils');
+const queue = require('../../src/resources/importQueue');
 
 describe('Testing base utility functions', () => {
   test('returns true for supported resource', () => {
@@ -9,5 +10,8 @@ describe('Testing base utility functions', () => {
   });
   test('Throws error for undefined resource', () => {
     expect(() => checkSupportedResource(undefined)).toThrow();
+  });
+  afterAll(async () => {
+    await queue.close();
   });
 });

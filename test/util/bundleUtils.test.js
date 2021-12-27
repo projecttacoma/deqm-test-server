@@ -7,7 +7,8 @@ const {
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { client } = require('../../src/database/connection');
-const { cleanUpDb } = require('../populateTestData');
+const { cleanUpTest } = require('../populateTestData');
+const queue = require('../../src/resources/importQueue');
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
@@ -60,15 +61,15 @@ describe('Testing functionality of all functions which run uuidv4', () => {
       expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT);
     });
   });
+  afterAll(async () => {
+    await queue.close();
+  });
 });
 describe('Testing dynamic querying for patient references using compartment definition', () => {
   beforeAll(async () => {
     await client.connect();
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
   test('Check that patient reference can be found at one level', async () => {
     await supertest(server.app)
       .post('/4_0_1/')
@@ -96,6 +97,7 @@ describe('Testing dynamic querying for patient references using compartment defi
     const reference = procedure.resource.performer.actor;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
   });
+  afterAll(cleanUpTest);
 });
 
 describe('Testing getQueryFromReference', () => {
@@ -110,5 +112,8 @@ describe('Testing getQueryFromReference', () => {
       url: 'http://hl7.org/fhir/StructureDefinition/Patient',
       version: '3.5.0'
     });
+  });
+  afterAll(async () => {
+    await queue.close();
   });
 });

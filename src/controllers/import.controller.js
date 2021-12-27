@@ -7,6 +7,6 @@ const service = require('../services/import.service');
 module.exports.bulkImport = (req, res, next) => {
   return service
     .bulkImport(req, res)
-    .then(result => res.status(200).json(result))
+    .then(result => res.json(result))
     .catch(err => next(err));
 };

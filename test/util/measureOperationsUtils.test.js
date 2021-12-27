@@ -3,6 +3,7 @@ const {
   validateEvalMeasureParams,
   validateCareGapsParams
 } = require('../../src/util/measureOperationsUtils');
+const queue = require('../../src/resources/importQueue');
 
 describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {
@@ -153,4 +154,6 @@ describe('validateCareGapsParams', () => {
     };
     expect(validateCareGapsParams(VALID_REQ)).toBeUndefined();
   });
+
+  afterAll(async () => await queue.close());
 });

@@ -1,6 +1,6 @@
 require('../../src/config/envConfig');
 const supertest = require('supertest');
-const { testSetup, cleanUpDb, createTestResource } = require('../populateTestData');
+const { testSetup, createTestResource, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { client } = require('../../src/database/connection');
@@ -60,9 +60,7 @@ describe('patient.service CRUD operations', () => {
     await supertest(server.app).delete('/4_0_1/Measure/testPatient').expect(204);
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });
 
 describe('testing custom measure operation', () => {
@@ -103,7 +101,5 @@ describe('testing custom measure operation', () => {
       });
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });

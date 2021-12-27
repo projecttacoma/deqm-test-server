@@ -96,6 +96,7 @@ async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
+  const { headers, baseUrl, protocol } = req;
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {
@@ -130,23 +131,15 @@ async function uploadTransactionBundle(req, res) {
     checkProvenanceHeader(req.headers);
     xprovenanceIncluded = true;
   }
-  const { protocol, baseUrl } = req;
-  const scrubbedEntries = replaceReferences(entries);
-  // define headers to be included in axios call
-  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
-  if (xprovenanceIncluded) {
-    entryHeaders['X-Provenance'] = req.headers['x-provenance'];
-  }
-  const requestsArray = scrubbedEntries.map(async entry => {
-    const { url, method } = entry.request;
-    const destinationUrl = `${protocol}://${path.join(req.headers.host, baseUrl, baseVersion, url)}`;
-    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-      headers: entryHeaders
-    }).catch(e => {
-      return e.response;
-    });
-  });
-  const requestResults = await Promise.all(requestsArray);
+  const requestResults = await uploadResourcesFromBundle(
+    entries,
+    headers,
+    baseUrl,
+    baseVersion,
+    protocol,
+    xprovenanceIncluded
+  );
+
   const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
     requestResults,
     res,
@@ -155,9 +148,29 @@ async function uploadTransactionBundle(req, res) {
     xprovenanceIncluded
   );
   if (xprovenanceIncluded && bundleProvenanceTarget.length > 0) {
-    populateProvenanceTarget(req.headers, res, bundleProvenanceTarget);
+    populateProvenanceTarget(headers, res, bundleProvenanceTarget);
   }
   return bundle;
 }
 
-module.exports = { uploadTransactionBundle, handleSubmitDataBundles };
+async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion, protocol, xprovenanceIncluded) {
+  const scrubbedEntries = replaceReferences(entries);
+  // define headers to be included in axios call
+  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
+  if (xprovenanceIncluded) {
+    entryHeaders['X-Provenance'] = headers['x-provenance'];
+  }
+  const requestsArray = scrubbedEntries.map(async entry => {
+    const { url, method } = entry.request;
+    const destinationUrl = `${protocol}://${path.join(headers.host, baseUrl, baseVersion, url)}`;
+    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
+      headers: entryHeaders
+    }).catch(e => {
+      return e.response;
+    });
+  });
+  const requestResults = await Promise.all(requestsArray);
+  return requestResults;
+}
+
+module.exports = { uploadTransactionBundle, handleSubmitDataBundles, uploadResourcesFromBundle };

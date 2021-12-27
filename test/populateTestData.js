@@ -1,5 +1,7 @@
 const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
+const queue = require('../src/resources/importQueue');
+
 const createTestResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
   await collection.insertOne(data);
@@ -9,6 +11,11 @@ const createTestResource = async (data, resourceType) => {
 async function cleanUpDb() {
   await db.dropDatabase();
   await client.close();
+}
+
+async function cleanUpTest() {
+  await cleanUpDb();
+  await queue.close();
 }
 
 const testSetup = async (testMeasure, testPatient, testLibrary) => {
@@ -25,4 +32,4 @@ const bulkStatusSetup = async () => {
   });
   await Promise.all(promises);
 };
-module.exports = { testSetup, cleanUpDb, bulkStatusSetup, createTestResource };
+module.exports = { testSetup, cleanUpTest, bulkStatusSetup, createTestResource };

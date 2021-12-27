@@ -4,6 +4,8 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = requi
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
+const importQueue = require('../resources/importQueue');
+const _ = require('lodash');
 const {
   retrieveExportURL,
   validateEvalMeasureParams,
@@ -193,16 +195,19 @@ const bulkImportFromRequirements = async (args, { req }) => {
     measureId = measureResource.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
+  const requestInfo = _.pick(req, 'params', 'body', 'headers', 'protocol', 'baseUrl');
 
   // retrieve data requirements
   const exportURL = retrieveExportURL(parameters);
-
-  // After updating to job queue, remove --forceExit in test script in package.json
-  executePingAndPull(clientEntry, exportURL, req, measureBundle);
+  const jobData = {
+    clientEntry,
+    exportURL,
+    requestInfo,
+    measureBundle
+  };
+  await importQueue.createJob(jobData).save();
   res.status(202);
   res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
-
-  return;
 };
 
 /**

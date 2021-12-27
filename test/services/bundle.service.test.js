@@ -1,7 +1,7 @@
 const supertest = require('supertest');
 const { uploadTransactionBundle } = require('../../src/services/bundle.service');
 const { client } = require('../../src/database/connection');
-const { cleanUpDb } = require('../populateTestData');
+const { cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -58,9 +58,7 @@ describe('Test transaction bundle upload', () => {
       });
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });
 
 describe('Test handle submit data bundle', () => {
@@ -96,7 +94,5 @@ describe('Test handle submit data bundle', () => {
       });
   });
 
-  afterAll(async () => {
-    await cleanUpDb();
-  });
+  afterAll(cleanUpTest);
 });

@@ -3,7 +3,7 @@ const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
-const { testSetup, cleanUpDb } = require('../populateTestData');
+const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -218,7 +218,5 @@ describe('base.service', () => {
     });
   });
 
-  afterEach(async () => {
-    await cleanUpDb();
-  });
+  afterEach(cleanUpTest);
 });

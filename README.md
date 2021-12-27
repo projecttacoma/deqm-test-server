@@ -8,6 +8,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
   - [Local Installation](#local-installation)
   - [Testing](#testing)
   - [MongoDB](#mongodb)
+  - [Redis Installation](#redis-installation)
   - [Docker](#docker)
 
 - [Usage](#usage)
@@ -28,6 +29,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 - [MongoDB >= 5.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
 - [Docker](https://docs.docker.com/get-docker/)
+- [Redis](https://redis.com/break-the-data-matrix/)
 
 ### Local Installation
 
@@ -56,6 +58,28 @@ npm run test
 This test server makes use of [MongoDB](https://www.mongodb.com), a cross-platform document-oriented database program.
 
 Follow the [MongoDB Community Edition installation guide](https://docs.mongodb.com/manual/installation/) for your platform, and follow the commands for running MongoDB on your machine.
+
+### Redis Installation
+
+This server uses [Redis](https://redis.com/break-the-data-matrix/) in order to use the [bee queue](https://github.com/bee-queue/bee-queue) Node.js queue library. To install with Homebrew, run the following command:
+
+```bash
+brew install redis
+```
+
+To launch Redis, run:
+
+```bash
+brew services start redis
+```
+
+To verify the Redis server is running, ping it with:
+
+```bash
+redis-cli ping
+```
+
+You should receive the output `PONG`.
 
 ### Docker
 
