@@ -40,13 +40,7 @@ importQueue.process(async job => {
 
 const executePingAndPull = async (clientEntryId, exportUrl, { headers, baseUrl, params, protocol }, measureBundle) => {
   try {
-    const transactionBundles = await BulkImportWrappers.executeBulkImport(
-      exportUrl,
-      clientEntryId,
-      measureBundle
-    ).catch(async e => {
-      await failBulkImportRequest(clientEntryId, e);
-    });
+    const transactionBundles = await BulkImportWrappers.executeBulkImport(exportUrl, clientEntryId, measureBundle);
     const baseVersion = params.base_version;
     const pendingTransactionBundles = transactionBundles.map(async tb => {
       const tbTemplate = resolveSchema(baseVersion, 'bundle');
