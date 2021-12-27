@@ -7,18 +7,8 @@ const { findResourceById, findResourcesWithQuery } = require('../database/dbOper
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 
 /**
-<<<<<<< HEAD
-<<<<<<< HEAD
  * Wrapper function to get patient data and data
  * requirements for given patient id and map the resources to a collection bundle.
-=======
- * Wrapper function to get patient data for a given patient id and its data
- * requirements and map the resources to a collection bundle.
->>>>>>> 75d7893 (created patientUtils from bundleUtils)
-=======
- * Wrapper function to get patient data and data
- * requirements for given patient id and map the resources to a collection bundle.
->>>>>>> a878b42 (misc changes)
  * @param {string} patientId patient ID of interest
  * @param {Array} dataRequirements data requirements array obtained from fqm execution
  * @returns {Object} patient bundle as a collection bundle
