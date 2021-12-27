@@ -70,7 +70,7 @@ describe('measure.service CRUD operations', () => {
   afterAll(cleanUpTest);
 });
 
-describe('bulkImport with exportURL', () => {
+describe('bulkImport with exportUrl', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });

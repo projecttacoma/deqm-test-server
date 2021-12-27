@@ -23,7 +23,7 @@ async function getPatientDataCollectionBundle(patientId, dataRequirements) {
  * the resources to a searchset bundle (used for Patient/$everything when
  * we are not concerned with a specific measure)
  * @param {string} patientId patient ID of interest
- * @param {string} base_version base version froma rgs passed in through client request
+ * @param {string} base_version base version from args passed in through client request
  * @param {string} host host specified in request headers
  * @returns {Object} patient bundle as a searchset bundle
  */
