@@ -6,7 +6,7 @@ const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
 const importQueue = require('../resources/importQueue');
 const _ = require('lodash');
-const { retrieveExportURL } = require('../util/exportUtils');
+const { retrieveExportUrl } = require('../util/exportUtils');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
@@ -198,7 +198,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
   const requestInfo = _.pick(req, 'params', 'body', 'headers', 'protocol', 'baseUrl');
 
   // retrieve data requirements
-  const exportURL = retrieveExportURL(parameters);
+  const exportURL = retrieveExportUrl(parameters);
   const jobData = {
     clientEntry,
     exportURL,

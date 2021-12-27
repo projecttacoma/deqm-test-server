@@ -1,9 +1,5 @@
 const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
-<<<<<<< HEAD
 const queue = require('../../src/resources/importQueue');
-=======
-
->>>>>>> 75d7893 (created patientUtils from bundleUtils)
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
@@ -50,12 +46,9 @@ describe('Testing functionality of all functions which run uuidv4', () => {
       expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT);
     });
   });
-<<<<<<< HEAD
   afterAll(async () => {
     await queue.close();
   });
-=======
->>>>>>> 75d7893 (created patientUtils from bundleUtils)
 });
 
 describe('Testing getQueryFromReference', () => {
