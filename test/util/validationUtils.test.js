@@ -2,7 +2,7 @@ const {
   checkRequiredParams,
   validateEvalMeasureParams,
   validateCareGapsParams
-} = require('../../src/util/measureOperationsUtils');
+} = require('../../src/util/validationUtils');
 const queue = require('../../src/resources/importQueue');
 
 describe('checkRequiredParams', () => {
@@ -10,7 +10,7 @@ describe('checkRequiredParams', () => {
     const req = { query: {} };
     const REQUIRED_PARAMS = ['test', 'test2'];
     try {
-      checkRequiredParams(req, REQUIRED_PARAMS, 'test');
+      checkRequiredParams(req.query, REQUIRED_PARAMS, 'test');
       throw new Error('checkRequiredParams failed to fail');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
@@ -21,7 +21,7 @@ describe('checkRequiredParams', () => {
   test('check checkRequiredParams succeeds on valid params', () => {
     const req = { query: { test: true, test2: true } };
     const REQUIRED_PARAMS = ['test', 'test2'];
-    checkRequiredParams(req, REQUIRED_PARAMS, 'test');
+    checkRequiredParams(req.query, REQUIRED_PARAMS, 'test');
   });
 });
 
@@ -31,9 +31,9 @@ describe('validateEvalMeasureParams', () => {
       query: { practitioner: 'testPractitioner', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
-      validateEvalMeasureParams(UNSUPPORTEDREQ);
+      validateEvalMeasureParams(UNSUPPORTEDREQ.query);
     } catch (e) {
-      expect(e.statusCode).toEqual(400);
+      expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
         `The following parameters were included and are not supported for $evaluate-measure: practitioner`
       );
@@ -45,7 +45,7 @@ describe('validateEvalMeasureParams', () => {
       query: { reportType: 'subject-list', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
-      validateEvalMeasureParams(UNSUPPORTEDREQ);
+      validateEvalMeasureParams(UNSUPPORTEDREQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(`The subject-list reportType is not currently supported by the server.`);
@@ -57,7 +57,7 @@ describe('validateEvalMeasureParams', () => {
       query: { reportType: 'invalid', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
-      validateEvalMeasureParams(INVALIDREQ);
+      validateEvalMeasureParams(INVALIDREQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(`reportType invalid is not supported for $evaluate-measure`);
@@ -69,7 +69,7 @@ describe('validateEvalMeasureParams', () => {
       query: { reportType: 'individual', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
-      validateEvalMeasureParams(MISSING_SUBJECT_REQ);
+      validateEvalMeasureParams(MISSING_SUBJECT_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
@@ -80,7 +80,7 @@ describe('validateEvalMeasureParams', () => {
 
   test('validateEvalMeasureParams does not throw error with correct params', async () => {
     const VALID_REQ = { query: { reportType: 'population', periodStart: '2019-01-01', periodEnd: '2019-12-31' } };
-    expect(validateEvalMeasureParams(VALID_REQ)).toBeUndefined();
+    expect(validateEvalMeasureParams(VALID_REQ.query)).toBeUndefined();
   });
 });
 
@@ -96,11 +96,11 @@ describe('validateCareGapsParams', () => {
       }
     };
     try {
-      validateCareGapsParams(UNSUPPORTEDREQ);
+      validateCareGapsParams(UNSUPPORTEDREQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        `$care-gaps functionality has not yet been implemented for requests with parameters: practitioner`
+        `The following parameters were included and are not supported for $care-gaps: practitioner`
       );
     }
   });
@@ -115,7 +115,7 @@ describe('validateCareGapsParams', () => {
       }
     };
     try {
-      validateCareGapsParams(MISSING_MEASURE_REQ);
+      validateCareGapsParams(MISSING_MEASURE_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
@@ -135,7 +135,7 @@ describe('validateCareGapsParams', () => {
       }
     };
     try {
-      validateCareGapsParams(UNSUPPORTED_STATUS_REQ);
+      validateCareGapsParams(UNSUPPORTED_STATUS_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(`Currently only supporting $care-gaps requests with status='open'`);
@@ -152,7 +152,7 @@ describe('validateCareGapsParams', () => {
         measureId: 'testID'
       }
     };
-    expect(validateCareGapsParams(VALID_REQ)).toBeUndefined();
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
   });
 
   afterAll(async () => await queue.close());
