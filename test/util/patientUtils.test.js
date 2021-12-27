@@ -3,7 +3,7 @@ const { client } = require('../../src/database/connection');
 const { getPatientDataCollectionBundle } = require('../../src/util/patientUtils');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
-const { cleanUpDb } = require('../populateTestData');
+const { cleanUpTest } = require('../populateTestData');
 const config = buildConfig();
 const server = initialize(config);
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
@@ -16,7 +16,7 @@ describe('Testing dynamic querying for patient references using compartment defi
   });
 
   afterAll(async () => {
-    await cleanUpDb();
+    await cleanUpTest();
   });
   test('Check that patient reference can be found at one level', async () => {
     await supertest(server.app)

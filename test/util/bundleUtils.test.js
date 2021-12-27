@@ -1,5 +1,5 @@
 const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
-
+const queue = require('../../src/resources/importQueue');
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,

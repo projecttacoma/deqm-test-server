@@ -2,7 +2,7 @@ const {
   checkRequiredParams,
   validateEvalMeasureParams,
   validateCareGapsParams
-} = require('../../src/util/measureOperationsUtils');
+} = require('../../src/util/validationUtils');
 const queue = require('../../src/resources/importQueue');
 
 describe('checkRequiredParams', () => {
