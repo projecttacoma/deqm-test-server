@@ -1,5 +1,11 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
+const { createResource, findResourceById } = require('../database/dbOperations');
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
+const { version } = require('os');
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
@@ -35,14 +41,33 @@ async function checkBulkStatus(req, res) {
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
-    //TODO: Fill all this in with actual response data. Example data for now.
+    
+    // Create and respond with operation outcome
+    const outcome = {};
+    outcome.id = uuidv4();
+    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+   // http://www.hl7.org/fhir/operationoutcome.html
+    // could add useful metadata from the import operation in the text of the operation outcome (number of resources, resource types, etc)
+    // would need to be added to the status field in dbOperations 151
+    // TODO: Update text/div
+    outcome.text = {
+      status: 'generated',
+      div: '<div xmlns="http://www.w3.org/1999/xhtml">\n      <p>The code &quot;W&quot; is not known and not legal Patient.gender.</p>\n    </div>'
+    };
+    outcome.issue = [];
+    await createResource(new OperationOutcome(outcome).toJSON(), 'OperationOutcome');
+
+    // TODO: ensure this works properly
+    const doc = await findResourceById(outcome.id, 'OperationOutcome');
+    writeToFile(doc, 'OperationOutcome', clientId)
+    
     return {
       transactionTime: '2021-01-01T00:00:00Z',
       requiresAccessToken: true,
       outcome: [
         {
           type: 'OperationOutcome',
-          url: 'https://example.com/output/info_file_1.ndjson'
+          url: `http://${process.env.HOST}:${process.env.PORT}/${clientId}/OperationOutcome.ndjson`
         }
       ],
       extension: { 'https://example.com/extra-property': true }
@@ -62,5 +87,21 @@ async function checkBulkStatus(req, res) {
     });
   }
 }
+
+const writeToFile = function (doc, type, clientId) {
+  const dirpath = './tmp/' + clientId;
+  fs.mkdirSync(dirpath, { recursive: true });
+  const filename = path.join(dirpath, `${type}.ndjson`);
+
+  let lineCount = 0;
+
+  if (Object.keys(doc).length > 0) {
+    const stream = fs.createWriteStream(filename, { flags: 'a' });
+    doc.forEach(function (doc) {
+      stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(doc));
+    });
+    stream.end();
+  } else return;
+};
 
 module.exports = { checkBulkStatus };
