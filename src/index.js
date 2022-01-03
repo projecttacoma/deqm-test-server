@@ -24,8 +24,10 @@ for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
   childProcess.fork('./src/server/importWorker.js');
 }
 
-server.listen(3000, async () => {
-  logger.info('Starting the FHIR Server at localhost:3000');
+const port = process.env.PORT || 3000;
+
+server.listen(port, async () => {
+  logger.info(`Starting the FHIR Server at localhost:${port}`);
   await mongoUtil.client.connect();
   logger.info('Connected to database');
 });
