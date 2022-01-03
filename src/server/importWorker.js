@@ -9,6 +9,10 @@ const mongoUtil = require('../database/connection');
 
 console.log(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379
+  },
   removeOnSuccess: true
 });
 
