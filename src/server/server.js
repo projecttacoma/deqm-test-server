@@ -20,6 +20,7 @@ class DEQMServer extends Server {
   }
   enableClientFileRoute() {
     this.app.get('/:base_version/:clientId/:fileName', configClientFile.clientFile);
+    return this;
   }
 }
 

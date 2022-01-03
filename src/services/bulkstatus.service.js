@@ -5,7 +5,6 @@ const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
-const { version } = require('os');
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
@@ -41,7 +40,7 @@ async function checkBulkStatus(req, res) {
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
-    
+
     // Create and respond with operation outcome
     const outcome = {};
     outcome.id = uuidv4();
@@ -67,7 +66,7 @@ async function checkBulkStatus(req, res) {
       outcome: [
         {
           type: 'OperationOutcome',
-          url: `http://${process.env.HOST}:${process.env.PORT}/${clientId}/OperationOutcome.ndjson`
+          url: `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/${clientId}/OperationOutcome.ndjson`
         }
       ],
       extension: { 'https://example.com/extra-property': true }
