@@ -49,11 +49,17 @@ async function checkBulkStatus(req, res) {
     // could add useful metadata from the import operation in the text of the operation outcome (number of resources, resource types, etc)
     // would need to be added to the status field in dbOperations 151
     // TODO: Update text/div
-    outcome.text = {
-      status: 'generated',
-      div: '<div xmlns="http://www.w3.org/1999/xhtml">\n      <p>The code &quot;W&quot; is not known and not legal Patient.gender.</p>\n    </div>'
-    };
-    outcome.issue = [];
+    outcome.issue = [{
+      severity: 'information',
+      code: 'informational',
+      details: {
+        coding: [{
+          code:'MSG_CREATED',
+          display: 'New resource created'
+        }],
+        text: 'Bulk import successfully completed'
+      }
+    }];
     await createResource(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome');
 
     // TODO: ensure this works properly
