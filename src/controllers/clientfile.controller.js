@@ -7,6 +7,6 @@ const service = require('../services/clientfile.service.js');
 module.exports.clientFile = (req, res, next) => {
   return service
     .getClientFile(req, res)
-    .then(result => res.json(result))
+    .then(result => res.sendFile(result))
     .catch(err => next(err));
 };

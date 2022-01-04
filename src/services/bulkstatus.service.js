@@ -54,7 +54,7 @@ async function checkBulkStatus(req, res) {
       div: '<div xmlns="http://www.w3.org/1999/xhtml">\n      <p>The code &quot;W&quot; is not known and not legal Patient.gender.</p>\n    </div>'
     };
     outcome.issue = [];
-    await createResource(new OperationOutcome(outcome).toJSON(), 'OperationOutcome');
+    await createResource(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome');
 
     // TODO: ensure this works properly
     const doc = await findResourceById(outcome.id, 'OperationOutcome');
@@ -96,9 +96,7 @@ const writeToFile = function (doc, type, clientId) {
 
   if (Object.keys(doc).length > 0) {
     const stream = fs.createWriteStream(filename, { flags: 'a' });
-    doc.forEach(function (doc) {
-      stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(doc));
-    });
+    stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(doc));
     stream.end();
   } else return;
 };

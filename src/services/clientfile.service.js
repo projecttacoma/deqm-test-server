@@ -1,5 +1,6 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Finds and responds with requested file for some client id
@@ -12,7 +13,6 @@ async function getClientFile(req, res) {
   const fileName = req.params.fileName;
   const filePath = `tmp/${clientId}/${fileName}`;
   if (fs.existsSync(filePath)) {
-    const readStream = fs.createReadStream(`tmp/${clientId}/${fileName}`);
     const extension = fileName.split(".").pop();
     // if (req.get('Content-Type')!== 'ndjson+fhir') -> TODO: do we want to check request Content-Type
     if (extension !== 'ndjson'){
@@ -32,7 +32,7 @@ async function getClientFile(req, res) {
     // TODO: check file type requested is ndjson (other cases change Content-type below)
     res.status(200);
     res.set('Content-Type', 'application/ndjson+fhir');
-    return readStream;
+    return path.resolve(`./tmp/${clientId}/${fileName}`);
   } else {
     throw new ServerError(null, {
       statusCode: 404,
