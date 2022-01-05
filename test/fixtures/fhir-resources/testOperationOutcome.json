@@ -1,0 +1,19 @@
+{
+  "resourceType": "OperationOutcome",
+  "id": "testid",
+  "issue": [
+      {
+          "severity": "information",
+          "code": "informational",
+          "details": {
+              "coding": [
+                  {
+                      "code": "MSG_CREATED",
+                      "display": "New resource created"
+                  }
+              ],
+              "text": "Bulk import successfully completed"
+          }
+      }
+  ]
+}

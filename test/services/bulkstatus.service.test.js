@@ -18,14 +18,16 @@ describe('checkBulkStatus logic', () => {
       });
   });
   test('check 200 returned for completed request', async () => {
-    await supertest(server.app)
+    const response = await supertest(server.app)
       .get('/4_0_1/bulkstatus/COMPLETED_REQUEST')
-      .expect(200)
-      .then(response => {
-        expect(response.headers.expires).toBeDefined();
-        expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
-        expect(response.body).toBeDefined();
-      });
+      .expect(200);
+    expect(response.headers.expires).toBeDefined();
+    expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
+    expect(response.body).toBeDefined();
+    expect(response.body.outcome[0].type).toEqual('OperationOutcome');
+    await supertest(server.app)
+      .get(response.body.outcome[0].url.replace(`http://${process.env.HOST}:${process.env.PORT}`,'')) //TODO: may need to break apart base_url to get slug
+      .expect(200);
   });
   test('check 500 and error returned for failed request with known error', async () => {
     await supertest(server.app)
