@@ -17,8 +17,8 @@ async function cleanUpDb() {
 
 async function cleanUpTest() {
   if (!!client.topology && client.topology.isConnected()) await cleanUpDb();
-  if(fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
-  if(fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
+  if (fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
+  if (fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
   await queue.close();
 }
 
@@ -40,9 +40,9 @@ const bulkStatusSetup = async () => {
 const clientFileSetup = async () => {
   fs.mkdirSync('./tmp/testid', { recursive: true });
   try {
-    fs.writeFileSync('./tmp/testid/OperationOutcome.ndjson', JSON.stringify(testOperationOutcome))
+    fs.writeFileSync('./tmp/testid/OperationOutcome.ndjson', JSON.stringify(testOperationOutcome));
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
 };
-module.exports = { testSetup, cleanUpTest, bulkStatusSetup, createTestResource, clientFileSetup};
+module.exports = { testSetup, cleanUpTest, bulkStatusSetup, createTestResource, clientFileSetup };
