@@ -13,7 +13,6 @@ describe('check client file', () => {
       .get('/4_0_1/file/testid/OperationOutcome.ndjson')
       .expect(200)
       .then(response => {
-        // expect(response.body.id).toEqual('testid');
         expect(response.text.includes('testid')).toBeTruthy();
       });
   });
