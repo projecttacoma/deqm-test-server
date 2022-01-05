@@ -45,23 +45,27 @@ async function checkBulkStatus(req, res) {
     const outcome = {};
     outcome.id = uuidv4();
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
-    outcome.issue = [{
-      severity: 'information',
-      code: 'informational',
-      details: {
-        coding: [{
-          code:'MSG_CREATED',
-          display: 'New resource created'
-        }],
-        text: 'Bulk import successfully completed'
+    outcome.issue = [
+      {
+        severity: 'information',
+        code: 'informational',
+        details: {
+          coding: [
+            {
+              code: 'MSG_CREATED',
+              display: 'New resource created'
+            }
+          ],
+          text: 'Bulk import successfully completed'
+        }
       }
-    }];
+    ];
     await createResource(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome');
 
     // TODO: ensure this works properly
     const doc = await findResourceById(outcome.id, 'OperationOutcome');
-    writeToFile(doc, 'OperationOutcome', clientId)
-    
+    writeToFile(doc, 'OperationOutcome', clientId);
+
     return {
       transactionTime: '2021-01-01T00:00:00Z',
       requiresAccessToken: true,

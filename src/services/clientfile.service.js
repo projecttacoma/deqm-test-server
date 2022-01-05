@@ -13,7 +13,6 @@ async function getClientFile(req, res) {
   const fileName = req.params.fileName;
   const filePath = `tmp/${clientId}/${fileName}`;
   if (fs.existsSync(filePath)) {
-    const extension = fileName.split(".").pop();
     res.status(200);
     res.set('Content-Type', 'application/ndjson+fhir');
     return path.resolve(`./tmp/${clientId}/${fileName}`);
@@ -31,8 +30,6 @@ async function getClientFile(req, res) {
       ]
     });
   }
-  
 }
-
 
 module.exports = { getClientFile };
