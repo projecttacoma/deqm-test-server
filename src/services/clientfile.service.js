@@ -14,22 +14,6 @@ async function getClientFile(req, res) {
   const filePath = `tmp/${clientId}/${fileName}`;
   if (fs.existsSync(filePath)) {
     const extension = fileName.split(".").pop();
-    // if (req.get('Content-Type')!== 'ndjson+fhir') -> TODO: do we want to check request Content-Type
-    if (extension !== 'ndjson'){
-      throw new ServerError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'not-supported',
-            details: {
-              text: `The following file extension is not currently supported: ${extension}`
-            }
-          }
-        ]
-      });
-    }
-    // TODO: check file type requested is ndjson (other cases change Content-type below)
     res.status(200);
     res.set('Content-Type', 'application/ndjson+fhir');
     return path.resolve(`./tmp/${clientId}/${fileName}`);

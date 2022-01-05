@@ -45,10 +45,6 @@ async function checkBulkStatus(req, res) {
     const outcome = {};
     outcome.id = uuidv4();
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
-   // http://www.hl7.org/fhir/operationoutcome.html
-    // could add useful metadata from the import operation in the text of the operation outcome (number of resources, resource types, etc)
-    // would need to be added to the status field in dbOperations 151
-    // TODO: Update text/div
     outcome.issue = [{
       severity: 'information',
       code: 'informational',
