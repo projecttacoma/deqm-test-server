@@ -163,9 +163,9 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
     const destinationUrl = `${protocol}://${path.join(headers.host, baseUrl, baseVersion, url)}`;
-    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-      headers: entryHeaders
-    }).catch(e => {
+    //change to mongo insert here
+    //the make the changes to programtically set responses to 200s/401s based on mongo results
+    return replaceAxiosWithMongo(entry, method).catch(e => {
       return e.response;
     });
   });
@@ -173,4 +173,19 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   return requestResults;
 }
 
+function replaceAxiosWithMongo( entry, method) {
+  //need to return an array of promises
+  if (method == 'POST') {
+     const id = createResource(entry.resource, entry.resourceType);
+  }
+  if ((method = 'PUT')) {
+    const { id, created } = updateResource(entry.request.id, entry.resource, entry.resourceType);
+    if ((created == true)) {
+      entry.status = '201';
+    } else if ((id != null) && (created == false)){
+      entry.status = '200';
+    }
+  }
+  return entry;
+}
 module.exports = { uploadTransactionBundle, handleSubmitDataBundles, uploadResourcesFromBundle };
