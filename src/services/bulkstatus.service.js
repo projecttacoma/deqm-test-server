@@ -68,7 +68,7 @@ async function checkBulkStatus(req, res) {
       outcome: [
         {
           type: 'OperationOutcome',
-          url: `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/${clientId}/OperationOutcome.ndjson`
+          url: `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/file/${clientId}/OperationOutcome.ndjson`
         }
       ],
       extension: { 'https://example.com/extra-property': true }
