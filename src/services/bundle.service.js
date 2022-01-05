@@ -173,16 +173,17 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   return requestResults;
 }
 
-function replaceAxiosWithMongo( entry, method) {
+function replaceAxiosWithMongo(entry, method) {
   //need to return an array of promises
   if (method == 'POST') {
-     const id = createResource(entry.resource, entry.resourceType);
+    const id = createResource(entry.resource, entry.resourceType);
+    if (id != null) entry.status = '201';
   }
   if ((method = 'PUT')) {
     const { id, created } = updateResource(entry.request.id, entry.resource, entry.resourceType);
-    if ((created == true)) {
+    if (created == true) {
       entry.status = '201';
-    } else if ((id != null) && (created == false)){
+    } else if (id != null && created == false) {
       entry.status = '200';
     }
   }
