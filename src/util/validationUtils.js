@@ -183,6 +183,7 @@ const gatherParams = (query, body) => {
       if (!e.resource) {
         acc[e.name] = e.valueDate || e.valueString || e.valueId || e.valueCode;
       }
+      return acc;
     }, params);
   }
   return params;

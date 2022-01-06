@@ -24,7 +24,6 @@ const {
   findOneResourceWithQuery,
   findResourcesWithQuery
 } = require('../database/dbOperations');
-const { request } = require('express');
 
 const logger = loggers.get('default');
 
