@@ -10,7 +10,8 @@ const { retrieveExportUrl } = require('../util/exportUtils');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
-  validateDataRequirementsParams
+  validateDataRequirementsParams,
+  gatherParams
 } = require('../util/validationUtils');
 const {
   getMeasureBundleFromId,
@@ -23,6 +24,7 @@ const {
   findOneResourceWithQuery,
   findResourcesWithQuery
 } = require('../database/dbOperations');
+const { request } = require('express');
 
 const logger = loggers.get('default');
 
@@ -279,11 +281,21 @@ const evaluateMeasure = async (args, { req }) => {
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
 
-  validateCareGapsParams(req.query);
+  let query;
+  if (req.method === 'POST') {
+    query = gatherParams(req.query, req.body);
+  } else {
+    query = req.query;
+  }
+  validateCareGapsParams(query);
 
-  const { periodStart, periodEnd, subject } = req.query;
-  const searchTerm = retrieveSearchTerm(req);
-  req.query = searchTerm;
+  const { periodStart, periodEnd, subject } = query;
+  const searchTerm = retrieveSearchTerm(query);
+  if (req.method === 'POST') {
+    req.body = searchTerm;
+  } else {
+    req.query = searchTerm;
+  }
   //Use the base search function here to allow search by measureId, measureUrl, and measureIdentifier
   const measure = await search(args, { req });
   if (measure.total === 0) {
@@ -319,8 +331,8 @@ const careGaps = async (args, { req }) => {
  * @param {Object} req http request object
  * @returns {Object} an object containing the measure identifier with the appropriate key
  */
-const retrieveSearchTerm = req => {
-  const { measureId, measureIdentifier, measureUrl } = req.query;
+const retrieveSearchTerm = query => {
+  const { measureId, measureIdentifier, measureUrl } = query;
 
   if (measureId) {
     return { _id: measureId };

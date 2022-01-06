@@ -169,9 +169,29 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
   }
 };
 
+/**
+ * Pulls query parameters from both the body and creates a new parameters map
+ * @param {Object} query the query terms on the request URL
+ * @param {Object} body a FHIR Parameters object passed into the body of the request passed in
+ * @returns {Object} an object containing a combination of request parameters from both sources
+ */
+const gatherParams = (query, body) => {
+  const params = { ...query };
+
+  if (body.parameter) {
+    body.parameter.reduce((acc, e) => {
+      if (!e.resource) {
+        acc[e.name] = e.valueDate || e.valueString || e.valueId || e.valueCode;
+      }
+    }, params);
+  }
+  return params;
+};
+
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
-  checkRequiredParams
+  checkRequiredParams,
+  gatherParams
 };
