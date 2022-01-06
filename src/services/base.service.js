@@ -153,6 +153,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   } else {
     searchParams = paramDefs;
   }
+
   // wipe out params since the 'base_version' here breaks the query building
   req.params = {};
 
