@@ -282,6 +282,7 @@ const careGaps = async (args, { req }) => {
 
   let query;
   if (req.method === 'POST') {
+    // Creates a new query from a combination of parameters in the body and query
     query = gatherParams(req.query, req.body);
   } else {
     query = req.query;

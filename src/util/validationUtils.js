@@ -181,6 +181,7 @@ const gatherParams = (query, body) => {
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
       if (!e.resource) {
+        // For now, all usable params are expected to be stored under one of these four keys
         acc[e.name] = e.valueDate || e.valueString || e.valueId || e.valueCode;
       }
       return acc;
