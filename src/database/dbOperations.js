@@ -118,7 +118,8 @@ const addPendingBulkImportRequest = async () => {
     error: {
       code: null,
       message: null
-    }
+    },
+    exportedFileCount: -1
   };
   await collection.insertOne(bulkImportClient);
   return clientId;
@@ -162,17 +163,47 @@ const getBulkImportStatus = async clientId => {
   return status;
 };
 
+/**
+ * Sets the total number of files returned by the export flow to be parsed by the server
+ * @param {string} clientId The id signifying the bulk status request
+ * @param {number} fileCount The number of output ndjson URLs returned by the export server
+ */
+const initializeBulkFileCount = async (clientId, fileCount) => {
+  const collection = db.collection('bulkImportStatuses');
+  await collection.findOneAndUpdate({ id: clientId }, { $set: { exportedFileCount: fileCount } });
+};
+
+/**
+ * Decrements the total number of files to process. Occurs after successful uploading of all of one ndjson file
+ * @param {string} clientId The id signifying the bulk status request
+ */
+const decrementBulkFileCount = async clientId => {
+  const collection = db.collection('bulkImportStatuses');
+  const { value } = await collection.findOneAndUpdate(
+    { id: clientId },
+    { $inc: { exportedFileCount: -1 } },
+    { returnDocument: 'after', projection: { exportedFileCount: true, _id: 0 } }
+  );
+
+  // Complete import request when file count reaches 0
+  if (value.exportedFileCount === 0) {
+    await completeBulkImportRequest(clientId);
+  }
+};
+
 module.exports = {
-  findResourcesWithQuery,
-  findResourceById,
-  findOneResourceWithQuery,
-  createResource,
-  removeResource,
-  updateResource,
-  pushToResource,
-  findResourcesWithAggregation,
   addPendingBulkImportRequest,
-  getBulkImportStatus,
+  completeBulkImportRequest,
+  createResource,
+  decrementBulkFileCount,
   failBulkImportRequest,
-  completeBulkImportRequest
+  findOneResourceWithQuery,
+  findResourceById,
+  findResourcesWithAggregation,
+  findResourcesWithQuery,
+  getBulkImportStatus,
+  initializeBulkFileCount,
+  pushToResource,
+  removeResource,
+  updateResource
 };
