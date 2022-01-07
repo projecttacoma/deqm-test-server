@@ -29,12 +29,13 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   // array of reference objects from each resource
   const bundleProvenanceTarget = [];
   results.forEach(result => {
+    console.log(result.resource.id);
     const entry = new Bundle({ response: { status: `${result.status} ${result.statusText}` } });
     if (result.status === 200 || result.status === 201) {
       if (xprovenanceIncluded) {
-        bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+        bundleProvenanceTarget.push({ reference: `${result.resource.resourceType}/${result.resource.id}` });
       }
-      entry.response.location = result.headers.location;
+      entry.response.location = `${baseVersion}/${result.resource.resourceType}/${result.resource.id}`;
     } else {
       entry.response.outcome = result.data;
     }
@@ -42,7 +43,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   });
 
   bundle.entry = entries;
-  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget.flat() };
+  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget };
 };
 
 /**
@@ -161,6 +162,7 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   }
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
+    //console.log(entry);
     return replaceAxiosWithMongo(entry, method).catch(e => {
       return e.response;
     });
@@ -172,15 +174,21 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
 async function replaceAxiosWithMongo(entry, method) {
   //need to return an array of promises
   if (method === 'POST') {
-    const id = await createResource(entry.resource, entry.resourceType);
-    if (id != null) entry.status = '201';
+    entry.resource.id = uuidv4();
+    const { id } = await createResource(entry.resource, entry.resource.resourceType);
+    if (id != null) {
+      entry.status = 201;
+      entry.statusText = 'Created';
+    }
   }
-  if ((method === 'PUT')) {
-    const { id, created } = await updateResource(entry.request.id, entry.resource, entry.resourceType);
+  if (method === 'PUT') {
+    const { id, created } = await updateResource(entry.resource.id, entry.resource, entry.resource.resourceType);
     if (created === true) {
-      entry.status = '201';
+      entry.status = 201;
+      entry.statusText = 'Created';
     } else if (id != null && created === false) {
-      entry.status = '200';
+      entry.status = 200;
+      entry.statusText = 'OK';
     }
   }
   return entry;
