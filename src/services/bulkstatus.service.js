@@ -1,6 +1,5 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
-const { createResource, findResourceById } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
@@ -19,6 +18,21 @@ async function checkBulkStatus(req, res) {
   const bulkStatus = await getBulkImportStatus(clientId);
 
   if (!bulkStatus) {
+    const outcome = {};
+    outcome.id = uuidv4();
+    outcome.issue = [
+      {
+        severity: 'error',
+        code: 'not-found',
+        details: {
+          text: `Could not find bulk import request with id: ${clientId}`
+        }
+      }
+    ];
+    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs generically indicate not found
+    writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
+
     throw new ServerError(null, {
       statusCode: 404,
       issue: [
@@ -44,7 +58,6 @@ async function checkBulkStatus(req, res) {
     // Create and respond with operation outcome
     const outcome = {};
     outcome.id = uuidv4();
-    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
     outcome.issue = [
       {
         severity: 'information',
@@ -60,11 +73,8 @@ async function checkBulkStatus(req, res) {
         }
       }
     ];
-    await createResource(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome');
-
-    // TODO: ensure this works properly
-    const doc = await findResourceById(outcome.id, 'OperationOutcome');
-    writeToFile(doc, 'OperationOutcome', clientId);
+    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     return {
       transactionTime: '2021-01-01T00:00:00Z',
@@ -78,6 +88,21 @@ async function checkBulkStatus(req, res) {
       extension: { 'https://example.com/extra-property': true }
     };
   } else {
+    const outcome = {};
+    outcome.id = uuidv4();
+    outcome.issue = [
+      {
+        severity: 'error',
+        code: 'exception',
+        details: {
+          text: bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`
+        }
+      }
+    ];
+    // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs are generic enough for an unknown failure
+    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
+
     throw new ServerError(null, {
       statusCode: 500,
       issue: [
