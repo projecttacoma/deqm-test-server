@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { createResource, pushToResource } = require('../database/dbOperations');
+const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 
 const logger = loggers.get('default');
@@ -161,9 +161,6 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   }
   const requestsArray = scrubbedEntries.map(async entry => {
     const { url, method } = entry.request;
-    const destinationUrl = `${protocol}://${path.join(headers.host, baseUrl, baseVersion, url)}`;
-    //change to mongo insert here
-    //the make the changes to programtically set responses to 200s/401s based on mongo results
     return replaceAxiosWithMongo(entry, method).catch(e => {
       return e.response;
     });
