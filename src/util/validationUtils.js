@@ -170,7 +170,7 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
 };
 
 /**
- * Pulls query parameters from both the body and creates a new parameters map
+ * Pulls query parameters from both the url query and request body and creates a new parameters map
  * @param {Object} query the query terms on the request URL
  * @param {Object} body a FHIR Parameters object passed into the body of the request passed in
  * @returns {Object} an object containing a combination of request parameters from both sources
