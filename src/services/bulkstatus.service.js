@@ -46,7 +46,21 @@ async function checkBulkStatus(req, res) {
       ]
     });
   }
-  if (bulkStatus.status === 'In Progress') {
+
+  if (bulkStatus.status === 'Error') {
+    throw new ServerError(null, {
+      statusCode: 500,
+      issue: [
+        {
+          severity: 'error',
+          code: bulkStatus.error.code || 'UnknownError',
+          details: {
+            text: bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`
+          }
+        }
+      ]
+    });
+  } else if (bulkStatus.status === 'In Progress') {
     res.status(202);
     //TODO set these responses dynamically?
     res.set('X-Progress', 'Retrieving export files');

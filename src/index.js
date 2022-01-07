@@ -1,6 +1,7 @@
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const express = require('express');
 const mongoUtil = require('./database/connection');
+const { decrementBulkFileCount } = require('./database/dbOperations');
 const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
@@ -14,14 +15,23 @@ const config = buildConfig();
 const server = initialize(config, app);
 const logger = loggers.get('default');
 
-if (process.env.IMPORT_WORKERS > os.cpus().length) {
-  console.warn(
-    `WARNING: Requested to start ${process.env.IMPORT_WORKERS} workers with only ${os.cpus().length} available cpus`
-  );
+const workerTotal = parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS);
+
+if (workerTotal > os.cpus().length) {
+  console.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
 }
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
   childProcess.fork('./src/server/importWorker.js');
+}
+
+for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
+  const child = childProcess.fork('./src/server/ndjsonWorker.js');
+
+  // Database updates need to happen from the main process to avoid race conditions
+  child.on('message', async clientId => {
+    await decrementBulkFileCount(clientId);
+  });
 }
 
 const port = process.env.PORT || 3000;
