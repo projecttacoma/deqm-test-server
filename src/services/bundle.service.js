@@ -29,7 +29,6 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   // array of reference objects from each resource
   const bundleProvenanceTarget = [];
   results.forEach(result => {
-    console.log(result.resource.id);
     const entry = new Bundle({ response: { status: `${result.status} ${result.statusText}` } });
     if (result.status === 200 || result.status === 201) {
       if (xprovenanceIncluded) {
@@ -161,8 +160,8 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
     entryHeaders['X-Provenance'] = headers['x-provenance'];
   }
   const requestsArray = scrubbedEntries.map(async entry => {
-    const { url, method } = entry.request;
-    //console.log(entry);
+    const { method } = entry.request;
+
     return replaceAxiosWithMongo(entry, method).catch(e => {
       return e.response;
     });
