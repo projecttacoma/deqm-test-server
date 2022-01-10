@@ -162,7 +162,7 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   const requestsArray = scrubbedEntries.map(async entry => {
     const { method } = entry.request;
 
-    return replaceAxiosWithMongo(entry, method).catch(e => {
+    return insertBundleResources(entry, method).catch(e => {
       return e.response;
     });
   });
@@ -170,7 +170,7 @@ async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion,
   return requestResults;
 }
 
-async function replaceAxiosWithMongo(entry, method) {
+async function insertBundleResources(entry, method) {
   //need to return an array of promises
   if (method === 'POST') {
     entry.resource.id = uuidv4();
