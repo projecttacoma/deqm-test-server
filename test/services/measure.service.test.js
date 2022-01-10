@@ -157,7 +157,7 @@ describe('testing custom measure operation', () => {
       });
   });
 
-  test.only('$submit-data uploads txn bundle for valid parameters request', async () => {
+  test('$submit-data uploads txn bundle for valid parameters request', async () => {
     await supertest(server.app)
       .post('/4_0_1/Measure/$submit-data')
       .send(testParam)
