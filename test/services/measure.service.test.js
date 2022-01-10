@@ -166,7 +166,6 @@ describe('testing custom measure operation', () => {
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200)
       .then(async response => {
-        console.log(JSON.stringify(response.body, null, 4));
         expect(response.body.entry[0].response.status).toEqual('201 Created');
         expect(response.body.resourceType).toEqual('Bundle');
         expect(response.body.type).toEqual('transaction-response');
