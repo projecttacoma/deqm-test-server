@@ -1,9 +1,18 @@
 const {
   checkRequiredParams,
   validateEvalMeasureParams,
-  validateCareGapsParams
+  validateCareGapsParams,
+  gatherParams
 } = require('../../src/util/validationUtils');
 const queue = require('../../src/resources/importQueue');
+
+const VALID_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open',
+  subject: 'testPatient',
+  measureId: 'testID'
+};
 
 describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {
@@ -144,15 +153,33 @@ describe('validateCareGapsParams', () => {
 
   test('validateCareGapsParams does not throw error with correct params', async () => {
     const VALID_REQ = {
+      query: VALID_QUERY
+    };
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+  });
+
+  test('gatherParams gathers params from query and body', () => {
+    const SPLIT_REQ = {
       query: {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        status: 'open',
-        subject: 'testPatient',
-        measureId: 'testID'
+        status: 'open'
+      },
+      body: {
+        resourceType: 'Parameters',
+        parameter: [
+          {
+            name: 'subject',
+            valueString: 'testPatient'
+          },
+          {
+            name: 'measureId',
+            valueId: 'testID'
+          }
+        ]
       }
     };
-    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+    expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(VALID_QUERY);
   });
 
   afterAll(async () => await queue.close());
