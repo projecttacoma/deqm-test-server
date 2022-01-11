@@ -204,7 +204,10 @@ const bulkImportFromRequirements = async (args, { req }) => {
   };
   await importQueue.createJob(jobData).save();
   res.status(202);
-  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
+  res.setHeader(
+    'Content-Location',
+    `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
+  );
 };
 
 /**
