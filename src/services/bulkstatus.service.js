@@ -1,9 +1,12 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
+<<<<<<< HEAD
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+=======
+>>>>>>> 2aa92e5 (updated valueString ot valueUrl)
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and

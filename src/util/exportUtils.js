@@ -9,7 +9,7 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const retrieveExportUrl = parameters => {
   const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
   checkExportUrlArray(exportUrlArray);
-  let exportUrl = exportUrlArray[0].valueString;
+  let exportUrl = exportUrlArray[0].valueUrl;
 
   // Retrieve comma-delimited list of type filters from parameters
   const typesString = parameters
@@ -59,8 +59,8 @@ const checkExportUrlArray = exportUrlArray => {
       ]
     });
   }
-  // if one export URL exists, check that value string exists
-  if (!exportUrlArray[0].valueString) {
+  // if one export URL exists, check that valueUrl exists
+  if (!exportUrlArray[0].valueUrl) {
     throw new ServerError(null, {
       statusCode: 400,
       issue: [
@@ -68,7 +68,7 @@ const checkExportUrlArray = exportUrlArray => {
           severity: 'error',
           code: 'BadRequest',
           details: {
-            text: `Expected a valueString for the exportUrl, but none was found`
+            text: `Expected a valueUrl for the exportUrl, but none was found`
           }
         }
       ]
