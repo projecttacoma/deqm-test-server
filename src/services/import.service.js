@@ -1,5 +1,6 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
 const { retrieveExportUrl } = require('../util/exportUtils');
+const { checkExportType } = require('../util/validationUtils');
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 
 const logger = loggers.get('default');
@@ -14,6 +15,8 @@ async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest();
+
+  checkExportType(req.body.parameter);
   const exportURL = retrieveExportUrl(req.body.parameter);
 
   const jobData = {
