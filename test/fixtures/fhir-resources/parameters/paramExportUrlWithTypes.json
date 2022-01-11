@@ -3,7 +3,7 @@
   "parameter": [
     {
       "name": "exportUrl",
-      "valueString": "http://example.com/$export"
+      "valueUrl": "http://example.com/$export"
     },
     {
       "name": "_type",

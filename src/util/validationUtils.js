@@ -169,9 +169,31 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
   }
 };
 
+/**
+ * Pulls query parameters from both the url query and request body and creates a new parameters map
+ * @param {Object} query the query terms on the request URL
+ * @param {Object} body http request body
+ * @returns {Object} an object containing a combination of request parameters from both sources
+ */
+const gatherParams = (query, body) => {
+  const params = { ...query };
+
+  if (body.parameter) {
+    body.parameter.reduce((acc, e) => {
+      if (!e.resource) {
+        // For now, all usable params are expected to be stored under one of these four keys
+        acc[e.name] = e.valueDate || e.valueString || e.valueId || e.valueCode;
+      }
+      return acc;
+    }, params);
+  }
+  return params;
+};
+
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
-  checkRequiredParams
+  checkRequiredParams,
+  gatherParams
 };
