@@ -47,7 +47,7 @@ async function checkBulkStatus(req, res) {
     });
   }
 
-  if (bulkStatus.status === 'Error') {
+  if (bulkStatus.status === 'Failed') {
     throw new ServerError(null, {
       statusCode: 500,
       issue: [
