@@ -29,8 +29,9 @@ for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
   const child = childProcess.fork('./src/server/ndjsonWorker.js');
 
   // Database updates need to happen from the main process to avoid race conditions
-  child.on('message', async clientId => {
-    await decrementBulkFileCount(clientId);
+  child.on('message', async ({ clientId, resourceCount }) => {
+    console.log('going to decrement');
+    await decrementBulkFileCount(clientId, resourceCount);
   });
 }
 

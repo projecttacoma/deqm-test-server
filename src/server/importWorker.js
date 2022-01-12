@@ -44,11 +44,26 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle) => {
   try {
     const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle);
 
-    await initializeBulkFileCount(clientEntryId, output.length);
+    // If any files dont have count data, just track percentage based on number of files
+    const resourceCount = output.reduce((resources, fileInfo) => {
+      if (resources === -1 || fileInfo.count === undefined) {
+        return -1;
+      }
+      // count of resources is available
+      return resources + fileInfo.count;
+    }, 0);
+
+    await initializeBulkFileCount(clientEntryId, output.length, resourceCount);
 
     // Enqueue a parsing job for each ndjson file
     await ndjsonQueue.saveAll(
-      output.map(locationInfo => ndjsonQueue.createJob({ fileUrl: locationInfo.url, clientId: clientEntryId }))
+      output.map(locationInfo =>
+        ndjsonQueue.createJob({
+          fileUrl: locationInfo.url,
+          clientId: clientEntryId,
+          resourceCount: resourceCount === -1 ? -1 : locationInfo.count
+        })
+      )
     );
 
     return true;

@@ -26,7 +26,8 @@ const retrieveNDJSONFromLocation = async url => {
 
 // This handler pulls down the jobs on Redis to handle
 ndjsonWorker.process(async job => {
-  const { fileUrl, clientId } = job.data;
+  // add in resource count
+  const { fileUrl, clientId, resourceCount } = job.data;
 
   const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
   console.log(`ndjson-worker-${process.pid}: processing ${fileName}`);
@@ -51,7 +52,8 @@ ndjsonWorker.process(async job => {
 
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
-  process.send(clientId);
+  // also add in resource count since it won't always be one
+  process.send({ clientId, resourceCount });
 
   await mongoUtil.client.close();
 });

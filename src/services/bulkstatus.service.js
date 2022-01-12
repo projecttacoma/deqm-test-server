@@ -63,7 +63,14 @@ async function checkBulkStatus(req, res) {
   } else if (bulkStatus.status === 'In Progress') {
     res.status(202);
     //TODO set these responses dynamically?
-    res.set('X-Progress', 'Retrieving export files');
+    let percentComplete;
+    if (bulkStatus.exportedResourceCount === -1) {
+      percentComplete = (bulkStatus.totalFileCount - bulkStatus.exportedFileCount) / bulkStatus.totalFileCount;
+    } else {
+      percentComplete =
+        (bulkStatus.totalResourceCount - bulkStatus.exportedResourceCount) / bulkStatus.totalResourceCount;
+    }
+    res.set('X-Progress', `${(percentComplete * 100).toFixed(2)}% Done`);
     res.set('Retry-After', 120);
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);

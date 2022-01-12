@@ -119,7 +119,12 @@ const addPendingBulkImportRequest = async () => {
       code: null,
       message: null
     },
-    exportedFileCount: -1
+    // These will both initially be set to the total # of NDJson files,
+    // and will be used to calculate percent complete
+    exportedFileCount: -1,
+    totalFileCount: -1,
+    exportedResourceCount: -1,
+    totalResourceCount: -1
   };
   await collection.insertOne(bulkImportClient);
   return clientId;
@@ -168,22 +173,48 @@ const getBulkImportStatus = async clientId => {
  * @param {string} clientId The id signifying the bulk status request
  * @param {number} fileCount The number of output ndjson URLs returned by the export server
  */
-const initializeBulkFileCount = async (clientId, fileCount) => {
+const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
   const collection = db.collection('bulkImportStatuses');
-  await collection.findOneAndUpdate({ id: clientId }, { $set: { exportedFileCount: fileCount } });
+  await collection.findOneAndUpdate(
+    { id: clientId },
+    // also set resource counts here?
+    {
+      $set: {
+        exportedFileCount: fileCount,
+        totalFileCount: fileCount,
+        exportedResourceCount: resourceCount,
+        totalResourceCount: resourceCount
+      }
+    }
+  );
 };
 
 /**
  * Decrements the total number of files to process. Occurs after successful uploading of all of one ndjson file
  * @param {string} clientId The id signifying the bulk status request
  */
-const decrementBulkFileCount = async clientId => {
+const decrementBulkFileCount = async (clientId, resourceCount) => {
   const collection = db.collection('bulkImportStatuses');
-  const { value } = await collection.findOneAndUpdate(
-    { id: clientId },
-    { $inc: { exportedFileCount: -1 } },
-    { returnDocument: 'after', projection: { exportedFileCount: true, _id: 0 } }
-  );
+  let value;
+  if (resourceCount !== -1) {
+    value = (
+      await collection.findOneAndUpdate(
+        { id: clientId },
+        { $inc: { exportedFileCount: -1, exportedResourceCount: -resourceCount } },
+        { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
+      )
+    ).value;
+  } else {
+    value = (
+      await collection.findOneAndUpdate(
+        { id: clientId },
+        { $inc: { exportedFileCount: -1 } },
+        { returnDocument: 'after', projection: { exportedFileCount: true, _id: 0 } }
+      )
+    ).value;
+  }
+
+  console.log(value);
 
   // Complete import request when file count reaches 0
   if (value.exportedFileCount === 0) {
