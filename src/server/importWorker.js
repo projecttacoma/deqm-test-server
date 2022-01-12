@@ -23,6 +23,7 @@ importQueue.process(async job => {
 
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
+  console.log(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
   const result = await executePingAndPull(clientEntry, exportURL, measureBundle);
   if (result) {
     console.log(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
@@ -42,7 +43,8 @@ importQueue.process(async job => {
  */
 const executePingAndPull = async (clientEntryId, exportUrl, measureBundle) => {
   try {
-    const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle);
+    // Default to not use typeFilters for measure specific import
+    const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle, false);
 
     // If any files dont have count data, just track percentage based on number of files
     const resourceCount = output.reduce((resources, fileInfo) => {
