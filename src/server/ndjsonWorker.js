@@ -44,11 +44,6 @@ ndjsonWorker.process(async job => {
 
   await Promise.all(insertions);
 
-  /* for (const line of ndjsonResources.trim().split(/\n/)) {
-    const data = JSON.parse(line);
-    await updateResource(data.id, data, data.resourceType);
-  } */
-
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
   process.send({ clientId, resourceCount });
