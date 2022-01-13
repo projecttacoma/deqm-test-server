@@ -5,6 +5,8 @@ const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
+const { checkContentTypeHeader } = require('./base.service');
+const { checkSupportedResource } = require('../util/baseUtils');
 
 const logger = loggers.get('default');
 
@@ -97,6 +99,8 @@ async function uploadTransactionBundle(req, res) {
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
   const { headers, baseUrl, protocol } = req;
+  checkContentTypeHeader(headers);
+
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {
@@ -164,7 +168,14 @@ async function uploadResourcesFromBundle(entries, headers,  xprovenanceIncluded)
     const { method } = entry.request;
 
     return insertBundleResources(entry, method).catch(e => {
-      return e.response;
+      const operationOutcome = resolveSchema(baseVersion, 'operationoutcome');
+      const results = new operationOutcome();
+      results.issue = e.issue;
+      return {
+        status: e.statusCode,
+        statusText: e.issue[0].code,
+        data: results.toJSON()
+      };
     });
   });
   const requestResults = await Promise.all(requestsArray);
@@ -173,6 +184,7 @@ async function uploadResourcesFromBundle(entries, headers,  xprovenanceIncluded)
 
 async function insertBundleResources(entry, method) {
   //need to return an array of promises
+  checkSupportedResource(entry.resource.resourceType);
   if (method === 'POST') {
     entry.resource.id = uuidv4();
     const { id } = await createResource(entry.resource, entry.resource.resourceType);
@@ -190,6 +202,19 @@ async function insertBundleResources(entry, method) {
       entry.status = 200;
       entry.statusText = 'OK';
     }
+  } else {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected requests of type PUT or POST, received ${method} for ${entry.resource.resourceType}/${entry.resource.id}`
+          }
+        }
+      ]
+    });
   }
   return entry;
 }
