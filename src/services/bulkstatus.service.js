@@ -62,8 +62,9 @@ async function checkBulkStatus(req, res) {
     });
   } else if (bulkStatus.status === 'In Progress') {
     res.status(202);
-    //TODO set these responses dynamically?
+    // Compute percent of files or resources exported
     let percentComplete;
+    // Use file counts for percentage if export server does not record resource counts
     if (bulkStatus.exportedResourceCount === -1) {
       percentComplete = (bulkStatus.totalFileCount - bulkStatus.exportedFileCount) / bulkStatus.totalFileCount;
     } else {

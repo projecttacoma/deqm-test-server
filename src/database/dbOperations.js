@@ -119,8 +119,7 @@ const addPendingBulkImportRequest = async () => {
       code: null,
       message: null
     },
-    // These will both initially be set to the total # of NDJson files,
-    // and will be used to calculate percent complete
+    // Counts for calculating percent of exported files/resources
     exportedFileCount: -1,
     totalFileCount: -1,
     exportedResourceCount: -1,
@@ -177,7 +176,7 @@ const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
   const collection = db.collection('bulkImportStatuses');
   await collection.findOneAndUpdate(
     { id: clientId },
-    // also set resource counts here?
+    // Set initial exported file/resource counts to their respective totals
     {
       $set: {
         exportedFileCount: fileCount,
@@ -192,11 +191,13 @@ const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
 /**
  * Decrements the total number of files to process. Occurs after successful uploading of all of one ndjson file
  * @param {string} clientId The id signifying the bulk status request
+ * @param {number} resourceCount The number of resources to be subtracted from the exported resource count
  */
 const decrementBulkFileCount = async (clientId, resourceCount) => {
   const collection = db.collection('bulkImportStatuses');
   let value;
   if (resourceCount !== -1) {
+    // Update both the exported file count and exported resource count
     value = (
       await collection.findOneAndUpdate(
         { id: clientId },
@@ -213,8 +214,6 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
       )
     ).value;
   }
-
-  console.log(value);
 
   // Complete import request when file count reaches 0
   if (value.exportedFileCount === 0) {

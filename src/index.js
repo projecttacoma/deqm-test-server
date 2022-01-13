@@ -30,7 +30,6 @@ for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
 
   // Database updates need to happen from the main process to avoid race conditions
   child.on('message', async ({ clientId, resourceCount }) => {
-    console.log('going to decrement');
     await decrementBulkFileCount(clientId, resourceCount);
   });
 }

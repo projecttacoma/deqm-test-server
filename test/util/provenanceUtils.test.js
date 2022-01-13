@@ -11,7 +11,7 @@ const {
   AMENDING_AUDIT
 } = require('../fixtures/provenanceFixtures');
 const { v4: uuidv4 } = require('uuid');
-const queue = require('../../src/resources/importQueue');
+const queue = require('../../src/queue/importQueue');
 
 jest.mock('uuid', () => {
   return {

@@ -13,7 +13,6 @@ describe('checkBulkStatus logic', () => {
       .get('/4_0_1/bulkstatus/PENDING_REQUEST')
       .expect(202)
       .then(response => {
-        expect(response.headers['x-progress']).toEqual('Retrieving export files');
         expect(response.headers['retry-after']).toEqual('120');
       });
   });

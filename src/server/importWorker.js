@@ -46,12 +46,11 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle) => {
     // Default to not use typeFilters for measure specific import
     const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle, false);
 
-    // If any files dont have count data, just track percentage based on number of files
+    // Calculate number of resources to export, if available. Otherwise, set to -1.
     const resourceCount = output.reduce((resources, fileInfo) => {
       if (resources === -1 || fileInfo.count === undefined) {
         return -1;
       }
-      // count of resources is available
       return resources + fileInfo.count;
     }, 0);
 
