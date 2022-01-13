@@ -34,6 +34,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
       if (xprovenanceIncluded) {
         bundleProvenanceTarget.push({ reference: `${result.resource.resourceType}/${result.resource.id}` });
       }
+      console.log(result.resource.resourceType);
       entry.response.location = `${baseVersion}/${result.resource.resourceType}/${result.resource.id}`;
     } else {
       entry.response.outcome = result.data;
@@ -152,7 +153,7 @@ async function uploadTransactionBundle(req, res) {
   return bundle;
 }
 
-async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion, protocol, xprovenanceIncluded) {
+async function uploadResourcesFromBundle(entries, headers,  xprovenanceIncluded) {
   const scrubbedEntries = replaceReferences(entries);
   // define headers to be included in axios call
   const entryHeaders = { 'Content-Type': 'application/json+fhir' };
