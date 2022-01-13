@@ -157,7 +157,7 @@ async function uploadTransactionBundle(req, res) {
   return bundle;
 }
 
-async function uploadResourcesFromBundle(entries, headers,  xprovenanceIncluded) {
+async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded) {
   const scrubbedEntries = replaceReferences(entries);
   // define headers to be included in axios call
   const entryHeaders = { 'Content-Type': 'application/json+fhir' };
