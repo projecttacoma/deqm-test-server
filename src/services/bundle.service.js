@@ -172,6 +172,7 @@ async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, 
       const operationOutcome = resolveSchema(baseVersion, 'operationoutcome');
       const results = new operationOutcome();
       results.issue = e.issue;
+      results.statusCode = e.statusCode;
       return {
         status: e.statusCode,
         statusText: e.issue[0].code,
