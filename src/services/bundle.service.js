@@ -175,6 +175,7 @@ async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, 
       results.statusCode = e.statusCode;
       return {
         status: e.statusCode,
+        statusCode: e.statusCode,
         statusText: e.issue[0].code,
         data: results.toJSON()
       };
