@@ -100,7 +100,6 @@ async function uploadTransactionBundle(req, res) {
   const { base_version: baseVersion } = req.params;
   const { headers, baseUrl, protocol } = req;
   checkContentTypeHeader(headers);
-  checkSupportedResource(resourceType);
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {

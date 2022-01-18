@@ -13,10 +13,15 @@ const server = initialize(config);
 
 const NON_BUNDLE_REQ = {
   body: { resourceType: 'invalidType', type: 'transaction' },
-  params: { base_version: '4_0_1' }
+  params: { base_version: '4_0_1' },
+  headers: { 'content-type': 'application/json+fhir' }
 };
 
-const NON_TXN_REQ = { body: { resourceType: 'Bundle', type: 'invalidType' }, params: { base_version: '4_0_1' } };
+const NON_TXN_REQ = {
+  body: { resourceType: 'Bundle', type: 'invalidType' },
+  params: { base_version: '4_0_1' },
+  headers: { 'content-type': 'application/json+fhir' }
+};
 
 describe('uploadTransactionBundle Server errors', () => {
   test('error thrown if resource type is not Bundle', async () => {
