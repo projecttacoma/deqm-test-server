@@ -23,7 +23,7 @@ const NON_TXN_REQ = {
   headers: { 'content-type': 'application/json+fhir' }
 };
 const NON_INVALID_METHOD_REQ = {
-  body: { resourceType: 'Bundle', type: 'transaction', entry: [ {request:{method:'GET'}}]},
+  body: { resourceType: 'Bundle', type: 'transaction', entry: [{ request: { method: 'GET' } }] },
   params: { base_version: '4_0_1' },
   headers: { 'content-type': 'application/json+fhir' }
 };
@@ -72,9 +72,7 @@ describe('Test transaction bundle upload', () => {
       await uploadTransactionBundle(NON_INVALID_METHOD_REQ, {});
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        `Expected requests of type PUT or POST, received GET.`
-      );
+      expect(e.issue[0].details.text).toEqual(`Expected requests of type PUT or POST, received GET.`);
     }
   });
   afterAll(cleanUpTest);
