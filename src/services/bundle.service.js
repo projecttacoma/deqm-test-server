@@ -36,7 +36,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
       if (xprovenanceIncluded) {
         bundleProvenanceTarget.push({ reference: `${result.resource.resourceType}/${result.resource.id}` });
       }
-      console.log(result.resource.resourceType);
+      
       entry.response.location = `${baseVersion}/${result.resource.resourceType}/${result.resource.id}`;
     } else {
       entry.response.outcome = result.data;
