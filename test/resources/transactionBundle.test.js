@@ -1,6 +1,6 @@
 const { createTransactionBundleClass } = require('../../src/resources/transactionBundle');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
-const queue = require('../../src/resources/importQueue');
+const queue = require('../../src/queue/importQueue');
 
 describe('Test functionality for adding resource entry to the bundle', () => {
   let tb;

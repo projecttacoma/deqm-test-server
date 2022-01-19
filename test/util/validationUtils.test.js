@@ -4,7 +4,7 @@ const {
   validateCareGapsParams,
   gatherParams
 } = require('../../src/util/validationUtils');
-const queue = require('../../src/resources/importQueue');
+const queue = require('../../src/queue/importQueue');
 
 const VALID_QUERY = {
   periodStart: '2019-01-01',

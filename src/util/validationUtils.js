@@ -157,7 +157,7 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
       issue: [
         {
           severity: 'error',
-          code: 'BadRequest',
+          code: 'NotImplemented',
           details: {
             text: `The following parameters were included and are not supported for ${operationName}: ${includedUnsupportedParams.join(
               ', '
@@ -190,10 +190,38 @@ const gatherParams = (query, body) => {
   return params;
 };
 
+/**
+ * Uses request body parameter to search for the optional exportType parameter if present.
+ * If so, checks that exportType is not static
+ * @param {Object} parameters - request body parameter
+ */
+const checkExportType = parameters => {
+  const exportTypes = parameters
+    .filter(param => param.name === 'exportType')
+    .map(entry => {
+      return entry.valueString;
+    });
+  if (exportTypes.includes('static')) {
+    throw new ServerError(null, {
+      statusCode: 501,
+      issue: [
+        {
+          severity: 'error',
+          code: 'NotImplemented',
+          details: {
+            text: 'static exportType is not supported on this server'
+          }
+        }
+      ]
+    });
+  }
+};
+
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
   checkRequiredParams,
-  gatherParams
+  gatherParams,
+  checkExportType
 };

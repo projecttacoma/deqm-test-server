@@ -1,7 +1,7 @@
 const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
-const queue = require('../src/resources/importQueue');
+const queue = require('../src/queue/importQueue');
 const fs = require('fs');
 
 const createTestResource = async (data, resourceType) => {

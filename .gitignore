@@ -3,3 +3,4 @@ node_modules
 connectathon
 coverage
 docker_ssl_setup.sh
+tmp

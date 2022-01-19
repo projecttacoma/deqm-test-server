@@ -4,8 +4,7 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = requi
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
-const importQueue = require('../resources/importQueue');
-const _ = require('lodash');
+const importQueue = require('../queue/importQueue');
 const { retrieveExportUrl } = require('../util/exportUtils');
 const {
   validateEvalMeasureParams,
@@ -196,19 +195,20 @@ const bulkImportFromRequirements = async (args, { req }) => {
     measureId = measureResource.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
-  const requestInfo = _.pick(req, 'params', 'body', 'headers', 'protocol', 'baseUrl');
 
   // retrieve data requirements
   const exportURL = retrieveExportUrl(parameters);
   const jobData = {
     clientEntry,
     exportURL,
-    requestInfo,
     measureBundle
   };
   await importQueue.createJob(jobData).save();
   res.status(202);
-  res.setHeader('Content-Location', `${args.base_version}/bulkstatus/${clientEntry}`);
+  res.setHeader(
+    'Content-Location',
+    `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
+  );
 };
 
 /**

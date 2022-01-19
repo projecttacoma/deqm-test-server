@@ -46,10 +46,32 @@ async function checkBulkStatus(req, res) {
       ]
     });
   }
-  if (bulkStatus.status === 'In Progress') {
+
+  if (bulkStatus.status === 'Failed') {
+    throw new ServerError(null, {
+      statusCode: 500,
+      issue: [
+        {
+          severity: 'error',
+          code: bulkStatus.error.code || 'UnknownError',
+          details: {
+            text: bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`
+          }
+        }
+      ]
+    });
+  } else if (bulkStatus.status === 'In Progress') {
     res.status(202);
-    //TODO set these responses dynamically?
-    res.set('X-Progress', 'Retrieving export files');
+    // Compute percent of files or resources exported
+    let percentComplete;
+    // Use file counts for percentage if export server does not record resource counts
+    if (bulkStatus.exportedResourceCount === -1) {
+      percentComplete = (bulkStatus.totalFileCount - bulkStatus.exportedFileCount) / bulkStatus.totalFileCount;
+    } else {
+      percentComplete =
+        (bulkStatus.totalResourceCount - bulkStatus.exportedResourceCount) / bulkStatus.totalResourceCount;
+    }
+    res.set('X-Progress', `${(percentComplete * 100).toFixed(2)}% Done`);
     res.set('Retry-After', 120);
   } else if (bulkStatus.status === 'Completed') {
     res.status(200);

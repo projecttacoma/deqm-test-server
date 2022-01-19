@@ -11,7 +11,7 @@
     },
     {
       "name": "exportUrl",
-      "valueString": "not-real-url"
+      "valueUrl": "not-real-url"
     }
   ]
 }

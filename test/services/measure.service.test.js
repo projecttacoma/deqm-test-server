@@ -5,7 +5,7 @@ const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
 const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
-const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueString.json');
+const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
 const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
@@ -94,7 +94,7 @@ describe('bulkImport with exportUrl', () => {
       .expect(400);
   });
 
-  test('FHIR Parameters object is missing valueString for export URL', async () => {
+  test('FHIR Parameters object is missing valueUrl for export URL', async () => {
     await supertest(server.app)
       .post('/4_0_1/Measure/$submit-data')
       .send(testParamNoValString)
