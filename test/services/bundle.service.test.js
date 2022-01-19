@@ -78,7 +78,6 @@ describe('Test transaction bundle upload', () => {
       .then(async response => {
         expect(response.statusCode).toEqual(400);
       });
-    afterAll(cleanUpTest);
   });
 });
 describe('Test handle submit data bundle', () => {
