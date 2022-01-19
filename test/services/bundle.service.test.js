@@ -22,7 +22,7 @@ const NON_TXN_REQ = {
   params: { base_version: '4_0_1' },
   headers: { 'content-type': 'application/json+fhir' }
 };
-const NON_INVALID_METHOD_REQ = {
+const INVALID_METHOD_REQ = {
   body: { resourceType: 'Bundle', type: 'transaction', entry: [{ request: { method: 'GET' } }] },
   params: { base_version: '4_0_1' },
   headers: { 'content-type': 'application/json+fhir' }
@@ -68,16 +68,19 @@ describe('Test transaction bundle upload', () => {
   });
 
   test('error thrown if method  type is not PUT or POST', async () => {
-    try {
-      await uploadTransactionBundle(NON_INVALID_METHOD_REQ, {});
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(`Expected requests of type PUT or POST, received GET.`);
-    }
+    await supertest(server.app)
+      .post('/4_0_1/Measure/$submit-data')
+      .send(INVALID_METHOD_REQ)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(400)
+      .then(async response => {
+        expect(response.statusCode).toEqual(400);
+      });
+    afterAll(cleanUpTest);
   });
-  afterAll(cleanUpTest);
 });
-
 describe('Test handle submit data bundle', () => {
   beforeAll(async () => {
     await client.connect();
