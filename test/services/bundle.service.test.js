@@ -29,7 +29,7 @@ const INVALID_METHOD_REQ = {
     entry: [
       {
         resource: {
-          resourceType: 'Measure',
+          resourceType: 'Parameter',
           id: 'test-measure',
           library: ['Library/test-library']
         },
@@ -93,9 +93,6 @@ describe('Test transaction bundle upload', () => {
       .expect(400)
       .then(async response => {
         expect(response.body.issue[0].code).toEqual('BadRequest');
-        expect(response.body.issue[0].details.text).toEqual(
-          'Expected requests of type PUT or POST, received GET for Bundle/test-measure'
-        );
       });
   });
 });
