@@ -185,7 +185,6 @@ async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, 
 }
 
 async function insertBundleResources(entry, method) {
-  //need to return an array of promises
   checkSupportedResource(entry.resource.resourceType);
   if (method === 'POST') {
     entry.resource.id = uuidv4();
