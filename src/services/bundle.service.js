@@ -197,7 +197,7 @@ async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, 
  * Supports Bundle upload to the server using transaction
  * @param {Object} entry - an object from the TB to insert to the database
  * @param {string} method - The method of the request, currently on PUT or POST are supported
- * @returns {Object} an object  containing the results of a  mongo insertion or update for the
+ * @returns {Object} an object containing the results of a mongo insertion or update for the
  * specified entry
  */
 async function insertBundleResources(entry, method) {
