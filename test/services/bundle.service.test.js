@@ -23,7 +23,23 @@ const NON_TXN_REQ = {
   headers: { 'content-type': 'application/json+fhir' }
 };
 const INVALID_METHOD_REQ = {
-  body: { resourceType: 'Bundle', type: 'transaction', entry: [{ request: { method: 'GET' } }] },
+  body: {
+    resourceType: 'Bundle',
+    type: 'transaction',
+    entry: [
+      {
+        resource: {
+          resourceType: 'Measure',
+          id: 'test-measure',
+          library: ['Library/test-library']
+        },
+        request: {
+          method: 'PUT',
+          url: 'Measure/test-measure'
+        }
+      }
+    ]
+  },
   params: { base_version: '4_0_1' },
   headers: { 'content-type': 'application/json+fhir' }
 };
@@ -76,7 +92,10 @@ describe('Test transaction bundle upload', () => {
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(400)
       .then(async response => {
-        expect(response.statusCode).toEqual(400);
+        expect(response.body.issue[0].code).toEqual('BadRequest');
+        expect(response.body.issue[0].details.text).toEqual(
+          'Expected requests of type PUT or POST, received GET for Bundle/test-measure'
+        );
       });
   });
 });
