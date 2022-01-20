@@ -39,7 +39,7 @@ const INVALID_METHOD_REQ = {
         }
       }
     ]
-  },
+  }
 };
 describe('uploadTransactionBundle Server errors', () => {
   test('error thrown if resource type is not Bundle', async () => {
