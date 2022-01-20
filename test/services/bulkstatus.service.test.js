@@ -67,6 +67,7 @@ describe('Dynamic X-Progress logic', () => {
       .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_FILE_COUNT')
       .expect(202)
       .then(response => {
+        // request contains total file count: 100 and exported file count: 10
         expect(response.headers['x-progress']).toEqual('90.00% Done');
       });
   });
@@ -76,6 +77,7 @@ describe('Dynamic X-Progress logic', () => {
       .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_RESOURCE_COUNT')
       .expect(202)
       .then(response => {
+        // request contains total resource count: 500 and exported resource count: 200
         expect(response.headers['x-progress']).toEqual('60.00% Done');
       });
   });
