@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
+const { checkContentTypeHeader } = require('../../src/services/base.service');
 const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
@@ -219,4 +220,18 @@ describe('base.service', () => {
   });
 
   afterEach(cleanUpTest);
+});
+
+describe('checkContentTypeHeader', () => {
+  test('throw ServerError for invalid ContentType header', () => {
+    const INVALID_HEADER = 'INVALID';
+    try {
+      checkContentTypeHeader(INVALID_HEADER);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
+      );
+    }
+  });
 });

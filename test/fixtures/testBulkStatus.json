@@ -18,6 +18,15 @@
     "exportedResourceCount": 200,
     "error": { "code": null, "message": null }
   },
+  {
+    "id": "ALMOST_COMPLETE_PENDING_REQUEST",
+    "status": "In Progress",
+    "totalFileCount": 100,
+    "exportedFileCount": 1,
+    "totalResourceCount": 500,
+    "exportedResourceCount": 10,
+    "error": { "code": null, "message": null }
+  },
   { "id": "COMPLETED_REQUEST", "status": "Completed", "error": { "code": null, "message": null } },
   {
     "id": "KNOWN_ERROR_REQUEST",
