@@ -24,7 +24,7 @@ const NON_TXN_REQ = {
 };
 const INVALID_METHOD_REQ = {
   body: {
-    resourceType: 'Bundle',
+    resourceType: 'Parameters',
     type: 'transaction',
     entry: [
       {
