@@ -34,7 +34,7 @@ const INVALID_METHOD_REQ = {
           library: ['Library/test-library']
         },
         request: {
-          method: 'PUT',
+          method: 'GET',
           url: 'Measure/test-measure'
         }
       }
