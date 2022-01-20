@@ -91,7 +91,7 @@ describe('Test transaction bundle upload', () => {
       .expect(400)
       .then(async response => {
         expect(response.body.issue[0].code).toEqual('BadRequest');
-        expect(response.body.issue[0].details).toEqual();
+        expect(response.body.issue[0].details).toContain("Expected requests of type PUT or POST, received GET");
       });
   });
 });
