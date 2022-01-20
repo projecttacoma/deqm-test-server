@@ -193,7 +193,7 @@ const gatherParams = (query, body) => {
 /**
  * Uses request body parameter to search for the optional exportType parameter if present.
  * If so, checks that exportType is not static
- * @param {Object} parameters - request body parameter
+ * @param {Array} parameters - parameters array from request body
  */
 const checkExportType = parameters => {
   const exportTypes = parameters
