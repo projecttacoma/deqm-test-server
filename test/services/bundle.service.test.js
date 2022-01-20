@@ -40,8 +40,6 @@ const INVALID_METHOD_REQ = {
       }
     ]
   },
-  params: { base_version: '4_0_1' },
-  headers: { 'content-type': 'application/json+fhir' }
 };
 describe('uploadTransactionBundle Server errors', () => {
   test('error thrown if resource type is not Bundle', async () => {
@@ -93,6 +91,7 @@ describe('Test transaction bundle upload', () => {
       .expect(400)
       .then(async response => {
         expect(response.body.issue[0].code).toEqual('BadRequest');
+        expect(response.body.issue[0].details).toEqual();
       });
   });
 });
