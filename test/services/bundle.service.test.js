@@ -28,7 +28,7 @@ const INVALID_METHOD_REQ = {
   entry: [
     {
       resource: {
-        resourceType: 'Parameters',
+        resourceType: 'Measure',
         id: 'test-measure',
         library: ['Library/test-library']
       },
