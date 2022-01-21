@@ -98,7 +98,7 @@ async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
-  const { headers, baseUrl, protocol } = req;
+  const { headers  } = req;
   checkContentTypeHeader(headers);
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
