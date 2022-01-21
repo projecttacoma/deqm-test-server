@@ -24,12 +24,12 @@ const NON_TXN_REQ = {
 };
 const INVALID_METHOD_REQ = {
   body: {
-    resourceType: 'Parameters',
+    resourceType: 'Bundle',
     type: 'transaction',
     entry: [
       {
         resource: {
-          resourceType: 'Parameter',
+          resourceType: 'Bundle',
           id: 'test-measure',
           library: ['Library/test-library']
         },
