@@ -83,17 +83,18 @@ describe('Test transaction bundle upload', () => {
 
   test('error thrown if method  type is not PUT or POST', async () => {
     await supertest(server.app)
-      .post('/4_0_1/Measure/$submit-data')
+      .post('/4_0_1/')
       .send(INVALID_METHOD_REQ)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(400)
+      .expect(200)
       .then(async response => {
-        expect(response.body.issue[0].code).toEqual('BadRequest');
-        expect(response.body.issue[0].details).toEqual(
+     
+        expect(response.entry.responce.issue[0].details).toEqual(
           'Expected requests of type PUT or POST, received GET for Parameter/test-measure'
         );
+       
       });
   });
 });
