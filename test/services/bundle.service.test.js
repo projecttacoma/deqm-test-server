@@ -79,7 +79,7 @@ describe('Test transaction bundle upload', () => {
       });
   });
 
-  test('error thrown if method  type is not PUT or POST', async () => {
+  test('error thrown if method type is not PUT or POST', async () => {
     await supertest(server.app)
       .post('/4_0_1/')
       .send(INVALID_METHOD_REQ)
