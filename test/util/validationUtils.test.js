@@ -2,7 +2,8 @@ const {
   checkRequiredParams,
   validateEvalMeasureParams,
   validateCareGapsParams,
-  gatherParams
+  gatherParams,
+  checkExportType
 } = require('../../src/util/validationUtils');
 const queue = require('../../src/queue/importQueue');
 
@@ -183,4 +184,27 @@ describe('validateCareGapsParams', () => {
   });
 
   afterAll(async () => await queue.close());
+});
+
+describe('checkExportType', () => {
+  test('checkExportType throws 501 error for unsupported static export type', () => {
+    const STATIC_EXPORT_PARAMS = [
+      { name: 'exportUrl', valueUrl: 'http://example.com' },
+      { name: 'exportType', valueString: 'static' }
+    ];
+    try {
+      checkExportType(STATIC_EXPORT_PARAMS);
+    } catch (e) {
+      expect(e.statusCode).toEqual(501);
+      expect(e.issue[0].details.text).toEqual(`static exportType is not supported on this server`);
+    }
+  });
+
+  test('checkExportType does not throw error for dynamic export type', () => {
+    const DYNAMIC_EXPORT_PARAMS = [
+      { name: 'exportUrl', valueUrl: 'http://example.com' },
+      { name: 'exportType', valueString: 'dynamic' }
+    ];
+    expect(checkExportType(DYNAMIC_EXPORT_PARAMS)).toBeUndefined();
+  });
 });

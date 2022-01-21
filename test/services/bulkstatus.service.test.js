@@ -59,3 +59,28 @@ describe('checkBulkStatus logic', () => {
   });
   afterAll(cleanUpTest);
 });
+
+describe('Dynamic X-Progress logic', () => {
+  beforeAll(bulkStatusSetup);
+  test('check X-Progress header calculates percent complete when only file counts are available', async () => {
+    await supertest(server.app)
+      .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_FILE_COUNT')
+      .expect(202)
+      .then(response => {
+        // request contains total file count: 100 and exported file count: 10
+        expect(response.headers['x-progress']).toEqual('90.00% Done');
+      });
+  });
+
+  test('check X-Progress header calculates percent complete using resource count when available', async () => {
+    await supertest(server.app)
+      .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_RESOURCE_COUNT')
+      .expect(202)
+      .then(response => {
+        // request contains total resource count: 500 and exported resource count: 200
+        expect(response.headers['x-progress']).toEqual('60.00% Done');
+      });
+  });
+
+  afterAll(cleanUpTest);
+});
