@@ -134,15 +134,7 @@ async function uploadTransactionBundle(req, res) {
     checkProvenanceHeader(req.headers);
     xprovenanceIncluded = true;
   }
-  const requestResults = await uploadResourcesFromBundle(
-    entries,
-    headers,
-    baseUrl,
-    baseVersion,
-    protocol,
-    xprovenanceIncluded,
-    baseVersion
-  );
+  const requestResults = await uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, baseVersion);
 
   const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
     requestResults,

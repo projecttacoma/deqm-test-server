@@ -90,6 +90,9 @@ describe('Test transaction bundle upload', () => {
       .then(async response => {
         expect(response.body.resourceType).toEqual('Bundle');
         expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
+        expect(response.body.entry[0].response.outcome.issue[0].details.text).toEqual(
+          'Expected requests of type PUT or POST, received GET for Measure/test-measure'
+        );
       });
   });
 });
