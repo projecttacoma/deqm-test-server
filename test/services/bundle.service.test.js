@@ -88,7 +88,8 @@ describe('Test transaction bundle upload', () => {
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200)
       .then(async response => {
-        expect(entry.response.issue[0].status.toEqual("400 BadRequest"));
+       const  entry = response.entry;
+        expect(entry.response.issue[0].status.toEqual('400 BadRequest'));
         expect(entry.response.issue[0].details.text).toEqual(
           'Expected requests of type PUT or POST, received GET for Parameter/test-measure'
         );
