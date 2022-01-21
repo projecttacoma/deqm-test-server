@@ -88,8 +88,8 @@ describe('Test transaction bundle upload', () => {
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
       .expect(200)
       .then(async response => {
-        expect(response.body.resourceType.toEqual('Bundle'));
-        expect(response.body.entry[0].response.status.toEqual('400 BadRequest'));
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
       });
   });
 });
