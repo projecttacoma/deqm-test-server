@@ -91,7 +91,7 @@ describe('Test transaction bundle upload', () => {
       .expect(200)
       .then(async response => {
      
-        expect(response.entry.responce.issue[0].details).toEqual(
+        expect(response.entry.response.issue[0].details).toEqual(
           'Expected requests of type PUT or POST, received GET for Parameter/test-measure'
         );
        
