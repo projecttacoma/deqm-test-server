@@ -23,13 +23,13 @@ const NON_TXN_REQ = {
   headers: { 'content-type': 'application/json+fhir' }
 };
 const INVALID_METHOD_REQ = {
-  body: {
+   
     resourceType: 'Bundle',
     type: 'transaction',
     entry: [
       {
         resource: {
-          resourceType: 'Bundle',
+          resourceType: 'Parameters',
           id: 'test-measure',
           library: ['Library/test-library']
         },
@@ -39,7 +39,7 @@ const INVALID_METHOD_REQ = {
         }
       }
     ]
-  }
+  
 };
 describe('uploadTransactionBundle Server errors', () => {
   test('error thrown if resource type is not Bundle', async () => {
