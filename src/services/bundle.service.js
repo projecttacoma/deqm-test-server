@@ -134,7 +134,7 @@ async function uploadTransactionBundle(req, res) {
     checkProvenanceHeader(req.headers);
     xprovenanceIncluded = true;
   }
-  const requestResults = await uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, baseVersion);
+  const requestResults = await uploadResourcesFromBundle(entries, baseVersion);
 
   const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
     requestResults,
@@ -152,13 +152,10 @@ async function uploadTransactionBundle(req, res) {
 /**
  * Supports Bundle upload to the server using transaction
  * @param {Object} entries - an object containing the list of entries in the bundle to process
- * @param {Object} headers - an object containing the headers for the request
  * @param {string} base_version base version from args passed in through client request
- * @param {boolean} xprovenanceIncluded - X-Provenance header was included and
- * should be accounted for
  * @returns {Object} an array of results that containing the results of the mongo insertions
  */
-async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, baseVersion) {
+async function uploadResourcesFromBundle(entries, baseVersion) {
   const scrubbedEntries = replaceReferences(entries);
 
   const requestsArray = scrubbedEntries.map(async entry => {
