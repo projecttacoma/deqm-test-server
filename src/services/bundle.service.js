@@ -1,11 +1,12 @@
 const path = require('path');
-const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { createResource, pushToResource } = require('../database/dbOperations');
+const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
+const { checkContentTypeHeader } = require('./base.service');
+const { checkSupportedResource } = require('../util/baseUtils');
 
 const logger = loggers.get('default');
 
@@ -33,9 +34,10 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
     const entry = new Bundle({ response: { status: `${result.status} ${result.statusText}` } });
     if (result.status === 200 || result.status === 201) {
       if (xprovenanceIncluded) {
-        bundleProvenanceTarget.push(JSON.parse(result.headers['x-provenance']).target);
+        bundleProvenanceTarget.push({ reference: `${result.resource.resourceType}/${result.resource.id}` });
       }
-      entry.response.location = result.headers.location;
+
+      entry.response.location = `${baseVersion}/${result.resource.resourceType}/${result.resource.id}`;
     } else {
       entry.response.outcome = result.data;
     }
@@ -43,7 +45,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   });
 
   bundle.entry = entries;
-  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget.flat() };
+  return { bundle, bundleProvenanceTarget: bundleProvenanceTarget };
 };
 
 /**
@@ -96,7 +98,8 @@ async function uploadTransactionBundle(req, res) {
   logger.info('Base >>> transaction');
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
-  const { headers, baseUrl, protocol } = req;
+  const { headers } = req;
+  checkContentTypeHeader(headers);
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
     throw new ServerError(null, {
@@ -131,14 +134,7 @@ async function uploadTransactionBundle(req, res) {
     checkProvenanceHeader(req.headers);
     xprovenanceIncluded = true;
   }
-  const requestResults = await uploadResourcesFromBundle(
-    entries,
-    headers,
-    baseUrl,
-    baseVersion,
-    protocol,
-    xprovenanceIncluded
-  );
+  const requestResults = await uploadResourcesFromBundle(entries, baseVersion);
 
   const { bundle, bundleProvenanceTarget } = makeTransactionResponseBundle(
     requestResults,
@@ -153,24 +149,75 @@ async function uploadTransactionBundle(req, res) {
   return bundle;
 }
 
-async function uploadResourcesFromBundle(entries, headers, baseUrl, baseVersion, protocol, xprovenanceIncluded) {
+/**
+ * Supports Bundle upload to the server using transaction
+ * @param {Object} entries - an object containing the list of entries in the bundle to process
+ * @param {string} base_version base version from args passed in through client request
+ * @returns {Object} an array of results that containing the results of the mongo insertions
+ */
+async function uploadResourcesFromBundle(entries, baseVersion) {
   const scrubbedEntries = replaceReferences(entries);
-  // define headers to be included in axios call
-  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
-  if (xprovenanceIncluded) {
-    entryHeaders['X-Provenance'] = headers['x-provenance'];
-  }
+
   const requestsArray = scrubbedEntries.map(async entry => {
-    const { url, method } = entry.request;
-    const destinationUrl = `${protocol}://${path.join(headers.host, baseUrl, baseVersion, url)}`;
-    return axios[method.toLowerCase()](destinationUrl, entry.resource, {
-      headers: entryHeaders
-    }).catch(e => {
-      return e.response;
+    const { method } = entry.request;
+
+    return insertBundleResources(entry, method).catch(e => {
+      const operationOutcome = resolveSchema(baseVersion, 'operationoutcome');
+      const results = new operationOutcome();
+      results.issue = e.issue;
+      results.statusCode = e.statusCode;
+      return {
+        status: e.statusCode,
+        statusCode: e.statusCode,
+        statusText: e.issue[0].code,
+        data: results.toJSON()
+      };
     });
   });
   const requestResults = await Promise.all(requestsArray);
   return requestResults;
 }
 
+/**
+ * Supports Bundle upload to the server using transaction
+ * @param {Object} entry - an object from the TB to insert to the database
+ * @param {string} method - The method of the request, currently on PUT or POST are supported
+ * @returns {Object} an object containing the results of a mongo insertion or update for the
+ * specified entry
+ */
+async function insertBundleResources(entry, method) {
+  checkSupportedResource(entry.resource.resourceType);
+  if (method === 'POST') {
+    entry.resource.id = uuidv4();
+    const { id } = await createResource(entry.resource, entry.resource.resourceType);
+    if (id != null) {
+      entry.status = 201;
+      entry.statusText = 'Created';
+    }
+  }
+  if (method === 'PUT') {
+    const { id, created } = await updateResource(entry.resource.id, entry.resource, entry.resource.resourceType);
+    if (created === true) {
+      entry.status = 201;
+      entry.statusText = 'Created';
+    } else if (id != null && created === false) {
+      entry.status = 200;
+      entry.statusText = 'OK';
+    }
+  } else {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `Expected requests of type PUT or POST, received ${method} for ${entry.resource.resourceType}/${entry.resource.id}`
+          }
+        }
+      ]
+    });
+  }
+  return entry;
+}
 module.exports = { uploadTransactionBundle, handleSubmitDataBundles, uploadResourcesFromBundle };

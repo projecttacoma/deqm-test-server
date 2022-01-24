@@ -13,11 +13,32 @@ const server = initialize(config);
 
 const NON_BUNDLE_REQ = {
   body: { resourceType: 'invalidType', type: 'transaction' },
-  params: { base_version: '4_0_1' }
+  params: { base_version: '4_0_1' },
+  headers: { 'content-type': 'application/json+fhir' }
 };
 
-const NON_TXN_REQ = { body: { resourceType: 'Bundle', type: 'invalidType' }, params: { base_version: '4_0_1' } };
-
+const NON_TXN_REQ = {
+  body: { resourceType: 'Bundle', type: 'invalidType' },
+  params: { base_version: '4_0_1' },
+  headers: { 'content-type': 'application/json+fhir' }
+};
+const INVALID_METHOD_REQ = {
+  resourceType: 'Bundle',
+  type: 'transaction',
+  entry: [
+    {
+      resource: {
+        resourceType: 'Measure',
+        id: 'test-measure',
+        library: ['Library/test-library']
+      },
+      request: {
+        method: 'GET',
+        url: 'Measure/test-measure'
+      }
+    }
+  ]
+};
 describe('uploadTransactionBundle Server errors', () => {
   test('error thrown if resource type is not Bundle', async () => {
     try {
@@ -58,9 +79,23 @@ describe('Test transaction bundle upload', () => {
       });
   });
 
-  afterAll(cleanUpTest);
+  test('error thrown if method type is not PUT or POST', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/')
+      .send(INVALID_METHOD_REQ)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200)
+      .then(async response => {
+        expect(response.body.resourceType).toEqual('Bundle');
+        expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
+        expect(response.body.entry[0].response.outcome.issue[0].details.text).toEqual(
+          'Expected requests of type PUT or POST, received GET for Measure/test-measure'
+        );
+      });
+  });
 });
-
 describe('Test handle submit data bundle', () => {
   beforeAll(async () => {
     await client.connect();
