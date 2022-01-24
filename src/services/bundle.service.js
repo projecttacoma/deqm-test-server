@@ -161,10 +161,6 @@ async function uploadTransactionBundle(req, res) {
 async function uploadResourcesFromBundle(entries, headers, xprovenanceIncluded, baseVersion) {
   const scrubbedEntries = replaceReferences(entries);
 
-  const entryHeaders = { 'Content-Type': 'application/json+fhir' };
-  if (xprovenanceIncluded) {
-    entryHeaders['X-Provenance'] = headers['x-provenance'];
-  }
   const requestsArray = scrubbedEntries.map(async entry => {
     const { method } = entry.request;
 
