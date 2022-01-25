@@ -87,8 +87,6 @@ describe('Dynamic X-Progress logic', () => {
       .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT')
       .expect(200)
       .then(response => {
-        // request contains total resource count: 500 and exported resource count: 200
-        expect(response.headers['x-progress']).toEqual('100.00% Done');
         expect(response.body.outcome[0].type).toEqual('OperationOutcome');
         expect(response.body.outcome[0].issue.details.text).toEqual(
           'Bulk import successfully completed, successfully imported 200'
