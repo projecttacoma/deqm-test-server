@@ -9,9 +9,13 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
+      HOST: fhir
+      PORT: 3000
       DB_HOST: mongo
       DB_PORT: 27017
       DB_NAME: deqm-test-server
+      IMPORT_WORKERS: 2
+      NDJSON_WORKERS: 2
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
