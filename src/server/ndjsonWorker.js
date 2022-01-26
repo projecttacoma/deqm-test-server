@@ -2,8 +2,9 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const axios = require('axios');
-const { updateResource } = require('../database/dbOperations');
+const { updateResource, pushBulkFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
+const { checkSupportedResource } = require('../util/baseUtils');
 
 console.log(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
@@ -38,11 +39,21 @@ ndjsonWorker.process(async job => {
     .trim()
     .split(/\n/)
     .map(async resourceStr => {
+      resourceStr = resourceStr.slice(-25);
       const data = JSON.parse(resourceStr);
+      checkSupportedResource(data.resourceType);
       return updateResource(data.id, data, data.resourceType);
     });
 
-  await Promise.all(insertions);
+  const outcomes = await Promise.allSettled(insertions);
+
+  const failedOutcomes = outcomes.filter(outcome => outcome.status === 'rejected');
+  const outcomeData = [];
+
+  failedOutcomes.forEach(out => {
+    outcomeData.push(out?.reason?.issue?.[0]?.details?.text ?? out.reason.message);
+  });
+  await pushBulkFailedOutcomes(clientId, outcomeData);
 
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
