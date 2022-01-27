@@ -166,7 +166,7 @@ const failBulkImportRequest = async (clientId, error) => {
  */
 const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
   const collection = db.collection('bulkImportStatuses');
-  await collection.findOneAndUpdate({ id: clientId }, { $push: failedOutcomes });
+  await collection.findOneAndUpdate({ id: clientId }, { $push: { failedOutcomes: { $each: failedOutcomes } } });
 };
 
 /**
