@@ -49,6 +49,8 @@ ndjsonWorker.process(async job => {
         checkSupportedResource(data.resourceType);
         return updateResource(data.id, data, data.resourceType);
       } catch (e) {
+        // Here, the location of the error message varies between standard error and ServerError
+        // The former path finds the message for a ServerError, the latter for a standard error
         throw new Error(
           `${data.resourceType}/${data.id} failed import with the following message: ${
             e.issue?.[0]?.details?.text ?? e.message
@@ -63,7 +65,7 @@ ndjsonWorker.process(async job => {
   const outcomeData = [];
 
   failedOutcomes.forEach(out => {
-    outcomeData.push(out?.reason?.issue?.[0]?.details?.text ?? out.reason.message);
+    outcomeData.push(out.reason.message);
   });
   await pushBulkFailedOutcomes(clientId, outcomeData);
 
