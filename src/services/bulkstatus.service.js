@@ -91,7 +91,7 @@ async function checkBulkStatus(req, res) {
               display: 'New resource created'
             }
           ],
-          text: `Bulk import successfully completed, successfully imported ${bulkStatus.succesCount}`
+          text: `Bulk import successfully completed, successfully imported ${bulkStatus.successCount}`
         }
       }
     ];
