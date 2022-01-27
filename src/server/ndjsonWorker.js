@@ -39,7 +39,6 @@ ndjsonWorker.process(async job => {
     .trim()
     .split(/\n/)
     .map(async resourceStr => {
-      resourceStr = resourceStr.slice(-25);
       const data = JSON.parse(resourceStr);
       checkSupportedResource(data.resourceType);
       return updateResource(data.id, data, data.resourceType);
