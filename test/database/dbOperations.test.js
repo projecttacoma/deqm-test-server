@@ -3,7 +3,8 @@ const {
   initializeBulkFileCount,
   decrementBulkFileCount,
   failBulkImportRequest,
-  findResourceById
+  findResourceById,
+  pushBulkFailedOutcomes
 } = require('../../src/database/dbOperations');
 
 describe('check bulk file count logic', () => {
@@ -72,6 +73,13 @@ describe('check bulk import status logic', () => {
     expect(result.status).toEqual('Failed');
     expect(result.error.code).toEqual(500);
     expect(result.error.message).toEqual(TEST_ERROR.message);
+  });
+  test('push to failed outcomes adds correctly to failed outcome array', async () => {
+    const CLIENT_ID = 'PENDING_REQUEST';
+    const exampleOutcomes = ['test1', 'test2'];
+    await pushBulkFailedOutcomes(CLIENT_ID, exampleOutcomes);
+    const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
+    expect(result.failedOutcomes).toEqual(['test1', 'test2']);
   });
 
   afterAll(cleanUpTest);
