@@ -23,7 +23,7 @@ describe('checkBulkStatus logic', () => {
     expect(response.body).toBeDefined();
     expect(response.body.outcome[0].type).toEqual('OperationOutcome');
     await supertest(server.app)
-      .get(response.body.outcome[0].url.replace(`http://${process.env.HOST}:${process.env.PORT}`, '')) //TODO: may need to break apart base_url to get slug
+      .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
       .expect(200);
   });
   test('check 500 and error returned for failed request with known error', async () => {
