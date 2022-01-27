@@ -34,7 +34,7 @@ for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
   });
 }
 
-const port = process.env.PORT || 3000;
+const port = process.env.SERVER_PORT || 3000;
 
 server.listen(port, async () => {
   logger.info(`Starting the FHIR Server at localhost:${port}`);

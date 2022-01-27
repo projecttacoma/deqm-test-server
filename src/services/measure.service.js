@@ -207,7 +207,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
   res.status(202);
   res.setHeader(
     'Content-Location',
-    `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
+    `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
   );
 };
 
