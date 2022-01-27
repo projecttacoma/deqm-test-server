@@ -37,6 +37,12 @@
     "failedOutcomes": []
   },
   {
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
+    "status": "Completed",
+    "error": { "code": null, "message": null },
+    "failedOutcomes": ["Test error message"]
+  },
+  {
     "id": "KNOWN_ERROR_REQUEST",
     "status": "Error",
     "error": { "code": "ErrorCode", "message": "Known Error Occurred!" },
