@@ -88,7 +88,6 @@ describe('Dynamic X-Progress logic', () => {
       .expect(200)
       .then(response => {
         expect(response.body.outcome[0].type).toEqual('OperationOutcome');
-        
       });
   });
   afterAll(cleanUpTest);
