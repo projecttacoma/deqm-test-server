@@ -127,7 +127,7 @@ async function checkBulkStatus(req, res) {
       });
       response.outcome.push({
         type: 'OperationOutcome',
-        url: `http://${process.env.HOST}:${process.env.PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
+        url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
       });
     }
     return response;
