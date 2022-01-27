@@ -39,9 +39,22 @@ ndjsonWorker.process(async job => {
     .trim()
     .split(/\n/)
     .map(async resourceStr => {
-      const data = JSON.parse(resourceStr);
-      checkSupportedResource(data.resourceType);
-      return updateResource(data.id, data, data.resourceType);
+      let data;
+      try {
+        data = JSON.parse(resourceStr);
+      } catch (e) {
+        throw new Error(`Error parsing JSON: ${resourceStr}`);
+      }
+      try {
+        checkSupportedResource(data.resourceType);
+        return updateResource(data.id, data, data.resourceType);
+      } catch (e) {
+        throw new Error(
+          `${data.resourceType}/${data.id} failed import with the following message: ${
+            e.issue?.[0]?.details?.text ?? e.message
+          }`
+        );
+      }
     });
 
   const outcomes = await Promise.allSettled(insertions);
