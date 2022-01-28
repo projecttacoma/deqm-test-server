@@ -1,4 +1,4 @@
-const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
