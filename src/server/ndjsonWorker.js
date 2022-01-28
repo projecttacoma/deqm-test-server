@@ -41,10 +41,10 @@ ndjsonWorker.process(async job => {
       const data = JSON.parse(resourceStr);
       return updateResource(data.id, data, data.resourceType);
     });
-  let sucessCount = await getCurrentSuccessfulImportCount(clientId);
+  let successCount = await getCurrentSuccessfulImportCount(clientId);
   const results = await Promise.all(insertions);
 
-  sucessCount = sucessCount + results.length();
+  successCount = successCount + results.length();
 
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
