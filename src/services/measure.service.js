@@ -1,4 +1,4 @@
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -323,7 +323,18 @@ const careGaps = async (args, { req }) => {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd
   });
-  return results;
+
+  const responseParameters = {
+    resourceType: 'Parameters',
+    parameter: [
+      {
+        name: 'return',
+        resource: results
+      }
+    ]
+  };
+
+  return responseParameters;
 };
 
 /**
