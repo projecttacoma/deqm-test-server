@@ -2,10 +2,7 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const { BulkImportWrappers } = require('bulk-data-utilities');
-const {
-  failBulkImportRequest,
-  initializeBulkFileCount  
-} = require('../database/dbOperations');
+const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
 
