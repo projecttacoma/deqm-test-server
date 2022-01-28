@@ -159,7 +159,7 @@ const failBulkImportRequest = async (clientId, error) => {
 };
 
 /**
- * Pushes an array of error messages to a bulkstatus entry to late be converted to
+ * Pushes an array of error messages to a bulkstatus entry to later be converted to
  * OperationOutcomes and made accessible via ndjson file to requestor
  * @param {String} clientId The id associated with the bulkImport request
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import

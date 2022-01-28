@@ -26,7 +26,7 @@ describe('checkBulkStatus logic', () => {
       .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
       .expect(200);
   });
-  test('check 200 returned with error OperationOUtcome ndjson file when it exists', async () => {
+  test('check 200 returned with error OperationOutcome ndjson file when it exists', async () => {
     const response = await supertest(server.app)
       .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
       .expect(200);
