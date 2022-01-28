@@ -1,7 +1,7 @@
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const express = require('express');
 const mongoUtil = require('./database/connection');
-const { decrementBulkFileCount } = require('./database/dbOperations');
+const { decrementBulkFileCount, updateSuccessfulImportCount } = require('./database/dbOperations');
 const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
@@ -29,8 +29,9 @@ for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
   const child = childProcess.fork('./src/server/ndjsonWorker.js');
 
   // Database updates need to happen from the main process to avoid race conditions
-  child.on('message', async ({ clientId, resourceCount }) => {
+  child.on('message', async ({ clientId, resourceCount, successCount }) => {
     await decrementBulkFileCount(clientId, resourceCount);
+    await updateSuccessfulImportCount(clientId, successCount);
   });
 }
 

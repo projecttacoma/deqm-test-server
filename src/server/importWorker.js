@@ -2,7 +2,10 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const { BulkImportWrappers } = require('bulk-data-utilities');
-const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
+const {
+  failBulkImportRequest,
+  initializeBulkFileCount  
+} = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
 
@@ -25,6 +28,7 @@ importQueue.process(async job => {
   // Call the existing export ndjson function that writes the files
   console.log(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
   const result = await executePingAndPull(clientEntry, exportURL, measureBundle);
+
   if (result) {
     console.log(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -66,7 +70,6 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle) => {
         })
       )
     );
-
     return true;
   } catch (e) {
     await failBulkImportRequest(clientEntryId, e);
