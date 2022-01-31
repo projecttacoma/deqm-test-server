@@ -182,7 +182,8 @@ const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
         exportedFileCount: fileCount,
         totalFileCount: fileCount,
         exportedResourceCount: resourceCount,
-        totalResourceCount: resourceCount
+        totalResourceCount: resourceCount,
+        successCount: 0
       }
     }
   );
@@ -220,6 +221,25 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
     await completeBulkImportRequest(clientId);
   }
 };
+/**
+ * Stores the total number of files successfully processed.
+ * @param {string} clientId The id signifying the bulk status request
+ * @param {number} resourceCount The number of successfully imported resources
+ */
+const updateSuccessfulImportCount = async (clientId, count) => {
+  const collection = db.collection('bulkImportStatuses');
+
+  await collection.findOneAndUpdate(
+    { id: clientId },
+    { $inc: { successCount: count } },
+    { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
+  );
+};
+const getCurrentSuccessfulImportCount = async clientId => {
+  const collection = db.collection('bulkImportStatuses');
+  const bulkStatus = await collection.findOne({ id: clientId });
+  return bulkStatus.successCount;
+};
 
 module.exports = {
   addPendingBulkImportRequest,
@@ -232,8 +252,10 @@ module.exports = {
   findResourcesWithAggregation,
   findResourcesWithQuery,
   getBulkImportStatus,
+  getCurrentSuccessfulImportCount,
   initializeBulkFileCount,
   pushToResource,
   removeResource,
-  updateResource
+  updateResource,
+  updateSuccessfulImportCount
 };

@@ -33,5 +33,14 @@
     "status": "Error",
     "error": { "code": "ErrorCode", "message": "Known Error Occurred!" }
   },
-  { "id": "UNKNOWN_ERROR_REQUEST", "status": "Error", "error": { "code": null, "message": null } }
+  { "id": "UNKNOWN_ERROR_REQUEST", "status": "Error", "error": { "code": null, "message": null } },
+  {
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
+    "status": "Completed",
+    "totalFileCount": 100,
+    "exportedFileCount": 10,
+    "totalResourceCount": 500,
+    "exportedResourceCount": 200,
+    "error": { "code": null, "message": null }
+  }
 ]
