@@ -2,7 +2,7 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const axios = require('axios');
-const { updateResource, getCurrentSuccessfulImportCount } = require('../database/dbOperations');
+const { updateResource } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 
 console.log(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
@@ -42,10 +42,9 @@ ndjsonWorker.process(async job => {
       return updateResource(data.id, data, data.resourceType);
     });
 
-  let successCount = await getCurrentSuccessfulImportCount(clientId);
   const results = await Promise.all(insertions);
+  let successCount = results.length;
 
-  successCount = successCount + results.length;
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
   process.send({ clientId, resourceCount, successCount });
