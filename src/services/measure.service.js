@@ -323,7 +323,18 @@ const careGaps = async (args, { req }) => {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd
   });
-  return results;
+
+  const responseParameters = {
+    resourceType: 'Parameters',
+    parameter: [
+      {
+        name: 'return',
+        resource: results
+      }
+    ]
+  };
+
+  return responseParameters;
 };
 
 /**
