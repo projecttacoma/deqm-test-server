@@ -2,7 +2,8 @@ const supertest = require('supertest');
 const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
-
+const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
+const validParam = require('../fixtures/fhir-resources/parameters/paramWithExport.json');
 const config = buildConfig();
 const server = initialize(config);
 
@@ -82,12 +83,32 @@ describe('Dynamic X-Progress logic', () => {
       });
   });
   test('check operationOutcome includes the number of resources when available', async () => {
-    await supertest(server.app)
-      .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT')
-      .expect(200)
-      .then(response => {
-        expect(response.body.outcome[0].type).toEqual('OperationOutcome');
+    const response = await supertest(server.app)
+      .post('/4_0_1/$import')
+      .send(validParam)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(202);
+
+    expect(response.headers['content-location']).toBeDefined();
+
+    const id = response.headers['content-location'].split('/');
+    console.log(id[5]);
+    const newResponse = await supertest(server.app)
+      .get('/4_0_1/file/' + id[5] + '/OperationOutcome.ndjson')
+      .expect(200);
+
+    newResponse.text
+      .trim()
+      .split(/\n/)
+      .map(async resourceStr => {
+        console.log(resourceStr + '\n');
+        const data = JSON.parse(resourceStr);
+        expect(data.contains('successfully imported  '));
       });
+    console.log(newResponse.text.length);
   });
+
   afterAll(cleanUpTest);
 });

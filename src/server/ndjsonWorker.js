@@ -43,7 +43,7 @@ ndjsonWorker.process(async job => {
     });
 
   const results = await Promise.all(insertions);
-  let successCount = results.length;
+  const successCount = results.length;
 
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
