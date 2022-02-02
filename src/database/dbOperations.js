@@ -123,7 +123,8 @@ const addPendingBulkImportRequest = async () => {
     exportedFileCount: -1,
     totalFileCount: -1,
     exportedResourceCount: -1,
-    totalResourceCount: -1
+    totalResourceCount: -1,
+    failedOutcomes: []
   };
   await collection.insertOne(bulkImportClient);
   return clientId;
@@ -155,6 +156,17 @@ const failBulkImportRequest = async (clientId, error) => {
     }
   };
   await collection.findOneAndUpdate({ id: clientId }, { $set: update });
+};
+
+/**
+ * Pushes an array of error messages to a bulkstatus entry to later be converted to
+ * OperationOutcomes and made accessible via ndjson file to requestor
+ * @param {String} clientId The id associated with the bulkImport request
+ * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
+ */
+const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
+  const collection = db.collection('bulkImportStatuses');
+  await collection.findOneAndUpdate({ id: clientId }, { $push: { failedOutcomes: { $each: failedOutcomes } } });
 };
 
 /**
@@ -227,6 +239,7 @@ module.exports = {
   createResource,
   decrementBulkFileCount,
   failBulkImportRequest,
+  pushBulkFailedOutcomes,
   findOneResourceWithQuery,
   findResourceById,
   findResourcesWithAggregation,

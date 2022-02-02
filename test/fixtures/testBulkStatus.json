@@ -7,7 +7,8 @@
     "exportedFileCount": 10,
     "totalResourceCount": -1,
     "exportedResourceCount": -1,
-    "error": { "code": null, "message": null }
+    "error": { "code": null, "message": null },
+    "failedOutcomes": []
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
@@ -16,7 +17,8 @@
     "exportedFileCount": 10,
     "totalResourceCount": 500,
     "exportedResourceCount": 200,
-    "error": { "code": null, "message": null }
+    "error": { "code": null, "message": null },
+    "failedOutcomes": []
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
@@ -25,13 +27,26 @@
     "exportedFileCount": 1,
     "totalResourceCount": 500,
     "exportedResourceCount": 10,
-    "error": { "code": null, "message": null }
+    "error": { "code": null, "message": null },
+    "failedOutcomes": []
   },
-  { "id": "COMPLETED_REQUEST", "status": "Completed", "error": { "code": null, "message": null } },
+  {
+    "id": "COMPLETED_REQUEST",
+    "status": "Completed",
+    "error": { "code": null, "message": null },
+    "failedOutcomes": []
+  },
+  {
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
+    "status": "Completed",
+    "error": { "code": null, "message": null },
+    "failedOutcomes": ["Test error message"]
+  },
   {
     "id": "KNOWN_ERROR_REQUEST",
     "status": "Error",
-    "error": { "code": "ErrorCode", "message": "Known Error Occurred!" }
+    "error": { "code": "ErrorCode", "message": "Known Error Occurred!" },
+    "failedOutcomes": []
   },
-  { "id": "UNKNOWN_ERROR_REQUEST", "status": "Error", "error": { "code": null, "message": null } }
+  { "id": "UNKNOWN_ERROR_REQUEST", "status": "Error", "error": { "code": null, "message": null }, "failedOutcomes": [] }
 ]

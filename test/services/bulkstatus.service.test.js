@@ -26,6 +26,19 @@ describe('checkBulkStatus logic', () => {
       .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
       .expect(200);
   });
+  test('check 200 returned with error OperationOutcome ndjson file when it exists', async () => {
+    const response = await supertest(server.app)
+      .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
+      .expect(200);
+    expect(response.headers.expires).toBeDefined();
+    expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
+    expect(response.body).toBeDefined();
+    expect(response.body.outcome.length).toEqual(2);
+    expect(response.body.outcome[1].type).toEqual('OperationOutcome');
+    await supertest(server.app)
+      .get(response.body.outcome[1].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
+      .expect(200);
+  });
   test('check 500 and error returned for failed request with known error', async () => {
     await supertest(server.app)
       .get('/4_0_1/bulkstatus/KNOWN_ERROR_REQUEST')
