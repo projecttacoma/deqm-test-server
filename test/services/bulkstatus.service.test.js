@@ -89,6 +89,7 @@ describe('Dynamic X-Progress logic', () => {
       .trim()
       .split(/\n/)
       .map(async resourceStr => {
+        //  TODO: improve this assertion when the duplicate OperationOutcome bug is resolved
         expect(resourceStr.includes('successfully imported 200'));
       });
   });
