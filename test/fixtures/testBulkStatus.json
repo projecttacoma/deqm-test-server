@@ -41,6 +41,7 @@
     "exportedFileCount": 10,
     "totalResourceCount": 500,
     "exportedResourceCount": 200,
+    "succesCount":200,
     "error": { "code": null, "message": null }
   }
 ]
