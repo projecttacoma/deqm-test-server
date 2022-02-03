@@ -45,7 +45,9 @@ const executePingAndPull = async (clientEntryId, exportUrl, measureBundle) => {
   try {
     // Default to not use typeFilters for measure specific import
     const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle, false);
-
+    if (output.length === 0) {
+      throw new Error('Export server failed to export any resources');
+    }
     // Calculate number of resources to export, if available. Otherwise, set to -1.
     const resourceCount = output.reduce((resources, fileInfo) => {
       if (resources === -1 || fileInfo.count === undefined) {

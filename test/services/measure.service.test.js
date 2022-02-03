@@ -299,9 +299,18 @@ describe('testing custom measure operation', () => {
     const { Calculator } = require('fqm-execution');
     const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
       return {
-        results: testCareGapsMeasureReport
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
       };
     });
+
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
       return {
         results: {
@@ -314,7 +323,8 @@ describe('testing custom measure operation', () => {
         }
       };
     });
-    await supertest(server.app)
+
+    const { body } = await supertest(server.app)
       .get('/4_0_1/Measure/$care-gaps')
       .query({
         measureId: 'testMeasure',
@@ -329,6 +339,12 @@ describe('testing custom measure operation', () => {
       measurementPeriodStart: '01-01-2020',
       measurementPeriodEnd: '01-01-2021'
     });
+
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(1);
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
   });
 
   test('bulk import fails if measure bundle cannot be found', async () => {

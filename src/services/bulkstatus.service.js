@@ -98,7 +98,7 @@ async function checkBulkStatus(req, res) {
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
-    return {
+    const response = {
       transactionTime: '2021-01-01T00:00:00Z',
       requiresAccessToken: true,
       outcome: [
@@ -109,6 +109,28 @@ async function checkBulkStatus(req, res) {
       ],
       extension: { 'https://example.com/extra-property': true }
     };
+
+    if (bulkStatus.failedOutcomes.length > 0) {
+      bulkStatus.failedOutcomes.forEach(fail => {
+        const failOutcome = {};
+        failOutcome.id = uuidv4();
+        failOutcome.issue = [
+          {
+            severity: 'error',
+            code: 'BadRequest',
+            details: {
+              text: fail
+            }
+          }
+        ];
+        writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(failOutcome).toJSON())), 'Errors', clientId);
+      });
+      response.outcome.push({
+        type: 'OperationOutcome',
+        url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
+      });
+    }
+    return response;
   } else {
     const outcome = {};
     outcome.id = uuidv4();
