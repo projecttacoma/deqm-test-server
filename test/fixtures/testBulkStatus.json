@@ -57,6 +57,7 @@
     "totalResourceCount": 500,
     "exportedResourceCount": 200,
     "succesCount":200,
-    "error": { "code": null, "message": null }
+    "error": { "code": null, "message": null },
+    "failedOutcomes": []
   }
 ]
