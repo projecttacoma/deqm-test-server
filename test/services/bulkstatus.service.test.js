@@ -69,6 +69,19 @@ describe('checkBulkStatus logic', () => {
         expect(response.body.issue[0].details.text).toEqual('Could not find bulk import request with id: INVALID_ID');
       });
   });
+  test('check operationOutcome includes the number of resources when available', async () => {
+    await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT').expect(200);
+    const response = await supertest(server.app).get(
+      '/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_COUNT/OperationOutcome.ndjson'
+    );
+    response.text
+      .trim()
+      .split(/\n/)
+      .map(async resourceStr => {
+        //  TODO: improve this assertion when the duplicate OperationOutcome bug is resolved
+        expect(resourceStr.includes('successfully imported 200'));
+      });
+  });
   afterAll(cleanUpTest);
 });
 
@@ -91,19 +104,6 @@ describe('Dynamic X-Progress logic', () => {
       .then(response => {
         // request contains total resource count: 500 and exported resource count: 200
         expect(response.headers['x-progress']).toEqual('60.00% Done');
-      });
-  });
-  test('check operationOutcome includes the number of resources when available', async () => {
-    await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT').expect(200);
-    const response = await supertest(server.app).get(
-      '/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_COUNT/OperationOutcome.ndjson'
-    );
-    response.text
-      .trim()
-      .split(/\n/)
-      .map(async resourceStr => {
-        //  TODO: improve this assertion when the duplicate OperationOutcome bug is resolved
-        expect(resourceStr.includes('successfully imported 200'));
       });
   });
 
