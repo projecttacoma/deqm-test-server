@@ -2,7 +2,6 @@ const supertest = require('supertest');
 const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
-
 const config = buildConfig();
 const server = initialize(config);
 
@@ -68,6 +67,19 @@ describe('checkBulkStatus logic', () => {
       .then(response => {
         expect(response.body.issue[0].code).toEqual('NotFound');
         expect(response.body.issue[0].details.text).toEqual('Could not find bulk import request with id: INVALID_ID');
+      });
+  });
+  test('check operationOutcome includes the number of resources when available', async () => {
+    await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT').expect(200);
+    const response = await supertest(server.app).get(
+      '/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_COUNT/OperationOutcome.ndjson'
+    );
+    response.text
+      .trim()
+      .split(/\n/)
+      .map(async resourceStr => {
+        //  TODO: improve this assertion when the duplicate OperationOutcome bug is resolved
+        expect(resourceStr.includes('successfully imported 200'));
       });
   });
   afterAll(cleanUpTest);

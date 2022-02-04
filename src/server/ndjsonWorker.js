@@ -62,16 +62,18 @@ ndjsonWorker.process(async job => {
   const outcomes = await Promise.allSettled(insertions);
 
   const failedOutcomes = outcomes.filter(outcome => outcome.status === 'rejected');
+  const succesfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
+
   const outcomeData = [];
 
   failedOutcomes.forEach(out => {
     outcomeData.push(out.reason.message);
   });
   await pushBulkFailedOutcomes(clientId, outcomeData);
-
+  const successCount = succesfulOutcomes.length;
   console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
-  process.send({ clientId, resourceCount });
+  process.send({ clientId, resourceCount, successCount });
 
   await mongoUtil.client.close();
 });
