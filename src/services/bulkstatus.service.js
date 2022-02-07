@@ -188,9 +188,9 @@ const checkForFile = function (type, clientId) {
     if (fs.existsSync(filename)) {
       //file exists
       const data = fs.readFileSync(filename);
-      return (data.length !== 0);
+      return data.length !== 0;
     }
-  } catch(err) {
+  } catch (err) {
     return false;
   }
   return false;
