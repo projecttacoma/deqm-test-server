@@ -9,11 +9,14 @@ const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('.
 /**
  * Wrapper function to get patient data and data
  * requirements for given patient id and map the resources to a collection bundle.
- * @param {string} patientId patient ID of interest
+ * @param {string} patientReference reference to patient of interest (either of the form {PatientId} or Patient/{PatientId})
  * @param {Array} dataRequirements data requirements array obtained from fqm execution
  * @returns {Object} patient bundle as a collection bundle
  */
-async function getPatientDataCollectionBundle(patientId, dataRequirements) {
+async function getPatientDataCollectionBundle(patientReference, dataRequirements) {
+  // PatientReference can be of the form {PatientId} or Patient/{PatientId} this extracts just the PatientId in both cases
+  const splitRef = patientReference.split('/');
+  const patientId = splitRef[splitRef.length - 1];
   const data = await getPatientData(patientId, dataRequirements);
   return mapResourcesToCollectionBundle(_.flattenDeep(data));
 }
