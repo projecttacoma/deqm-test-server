@@ -163,6 +163,9 @@ async function checkBulkStatus(req, res) {
 }
 
 const writeToFile = function (doc, type, clientId) {
+  // Do not write if file already has contents
+  if (checkForFile(type, clientId)) return;
+
   const dirpath = './tmp/' + clientId;
   fs.mkdirSync(dirpath, { recursive: true });
   const filename = path.join(dirpath, `${type}.ndjson`);
@@ -174,6 +177,23 @@ const writeToFile = function (doc, type, clientId) {
     stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(doc));
     stream.end();
   } else return;
+};
+
+// true if file for type and client id exists with content
+const checkForFile = function (type, clientId) {
+  const dirpath = './tmp/' + clientId;
+  const filename = path.join(dirpath, `${type}.ndjson`);
+  // check file exists and has contents
+  try {
+    if (fs.existsSync(filename)) {
+      //file exists
+      const data = fs.readFileSync(filename);
+      return (data.length !== 0);
+    }
+  } catch(err) {
+    return false;
+  }
+  return false;
 };
 
 module.exports = { checkBulkStatus };
