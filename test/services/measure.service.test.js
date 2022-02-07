@@ -331,7 +331,7 @@ describe('testing custom measure operation', () => {
         subject: 'testPatient',
         periodStart: '01-01-2020',
         periodEnd: '01-01-2021',
-        status: 'open'
+        status: 'open-gap'
       })
       .expect(200);
 
