@@ -32,7 +32,35 @@ describe('Testing dynamic querying for patient references using compartment defi
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
   });
 
+  test('Check that patient reference can be found at one level with Patient/{PatientId} style reference', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/')
+      .send(testBundle)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200);
+    const patientBundle = await getPatientDataCollectionBundle('Patient/test-patient', DATA_REQ);
+    const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
+    const reference = procedure.resource.subject;
+    expect(reference).toEqual({ reference: 'Patient/test-patient' });
+  });
+
   test('Check that patient reference can be found when nested', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/')
+      .send(testNestedBundle)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200);
+    const patientBundle = await getPatientDataCollectionBundle('test-patient', DATA_REQ);
+    const procedure = patientBundle.entry.filter(e => e.resource.resourceType === 'Procedure')[0];
+    const reference = procedure.resource.performer.actor;
+    expect(reference).toEqual({ reference: 'Patient/test-patient' });
+  });
+
+  test('Check that patient reference can be found when nested with Patient/{PatientId} style reference ', async () => {
     await supertest(server.app)
       .post('/4_0_1/')
       .send(testNestedBundle)
