@@ -90,7 +90,7 @@ const validateCareGapsParams = query => {
     });
   }
 
-  if (query.status !== 'open') {
+  if (query.status !== 'open-gap') {
     throw new ServerError(null, {
       statusCode: 501,
       issue: [
@@ -98,7 +98,7 @@ const validateCareGapsParams = query => {
           severity: 'error',
           code: 'NotImplemented',
           details: {
-            text: `Currently only supporting $care-gaps requests with status='open'`
+            text: `Currently only supporting $care-gaps requests with status='open-gap'`
           }
         }
       ]

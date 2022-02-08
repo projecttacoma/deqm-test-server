@@ -10,7 +10,7 @@ const queue = require('../../src/queue/importQueue');
 const VALID_QUERY = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
-  status: 'open',
+  status: 'open-gap',
   subject: 'testPatient',
   measureId: 'testID'
 };
@@ -100,7 +100,7 @@ describe('validateCareGapsParams', () => {
       query: {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        status: 'open',
+        status: 'open-gap',
         subject: 'testPatient',
         practitioner: 'testPractitioner'
       }
@@ -120,7 +120,7 @@ describe('validateCareGapsParams', () => {
       query: {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        status: 'open',
+        status: 'open-gap',
         subject: 'testPatient'
       }
     };
@@ -134,7 +134,7 @@ describe('validateCareGapsParams', () => {
     }
   });
 
-  test('error thrown for missing open status for $care-gaps', async () => {
+  test('error thrown for missing open-gap status for $care-gaps', async () => {
     const UNSUPPORTED_STATUS_REQ = {
       query: {
         periodStart: '2019-01-01',
@@ -148,7 +148,7 @@ describe('validateCareGapsParams', () => {
       validateCareGapsParams(UNSUPPORTED_STATUS_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(501);
-      expect(e.issue[0].details.text).toEqual(`Currently only supporting $care-gaps requests with status='open'`);
+      expect(e.issue[0].details.text).toEqual(`Currently only supporting $care-gaps requests with status='open-gap'`);
     }
   });
 
@@ -164,7 +164,7 @@ describe('validateCareGapsParams', () => {
       query: {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        status: 'open'
+        status: 'open-gap'
       },
       body: {
         resourceType: 'Parameters',
