@@ -25,6 +25,16 @@ describe('checkBulkStatus logic', () => {
       .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
       .expect(200);
   });
+  test('check single OperationOutcome response for completed request', async () => {
+    // call for status twice
+    await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
+    const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
+    const operationResponse = await supertest(server.app)
+      .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, ''))
+      .expect(200);
+    const count = (operationResponse.text.match(/OperationOutcome/g) || []).length;
+    expect(count).toEqual(1);
+  });
   test('check 200 returned with error OperationOutcome ndjson file when it exists', async () => {
     const response = await supertest(server.app)
       .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
