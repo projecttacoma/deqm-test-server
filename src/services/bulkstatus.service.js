@@ -1,10 +1,11 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 
+const logger = loggers.get('default');
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
  * formats the information held there to return to the user
@@ -14,7 +15,7 @@ const path = require('path');
  */
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
-
+  logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
   const bulkStatus = await getBulkImportStatus(clientId);
 
   if (!bulkStatus) {
@@ -30,6 +31,7 @@ async function checkBulkStatus(req, res) {
       }
     ];
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    logger.debug(`Writing unable to find bulk import request OperationOutcome to file for client: ${clientId}`);
     // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs generically indicate not found
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
@@ -63,6 +65,7 @@ async function checkBulkStatus(req, res) {
   } else if (bulkStatus.status === 'In Progress') {
     res.status(202);
     // Compute percent of files or resources exported
+    logger.debug(`Calculating bulkStatus percent complete for clientId: ${clientId}`);
     let percentComplete;
     // Use file counts for percentage if export server does not record resource counts
     if (bulkStatus.exportedResourceCount === -1) {
@@ -96,6 +99,7 @@ async function checkBulkStatus(req, res) {
       }
     ];
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    logger.debug(`Writing successful OperationOutcome to file for client: ${clientId}`);
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     const response = {
@@ -145,6 +149,7 @@ async function checkBulkStatus(req, res) {
     ];
     // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs are generic enough for an unknown failure
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
+    logger.debug(`Writing OperationOutcome with failed resources to file for client: ${clientId}`);
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     throw new ServerError(null, {

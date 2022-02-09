@@ -6,7 +6,12 @@ const { updateResource, pushBulkFailedOutcomes } = require('../database/dbOperat
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 
-console.log(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
+const { loggers } = require('@projecttacoma/node-fhir-server-core');
+loggers.initialize();
+
+const logger = loggers.get('default');
+
+logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
@@ -30,7 +35,7 @@ ndjsonWorker.process(async job => {
   const { fileUrl, clientId, resourceCount } = job.data;
 
   const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-  console.log(`ndjson-worker-${process.pid}: processing ${fileName}`);
+  logger.info(`ndjson-worker-${process.pid}: processing ${fileName}`);
 
   await mongoUtil.client.connect();
   const ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
@@ -71,7 +76,7 @@ ndjsonWorker.process(async job => {
   });
   await pushBulkFailedOutcomes(clientId, outcomeData);
   const successCount = succesfulOutcomes.length;
-  console.log(`ndjson-worker-${process.pid}: processed ${fileName}`);
+  logger.info(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
   process.send({ clientId, resourceCount, successCount });
 

@@ -15,6 +15,14 @@ const config = buildConfig();
 const server = initialize(config, app);
 const logger = loggers.get('default');
 
+/* 
+  The winston logger defaults to debug level. Outside production mode,
+  reset the debug level to 'info' to hide the debug console logs
+*/
+if (process.env.NODE_ENV === 'production') {
+  logger.transports[0].level = 'info';
+}
+
 const workerTotal = parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS);
 
 if (workerTotal > os.cpus().length) {

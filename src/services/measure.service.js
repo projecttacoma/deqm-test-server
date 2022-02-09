@@ -84,7 +84,6 @@ const SEARCH_PARAM_DEFS = {
  * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
-  logger.info('Measure >>> search');
   return baseSearch(args, { req }, 'Measure', SEARCH_PARAM_DEFS);
 };
 
@@ -161,6 +160,7 @@ const submitData = async (args, { req }) => {
   });
   const output = await handleSubmitDataBundles([tb], req);
   // expect exactly one output because uses exactly one transaction bundle
+  logger.info('Completed $submit-data request');
   return output[0];
 };
 
@@ -226,6 +226,7 @@ const dataRequirements = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(id);
 
   const { results } = Calculator.calculateDataRequirements(measureBundle, req.query);
+  logger.info('Successfully generated $data-requirements report');
   return results;
 };
 
@@ -257,6 +258,8 @@ const evaluateMeasure = async (args, { req }) => {
       measurementPeriodEnd: periodEnd,
       reportType: 'summary'
     });
+
+    logger.info('Successfully generated $evaluate-measure report');
     return results;
   }
 
@@ -333,7 +336,7 @@ const careGaps = async (args, { req }) => {
       }
     ]
   };
-
+  logger.info('Successfully generated $care-gaps report');
   return responseParameters;
 };
 

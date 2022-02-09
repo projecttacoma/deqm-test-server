@@ -56,7 +56,6 @@ const remove = async args => {
  * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
-  logger.info('Patient >>> search');
   return baseSearch(args, { req }, 'Patient');
 };
 
@@ -69,6 +68,7 @@ const search = async (args, { req }) => {
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
 const patientEverything = async (args, { req }) => {
+  logger.info('Patient >>> $everything');
   validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient

@@ -5,8 +5,11 @@ const { BulkImportWrappers } = require('bulk-data-utilities');
 const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
+const { loggers } = require('@projecttacoma/node-fhir-server-core');
 
-console.log(`import-worker-${process.pid}: Import Worker Started!`);
+loggers.initialize();
+const logger = loggers.get('default');
+logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
@@ -19,16 +22,16 @@ const importQueue = new Queue('import', {
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
   const { clientEntry, exportURL, measureBundle } = job.data;
-  console.log(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
+  logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
-  console.log(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
+  logger.info(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
   const result = await executePingAndPull(clientEntry, exportURL, measureBundle);
   if (result) {
-    console.log(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
+    logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
-    console.log(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
+    logger.info(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
   }
   await mongoUtil.client.close();
 });

@@ -20,6 +20,7 @@ const logger = loggers.get('default');
  * @returns {Object} transaction-response Bundle and updated txn bundle target (may be empty)
  */
 const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovenanceIncluded) => {
+  logger.info('Compiling transaction response bundle');
   const Bundle = resolveSchema(baseVersion, 'bundle');
   const bundle = new Bundle({ type: type, id: uuidv4() });
   bundle.link = {
@@ -45,6 +46,7 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   });
 
   bundle.entry = entries;
+  logger.info('Completed transaction response bundle');
   return { bundle, bundleProvenanceTarget: bundleProvenanceTarget };
 };
 
@@ -146,6 +148,7 @@ async function uploadTransactionBundle(req, res) {
   if (xprovenanceIncluded && bundleProvenanceTarget.length > 0) {
     populateProvenanceTarget(headers, res, bundleProvenanceTarget);
   }
+  logger.info('Transaction bundle successfully uploaded.');
   return bundle;
 }
 
@@ -156,11 +159,11 @@ async function uploadTransactionBundle(req, res) {
  * @returns {Object} an array of results that containing the results of the mongo insertions
  */
 async function uploadResourcesFromBundle(entries, baseVersion) {
+  logger.info('Inserting resources from transaction bundle');
   const scrubbedEntries = replaceReferences(entries);
 
   const requestsArray = scrubbedEntries.map(async entry => {
     const { method } = entry.request;
-
     return insertBundleResources(entry, method).catch(e => {
       const operationOutcome = resolveSchema(baseVersion, 'operationoutcome');
       const results = new operationOutcome();

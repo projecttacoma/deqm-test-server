@@ -1,7 +1,8 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const fs = require('fs');
 const path = require('path');
 
+const logger = loggers.get('default');
 /**
  * Finds and responds with requested file for some client id
  * @param {Object} req The express request object passed in by the user
@@ -11,6 +12,7 @@ const path = require('path');
 async function getClientFile(req, res) {
   const clientId = req.params.clientId;
   const fileName = req.params.fileName;
+  logger.info(`Retrieving ${fileName} file for client: ${clientId} `);
   const filePath = `tmp/${clientId}/${fileName}`;
   if (fs.existsSync(filePath)) {
     res.status(200);

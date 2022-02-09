@@ -91,6 +91,7 @@ const baseCreate = async ({ req }, resourceType) => {
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
+    logger.debug('Populating provenance target');
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
   }
   return createResource(data, resourceType);
@@ -164,6 +165,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
     total: 0
   });
   // build the aggregation query
+  logger.debug('Building search query');
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
 
   // if the query builder was able to build a query actually execute it.
@@ -238,6 +240,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
+    logger.debug('Populating provenance target');
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
   }
   return updateResource(args.id, data, resourceType);
