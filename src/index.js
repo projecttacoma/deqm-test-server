@@ -6,6 +6,7 @@ const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
 const os = require('os');
+const winston = require('winston');
 
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
@@ -19,6 +20,9 @@ const logger = loggers.get('default');
   The winston logger defaults to debug level. Outside production mode,
   reset the debug level to 'info' to hide the debug console logs
 */
+
+logger.transports[0].format = winston.format.printf(log => log.message);
+
 if (process.env.NODE_ENV === 'production') {
   logger.transports[0].level = 'info';
 }

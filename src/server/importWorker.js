@@ -6,9 +6,12 @@ const { failBulkImportRequest, initializeBulkFileCount } = require('../database/
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
 const { loggers } = require('@projecttacoma/node-fhir-server-core');
+const winston = require('winston');
 
 loggers.initialize();
 const logger = loggers.get('default');
+logger.transports[0].format = winston.format.printf(log => log.message);
+
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
   redis: {
