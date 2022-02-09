@@ -49,7 +49,9 @@ async function checkBulkStatus(req, res) {
     });
   }
 
+  logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
   if (bulkStatus.status === 'Failed') {
+    logger.debug(`bulkStatus entry is failed`);
     throw new ServerError(null, {
       statusCode: 500,
       issue: [
@@ -63,6 +65,7 @@ async function checkBulkStatus(req, res) {
       ]
     });
   } else if (bulkStatus.status === 'In Progress') {
+    logger.debug(`bulkStatus entry is in progress`);
     res.status(202);
     // Compute percent of files or resources exported
     logger.debug(`Calculating bulkStatus percent complete for clientId: ${clientId}`);
@@ -77,6 +80,7 @@ async function checkBulkStatus(req, res) {
     res.set('X-Progress', `${(percentComplete * 100).toFixed(2)}% Done`);
     res.set('Retry-After', 120);
   } else if (bulkStatus.status === 'Completed') {
+    logger.debug(`bulkStatus entry is completed`);
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
 
@@ -99,7 +103,6 @@ async function checkBulkStatus(req, res) {
       }
     ];
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
-    logger.debug(`Writing successful OperationOutcome to file for client: ${clientId}`);
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     const response = {
@@ -115,6 +118,7 @@ async function checkBulkStatus(req, res) {
     };
 
     if (bulkStatus.failedOutcomes.length > 0) {
+      logger.debug(`bulkStatus entry contains failed outcomes`);
       bulkStatus.failedOutcomes.forEach(fail => {
         const failOutcome = {};
         failOutcome.id = uuidv4();
@@ -149,7 +153,6 @@ async function checkBulkStatus(req, res) {
     ];
     // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs are generic enough for an unknown failure
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
-    logger.debug(`Writing OperationOutcome with failed resources to file for client: ${clientId}`);
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     throw new ServerError(null, {
@@ -176,6 +179,7 @@ const writeToFile = function (doc, type, clientId) {
   const filename = path.join(dirpath, `${type}.ndjson`);
 
   let lineCount = 0;
+  logger.debug(`Attempting to write the following OperationOutcome to ${filename}: ${JSON.stringify(doc)}`);
 
   if (Object.keys(doc).length > 0) {
     const stream = fs.createWriteStream(filename, { flags: 'a' });

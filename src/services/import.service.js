@@ -13,6 +13,10 @@ const importQueue = require('../queue/importQueue');
  */
 async function bulkImport(req, res) {
   logger.info('Measure >>> $bulk-import');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+  logger.debug(`Request params: ${JSON.stringify(req.params)}`);
+
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest();
 

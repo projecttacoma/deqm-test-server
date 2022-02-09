@@ -45,5 +45,10 @@
     "nodemon": "^2.0.12",
     "prettier": "^2.4.1",
     "supertest": "^6.1.6"
+  },
+  "jest": {
+    "setupFiles": [
+      "./test/globalSetup.js"
+    ]
   }
 }

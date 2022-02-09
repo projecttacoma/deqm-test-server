@@ -1,9 +1,10 @@
-const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, resolveSchema, loggers } = require('@projecttacoma/node-fhir-server-core');
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
 
+const logger = loggers.get('default');
 /**
  * Converts an array of FHIR resources to a FHIR searchset bundle
  * @param {Array} resources an array of FHIR resources
@@ -113,8 +114,10 @@ async function getMeasureBundleFromId(measureId) {
  * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
 async function assembleCollectionBundleFromMeasure(measure) {
+  logger.info('Assembling collection bundle from Measure');
   const [mainLibraryRef] = measure.library;
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
+  logger.debug(`Retrieved query from reference: ${mainLibQuery}`);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 
   if (!mainLib) {
@@ -145,6 +148,7 @@ async function assembleCollectionBundleFromMeasure(measure) {
  * @returns {Array} array of ValueSet resources required by the library
  */
 async function getDependentValueSets(lib) {
+  logger.debug(`Retrieving dependent valuesets for library: ${JSON.stringify(lib)}`);
   if (hasNoDependencies(lib)) {
     return [];
   }
@@ -167,6 +171,8 @@ async function getDependentValueSets(lib) {
  * @returns {Array} array of all libraries
  */
 async function getAllDependentLibraries(lib) {
+  logger.debug(`Retrieving all dependent libraries for library: ${JSON.stringify(lib)}`);
+
   // Kick off function with current library and any ValueSets it uses
   const valueSets = await getDependentValueSets(lib);
   const results = [lib, ...valueSets];
@@ -207,6 +213,7 @@ async function getAllDependentLibraries(lib) {
 function replaceReferences(entries) {
   // Add metadata for old IDs and newly created ones of POST entries
   entries.forEach(e => {
+    logger.debug(`Replacing resourceIds for entry: ${JSON.stringify(e)}`);
     if (e.request.method === 'POST') {
       e.isPost = true;
       e.oldId = e.resource.id;
@@ -219,7 +226,8 @@ function replaceReferences(entries) {
 
   // For each POST entry, replace existing reference across all entries
   postEntries.forEach(e => {
-    //checking fullUrl and id in separate replace loops will prevent invalid ResourcType/ResourceID -> urn:uuid references
+    logger.debug(`Replacing referenceIds for entry: ${JSON.stringify(e)}`);
+    // Checking fullUrl and id in separate replace loops will prevent invalid ResourceType/ResourceID -> urn:uuid references
     if (e.oldId) {
       const idRegexp = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
       entriesStr = entriesStr.replace(idRegexp, `${e.resource.resourceType}/${e.newId}`);
@@ -233,8 +241,8 @@ function replaceReferences(entries) {
   // Remove metadata and modify request type/resource id
   const newEntries = JSON.parse(entriesStr).map(e => {
     if (e.isPost) {
+      logger.debug(`Removing metadata and changing request type to PUT for entry: ${JSON.stringify(e)}`);
       e.resource.id = e.newId;
-
       e.request = {
         method: 'PUT',
         url: `${e.resource.resourceType}/${e.newId}`

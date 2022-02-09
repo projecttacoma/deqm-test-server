@@ -21,6 +21,7 @@ const logger = loggers.get('default');
  */
 const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovenanceIncluded) => {
   logger.info('Compiling transaction response bundle');
+  logger.debug(`Transaction response bundle results: ${JSON.stringify(results)}`);
   const Bundle = resolveSchema(baseVersion, 'bundle');
   const bundle = new Bundle({ type: type, id: uuidv4() });
   bundle.link = {
@@ -31,11 +32,15 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
   const entries = [];
   // array of reference objects from each resource
   const bundleProvenanceTarget = [];
+  logger.debug(`Transaction response bundle results: ${JSON.stringify(results)}`);
   results.forEach(result => {
+    logger.debug(`Processing upload result: ${JSON.stringify(result)}`);
     const entry = new Bundle({ response: { status: `${result.status} ${result.statusText}` } });
     if (result.status === 200 || result.status === 201) {
       if (xprovenanceIncluded) {
-        bundleProvenanceTarget.push({ reference: `${result.resource.resourceType}/${result.resource.id}` });
+        const provTarget = { reference: `${result.resource.resourceType}/${result.resource.id}` };
+        logger.debug(`Pushing to bundle provenance target: ${JSON.stringify(provTarget)}`);
+        bundleProvenanceTarget.push(provTarget);
       }
 
       entry.response.location = `${baseVersion}/${result.resource.resourceType}/${result.resource.id}`;
@@ -58,11 +63,17 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
  * @returns {Array} array of transaction-response bundle
  */
 async function handleSubmitDataBundles(transactionBundles, req) {
+  logger.info('Handling submit data bundles');
+  logger.debug(`Passed in transaction bundles: ${JSON.stringify(transactionBundles)}`);
+  logger.debug(`Request params: ${JSON.stringify(req.params)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+
   let auditID;
   const { base_version: baseVersion } = req.params;
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const auditEvent = createAuditEventFromProvenance(req.headers['x-provenance'], baseVersion);
+    logger.info(`Creating AuditEvent resource`);
     auditID = (await createResource(auditEvent, 'AuditEvent')).id;
   }
   const tbTemplate = resolveSchema(baseVersion, 'bundle');
@@ -101,6 +112,10 @@ async function uploadTransactionBundle(req, res) {
   const { resourceType, type, entry: entries } = req.body;
   const { base_version: baseVersion } = req.params;
   const { headers } = req;
+  logger.debug(`Request params: ${JSON.stringify(req.params)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+
   checkContentTypeHeader(headers);
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
@@ -162,6 +177,7 @@ async function uploadResourcesFromBundle(entries, baseVersion) {
   logger.info('Inserting resources from transaction bundle');
   const scrubbedEntries = replaceReferences(entries);
 
+  logger.debug(`Attempting to upload bundle resources: ${JSON.stringify(entries)}`);
   const requestsArray = scrubbedEntries.map(async entry => {
     const { method } = entry.request;
     return insertBundleResources(entry, method).catch(e => {
@@ -189,6 +205,7 @@ async function uploadResourcesFromBundle(entries, baseVersion) {
  * specified entry
  */
 async function insertBundleResources(entry, method) {
+  logger.debug(`Using ${method} method to insert entry: ${entry}`);
   checkSupportedResource(entry.resource.resourceType);
   if (method === 'POST') {
     entry.resource.id = uuidv4();

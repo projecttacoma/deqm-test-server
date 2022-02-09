@@ -83,6 +83,9 @@ const qb = new QueryBuilder({
  */
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
+  logger.debug(`Request args: ${JSON.stringify(req.args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
@@ -91,7 +94,6 @@ const baseCreate = async ({ req }, resourceType) => {
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
-    logger.debug('Populating provenance target');
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${data.id}` }]);
   }
   return createResource(data, resourceType);
@@ -106,6 +108,7 @@ const baseCreate = async ({ req }, resourceType) => {
  */
 const baseSearchById = async (args, resourceType) => {
   logger.info(`${resourceType} >>> read`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
   if (!result) {
@@ -136,6 +139,10 @@ const baseSearchById = async (args, resourceType) => {
  */
 const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   logger.info(`${resourceType} >>> search`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+  logger.debug(`Passed in paramDefs: ${JSON.stringify(paramDefs)}`);
   // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -170,6 +177,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
+    logger.debug(`Executing aggregation search over ${resourceType}s using query: ${filter.query}`);
     // grab the results from aggregation. has metadata about counts and data with resources in the first array position
     const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
 
@@ -218,6 +226,9 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
  */
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
@@ -240,7 +251,6 @@ const baseUpdate = async (args, { req }, resourceType) => {
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
-    logger.debug('Populating provenance target');
     populateProvenanceTarget(req.headers, res, [{ reference: `${resourceType}/${args.id}` }]);
   }
   return updateResource(args.id, data, resourceType);
@@ -254,6 +264,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
  */
 const baseRemove = async (args, resourceType) => {
   logger.info(`${resourceType} >>> delete`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
   return removeResource(args.id, resourceType);
 };
 

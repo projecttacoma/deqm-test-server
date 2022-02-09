@@ -69,6 +69,9 @@ const search = async (args, { req }) => {
  */
 const patientEverything = async (args, { req }) => {
   logger.info('Patient >>> $everything');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+
   validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient

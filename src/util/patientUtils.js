@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
@@ -6,6 +6,7 @@ const patientRefs = require('../compartment-definition/patient-references');
 const { findResourceById, findResourcesWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 
+const logger = loggers.get('default');
 /**
  * Wrapper function to get patient data and data
  * requirements for given patient id and map the resources to a collection bundle.
@@ -60,6 +61,7 @@ async function getPatientData(patientId, dataRequirements) {
   }
   let requiredTypes;
   if (dataRequirements) {
+    logger.debug(`Filtering patient data using dataRequirements: ${JSON.stringify(dataRequirements)}`);
     requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
   } else {
     requiredTypes = supportedResources.filter(type => patientRefs[type]);

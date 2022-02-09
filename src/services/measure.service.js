@@ -98,6 +98,10 @@ const search = async (args, { req }) => {
  */
 const submitData = async (args, { req }) => {
   logger.info('Measure >>> $submit-data');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   if (req.body.resourceType !== 'Parameters') {
     throw new ServerError(null, {
       statusCode: 400,
@@ -173,6 +177,9 @@ const submitData = async (args, { req }) => {
  */
 const bulkImportFromRequirements = async (args, { req }) => {
   logger.info('Measure >>> $bulk-import');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
   const res = req.res;
@@ -218,6 +225,9 @@ const bulkImportFromRequirements = async (args, { req }) => {
  */
 const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   const id = args.id;
 
@@ -238,6 +248,10 @@ const dataRequirements = async (args, { req }) => {
  */
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   const measureBundle = await getMeasureBundleFromId(args.id);
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
@@ -282,7 +296,9 @@ const evaluateMeasure = async (args, { req }) => {
  */
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
-
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   let query;
   if (req.method === 'POST') {
     // Creates a new query from a combination of parameters in the body and query
@@ -318,10 +334,12 @@ const careGaps = async (args, { req }) => {
   }
   const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
 
+  logger.info('Calculating data requirements');
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
+  logger.info('Calculating gaps in care');
   const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd

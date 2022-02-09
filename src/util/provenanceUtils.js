@@ -1,6 +1,7 @@
-const { resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema, ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 
+const logger = loggers.get('default');
 /**
  * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
  * @param {string} provenance the provenance headers in string form from the request
@@ -8,8 +9,10 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Object} A JSON object representing an AuditEvent to be stored in the system
  */
 const createAuditEventFromProvenance = (provenance, version) => {
+  logger.debug(`Building AuditEvent from provenance: ${JSON.stringify(provenance)}`);
   provenance = JSON.parse(provenance);
   const audit = {};
+  logger.debug(`Creating AuditEvent from Provenance: ${JSON.stringify(provenance)}`);
   audit.type = {
     system: 'http://dicom.nema.org/resources/ontology/DCM',
     code: '110100',
@@ -152,6 +155,7 @@ const checkProvenanceHeader = requestHeaders => {
  */
 const populateProvenanceTarget = (requestHeaders, res, target) => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
+  logger.debug(`Populating provenance target with ${JSON.stringify(target)}`);
   provenanceRequest.target = target;
   res.setHeader('X-Provenance', JSON.stringify(provenanceRequest));
 };
