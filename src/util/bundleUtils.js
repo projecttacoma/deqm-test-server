@@ -117,7 +117,7 @@ async function assembleCollectionBundleFromMeasure(measure) {
   logger.info('Assembling collection bundle from Measure');
   const [mainLibraryRef] = measure.library;
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
-  logger.debug(`Retrieved query from reference: ${mainLibQuery}`);
+  logger.debug(`Retrieved query from reference: ${JSON.stringify(mainLibQuery)}`);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 
   if (!mainLib) {

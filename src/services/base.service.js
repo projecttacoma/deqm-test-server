@@ -176,7 +176,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
-    logger.debug(`Executing aggregation search over ${resourceType}s using query: ${filter.query}`);
+    logger.debug(`Executing aggregation search over ${resourceType}s using query: ${JSON.stringify(filter.query)}`);
     // grab the results from aggregation. has metadata about counts and data with resources in the first array position
     const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
 

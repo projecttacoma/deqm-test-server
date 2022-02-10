@@ -63,7 +63,6 @@ const makeTransactionResponseBundle = (results, res, baseVersion, type, xprovena
  */
 async function handleSubmitDataBundles(transactionBundles, req) {
   logger.info('Handling submit data bundles');
-  logger.debug(`Passed in transaction bundles: ${JSON.stringify(transactionBundles)}`);
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);
   logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
 
