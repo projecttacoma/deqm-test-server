@@ -1,4 +1,4 @@
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -23,8 +23,7 @@ const {
   findOneResourceWithQuery,
   findResourcesWithQuery
 } = require('../database/dbOperations');
-
-const logger = loggers.get('default');
+const logger = require('../server/logger');
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -84,7 +83,6 @@ const SEARCH_PARAM_DEFS = {
  * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
-  logger.info('Measure >>> search');
   return baseSearch(args, { req }, 'Measure', SEARCH_PARAM_DEFS);
 };
 
@@ -99,6 +97,10 @@ const search = async (args, { req }) => {
  */
 const submitData = async (args, { req }) => {
   logger.info('Measure >>> $submit-data');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   if (req.body.resourceType !== 'Parameters') {
     throw new ServerError(null, {
       statusCode: 400,
@@ -161,6 +163,7 @@ const submitData = async (args, { req }) => {
   });
   const output = await handleSubmitDataBundles([tb], req);
   // expect exactly one output because uses exactly one transaction bundle
+  logger.info('Completed $submit-data request');
   return output[0];
 };
 
@@ -173,6 +176,9 @@ const submitData = async (args, { req }) => {
  */
 const bulkImportFromRequirements = async (args, { req }) => {
   logger.info('Measure >>> $bulk-import');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
   const res = req.res;
@@ -218,6 +224,9 @@ const bulkImportFromRequirements = async (args, { req }) => {
  */
 const dataRequirements = async (args, { req }) => {
   logger.info('Measure >>> $data-requirements');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   const id = args.id;
 
@@ -226,6 +235,7 @@ const dataRequirements = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(id);
 
   const { results } = Calculator.calculateDataRequirements(measureBundle, req.query);
+  logger.info('Successfully generated $data-requirements report');
   return results;
 };
 
@@ -237,6 +247,10 @@ const dataRequirements = async (args, { req }) => {
  */
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate-measure');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
   const measureBundle = await getMeasureBundleFromId(args.id);
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
@@ -257,6 +271,8 @@ const evaluateMeasure = async (args, { req }) => {
       measurementPeriodEnd: periodEnd,
       reportType: 'summary'
     });
+
+    logger.info('Successfully generated $evaluate-measure report');
     return results;
   }
 
@@ -279,7 +295,9 @@ const evaluateMeasure = async (args, { req }) => {
  */
 const careGaps = async (args, { req }) => {
   logger.info('Measure >>> $care-gaps');
-
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   let query;
   if (req.method === 'POST') {
     // Creates a new query from a combination of parameters in the body and query
@@ -315,10 +333,12 @@ const careGaps = async (args, { req }) => {
   }
   const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
 
+  logger.info('Calculating data requirements');
   const dataReq = Calculator.calculateDataRequirements(measureBundle);
 
   const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
 
+  logger.info('Calculating gaps in care');
   const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd
@@ -333,7 +353,7 @@ const careGaps = async (args, { req }) => {
       }
     ]
   };
-
+  logger.info('Successfully generated $care-gaps report');
   return responseParameters;
 };
 

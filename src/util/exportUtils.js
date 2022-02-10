@@ -1,4 +1,5 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const logger = require('../server/logger');
 
 /**
  * Uses request body parameter to search for the export server URL. Validates that
@@ -7,6 +8,7 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
  * @returns export server URL string
  */
 const retrieveExportUrl = parameters => {
+  logger.debug(`Retrieving export URL from parameters: ${JSON.stringify(parameters)}`);
   const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
   checkExportUrlArray(exportUrlArray);
   let exportUrl = exportUrlArray[0].valueUrl;
@@ -15,6 +17,7 @@ const retrieveExportUrl = parameters => {
   const typesString = parameters
     .filter(param => param.name === '_type')
     .map(function (type) {
+      logger.debug(`Adding type ${type} to exportUrl type parameter`);
       return type.valueString;
     })
     .toString();

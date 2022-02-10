@@ -88,7 +88,7 @@ Debugging with terminal input can be facilitated with `stdin_open: true` and `tt
 
 ## Usage
 
-Once MongoDB is running on your machine, run the `npm start` command to start up the FHIR server at `localhost:3000`. The server can also be run in "watch" mode with `npm run start:watch`.
+Once MongoDB is running on your machine, run the `npm start` command to start up the FHIR server at `localhost:3000`. The server can also be run in "watch" mode with `npm run start:watch` and in "debug" mode by running `NODE_ENV=development npm start`.
 
 For ease of testing, it is recommended to download [Insomnia API Client and Design Tool](https://insomnia.rest) for sending HTTP requests to the server and [Robo 3T](https://robomongo.org) as a GUI for viewing the Mongo database.
 

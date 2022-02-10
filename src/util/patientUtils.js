@@ -5,6 +5,7 @@ const supportedResources = require('../server/supportedResources');
 const patientRefs = require('../compartment-definition/patient-references');
 const { findResourceById, findResourcesWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
+const logger = require('../server/logger');
 
 /**
  * Wrapper function to get patient data and data
@@ -60,6 +61,7 @@ async function getPatientData(patientId, dataRequirements) {
   }
   let requiredTypes;
   if (dataRequirements) {
+    logger.debug(`Filtering patient data using dataRequirements: ${JSON.stringify(dataRequirements)}`);
     requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
   } else {
     requiredTypes = supportedResources.filter(type => patientRefs[type]);

@@ -16,8 +16,8 @@
     "db:reset": "npm run db:delete && npm run db:setup",
     "parse-references": "node src/scripts/parseCompartmentDefinition.js",
     "connectathon-upload": "node src/scripts/getConnectathonBundles.js",
-    "test": "jest --silent --runInBand",
-    "test:coverage": "jest --collectCoverage --silent --runInBand",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --collectCoverage --runInBand",
     "test:watch": "jest --watchAll --runInBand",
     "test:watch:coverage": "jest --watchAll --runInBand --collectCoverage"
   },
@@ -36,6 +36,7 @@
     "lodash": "^4.17.21",
     "mongodb": "^4.1.3",
     "uuid": "^8.3.2",
+    "winston": "^3.5.1",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
@@ -45,5 +46,10 @@
     "nodemon": "^2.0.12",
     "prettier": "^2.4.1",
     "supertest": "^6.1.6"
+  },
+  "jest": {
+    "setupFiles": [
+      "./test/globalSetup.js"
+    ]
   }
 }

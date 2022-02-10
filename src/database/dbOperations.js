@@ -1,6 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('./connection.js');
 
+const logger = require('../server/logger');
+
 /**
  * creates a new document in the specified collection
  * @param {Object} data the data of the document to be created
@@ -9,6 +11,7 @@ const { db } = require('./connection.js');
  */
 const createResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Inserting ${resourceType}/${data.id} into database`);
   await collection.insertOne(data);
   return { id: data.id };
 };
@@ -21,6 +24,7 @@ const createResource = async (data, resourceType) => {
  */
 const findResourceById = async (id, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Searching database for ${resourceType}/${id}`);
   return collection.findOne({ id: id });
 };
 
@@ -32,6 +36,7 @@ const findResourceById = async (id, resourceType) => {
  */
 const findOneResourceWithQuery = async (query, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Searching database for one ${resourceType} which matches query: ${JSON.stringify(query)}`);
   return collection.findOne(query);
 };
 
@@ -43,6 +48,7 @@ const findOneResourceWithQuery = async (query, resourceType) => {
  */
 const findResourcesWithQuery = async (query, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Searching database for all ${resourceType}s which match query: ${JSON.stringify(query)}`);
   return (await collection.find(query)).toArray();
 };
 
@@ -55,7 +61,7 @@ const findResourcesWithQuery = async (query, resourceType) => {
  */
 const updateResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
-
+  logger.debug(`Finding and updating ${resourceType}/${data.id} in database`);
   const results = await collection.findOneAndUpdate({ id: id }, { $set: data }, { upsert: true });
 
   // If the document cannot be created with the passed id, Mongo will throw an error
@@ -79,6 +85,7 @@ const updateResource = async (id, data, resourceType) => {
  */
 const pushToResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Pushing data to ${resourceType}/${id} in database`);
   await collection.findOneAndUpdate({ id: id }, { $push: data });
 };
 
@@ -90,6 +97,7 @@ const pushToResource = async (id, data, resourceType) => {
  */
 const removeResource = async (id, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Removing ${resourceType}/${id} from database`);
   return collection.deleteOne({ id: id });
 };
 
@@ -101,6 +109,7 @@ const removeResource = async (id, resourceType) => {
  */
 const findResourcesWithAggregation = async (query, resourceType) => {
   const collection = db.collection(resourceType);
+  logger.debug(`Running aggregation query on ${resourceType}s with query: ${JSON.stringify(query)}`);
   return (await collection.aggregate(query)).toArray();
 };
 
@@ -126,6 +135,7 @@ const addPendingBulkImportRequest = async () => {
     totalResourceCount: -1,
     failedOutcomes: []
   };
+  logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
   await collection.insertOne(bulkImportClient);
   return clientId;
 };
@@ -139,6 +149,7 @@ const completeBulkImportRequest = async clientId => {
   const update = {
     status: 'Completed'
   };
+  logger.debug(`Completing bulkImportStatus for clientId: ${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $set: update });
 };
 
@@ -155,6 +166,7 @@ const failBulkImportRequest = async (clientId, error) => {
       message: error.message
     }
   };
+  logger.debug(`Failing bulkImportStatus for clientId: ${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $set: update });
 };
 
@@ -166,6 +178,7 @@ const failBulkImportRequest = async (clientId, error) => {
  */
 const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
   const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing failed outcomes to bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $push: { failedOutcomes: { $each: failedOutcomes } } });
 };
 
@@ -175,6 +188,7 @@ const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
  * @returns {Object} The bulkstatus entry for the passed in clientId
  */
 const getBulkImportStatus = async clientId => {
+  logger.debug(`Retrieving bulkImportStatus with clientId: ${clientId}`);
   const status = await findResourceById(clientId, 'bulkImportStatuses');
   return status;
 };
@@ -186,6 +200,7 @@ const getBulkImportStatus = async clientId => {
  */
 const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
   const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Initializing bulk file count for bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate(
     { id: clientId },
     // Set initial exported file/resource counts to their respective totals
@@ -211,6 +226,9 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
   let value;
   if (resourceCount !== -1) {
     // Update both the exported file count and exported resource count
+    logger.debug(
+      `Decrementing exportedFileCount and exportedResourceCount for bulkImportStatus with clientId: ${clientId}`
+    );
     value = (
       await collection.findOneAndUpdate(
         { id: clientId },
@@ -219,6 +237,8 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
       )
     ).value;
   } else {
+    logger.debug(`Decrementing exportedFileCount for bulkImportStatus with clientId: ${clientId}`);
+
     value = (
       await collection.findOneAndUpdate(
         { id: clientId },
@@ -240,7 +260,7 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
  */
 const updateSuccessfulImportCount = async (clientId, count) => {
   const collection = db.collection('bulkImportStatuses');
-
+  logger.debug(`Incrementing successCount by ${count} for bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate(
     { id: clientId },
     { $inc: { successCount: count } },
@@ -249,6 +269,7 @@ const updateSuccessfulImportCount = async (clientId, count) => {
 };
 const getCurrentSuccessfulImportCount = async clientId => {
   const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Retrieving successCount for bulkImportStatus with clientId: ${clientId}`);
   const bulkStatus = await collection.findOne({ id: clientId });
   return bulkStatus.successCount;
 };

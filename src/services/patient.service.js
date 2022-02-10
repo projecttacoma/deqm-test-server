@@ -1,10 +1,10 @@
 const _ = require('lodash');
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 const { getPatientData, getPatientDataSearchSetBundle } = require('../util/patientUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
-const logger = loggers.get('default');
+const logger = require('../server/logger');
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient
@@ -56,7 +56,6 @@ const remove = async args => {
  * @returns {Object} Search set result bundle
  */
 const search = async (args, { req }) => {
-  logger.info('Patient >>> search');
   return baseSearch(args, { req }, 'Patient');
 };
 
@@ -69,6 +68,10 @@ const search = async (args, { req }) => {
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
 const patientEverything = async (args, { req }) => {
+  logger.info('Patient >>> $everything');
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+
   validatePatientEverythingParams(req);
   if (req.params.id) {
     // return information for specified patient

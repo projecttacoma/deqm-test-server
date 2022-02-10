@@ -1,4 +1,4 @@
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
+const logger = require('./server/logger.js');
 const express = require('express');
 const mongoUtil = require('./database/connection');
 const { decrementBulkFileCount, updateSuccessfulImportCount } = require('./database/dbOperations');
@@ -13,12 +13,11 @@ app.use(express.json({ limit: '50mb', type: 'application/fhir+json' }));
 
 const config = buildConfig();
 const server = initialize(config, app);
-const logger = loggers.get('default');
 
 const workerTotal = parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS);
 
 if (workerTotal > os.cpus().length) {
-  console.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
+  logger.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
 }
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {

@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { getSearchParameters, resolveSchema, ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { getSearchParameters, resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const {
@@ -11,8 +11,7 @@ const {
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 const { checkSupportedResource } = require('../util/baseUtils');
-
-const logger = loggers.get('default');
+const logger = require('../server/logger.js');
 
 /**
  * Query Builder Parameter Definitions for all resources
@@ -83,6 +82,9 @@ const qb = new QueryBuilder({
  */
 const baseCreate = async ({ req }, resourceType) => {
   logger.info(`${resourceType} >>> create`);
+  logger.debug(`Request args: ${JSON.stringify(req.args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
@@ -105,6 +107,7 @@ const baseCreate = async ({ req }, resourceType) => {
  */
 const baseSearchById = async (args, resourceType) => {
   logger.info(`${resourceType} >>> read`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
   if (!result) {
@@ -135,6 +138,10 @@ const baseSearchById = async (args, resourceType) => {
  */
 const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   logger.info(`${resourceType} >>> search`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+  logger.debug(`Passed in paramDefs: ${JSON.stringify(paramDefs)}`);
   // grab the schemas for the data type and Bundle to use for response
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const Bundle = resolveSchema(args.base_version, 'bundle');
@@ -164,10 +171,12 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
     total: 0
   });
   // build the aggregation query
+  logger.debug('Building search query');
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
 
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
+    logger.debug(`Executing aggregation search over ${resourceType}s using query: ${JSON.stringify(filter.query)}`);
     // grab the results from aggregation. has metadata about counts and data with resources in the first array position
     const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
 
@@ -216,6 +225,9 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
  */
 const baseUpdate = async (args, { req }, resourceType) => {
   logger.info(`${resourceType} >>> update`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
@@ -251,6 +263,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
  */
 const baseRemove = async (args, resourceType) => {
   logger.info(`${resourceType} >>> delete`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
   return removeResource(args.id, resourceType);
 };
 

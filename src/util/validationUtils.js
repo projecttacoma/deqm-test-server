@@ -2,7 +2,7 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 
 /**
  * Checks that the parameters input to $evaluate-measure are valid. Throws a ServerError
- * for missing parameters, the use of unsupported parameters, and the use of unsuppported
+ * for missing parameters, the use of unsupported parameters, and the use of unsupported
  * report types.
  * @param {Object} query query from http request object
  */
