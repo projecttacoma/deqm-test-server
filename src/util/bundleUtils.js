@@ -169,7 +169,7 @@ async function getDependentValueSets(lib) {
  * @returns {Array} array of all libraries
  */
 async function getAllDependentLibraries(lib) {
-  logger.debug(`Retrieving all dependent libraries for library: ${JSON.stringify(lib)}`);
+  logger.debug(`Retrieving all dependent libraries for library: ${lib.id}`);
 
   // Kick off function with current library and any ValueSets it uses
   const valueSets = await getDependentValueSets(lib);
