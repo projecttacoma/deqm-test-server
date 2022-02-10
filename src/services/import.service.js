@@ -10,7 +10,7 @@ const logger = require('../server/logger');
  * @param {Object} res The response object returned to the client by the server
  */
 async function bulkImport(req, res) {
-  logger.info('Measure >>> $bulk-import');
+  logger.info('Base >>> $import');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);

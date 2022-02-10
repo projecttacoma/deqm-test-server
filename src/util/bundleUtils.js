@@ -117,7 +117,6 @@ async function assembleCollectionBundleFromMeasure(measure) {
   logger.info('Assembling collection bundle from Measure');
   const [mainLibraryRef] = measure.library;
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
-  logger.debug(`Retrieved query from reference: ${JSON.stringify(mainLibQuery)}`);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 
   if (!mainLib) {
@@ -148,7 +147,6 @@ async function assembleCollectionBundleFromMeasure(measure) {
  * @returns {Array} array of ValueSet resources required by the library
  */
 async function getDependentValueSets(lib) {
-  logger.debug(`Retrieving dependent valuesets for library: ${JSON.stringify(lib)}`);
   if (hasNoDependencies(lib)) {
     return [];
   }
