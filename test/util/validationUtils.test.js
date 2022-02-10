@@ -88,6 +88,25 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
+  test('error thrown for population $evaluate-measure with non-Group subject', async () => {
+    const POPULATION_REQ = {
+      query: {
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Patient/testPatient'
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `Invalid request. For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+      );
+    }
+  });
+
   test('validateEvalMeasureParams does not throw error with correct params', async () => {
     const VALID_REQ = { query: { reportType: 'population', periodStart: '2019-01-01', periodEnd: '2019-12-31' } };
     expect(validateEvalMeasureParams(VALID_REQ.query)).toBeUndefined();
