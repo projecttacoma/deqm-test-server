@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { getSearchParameters, resolveSchema, ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { getSearchParameters, resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const {
@@ -11,8 +11,7 @@ const {
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 const { checkSupportedResource } = require('../util/baseUtils');
-
-const logger = loggers.get('default');
+const logger = require('../server/logger.js');
 
 /**
  * Query Builder Parameter Definitions for all resources

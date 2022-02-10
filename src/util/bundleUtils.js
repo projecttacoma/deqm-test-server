@@ -1,10 +1,10 @@
-const { ServerError, resolveSchema, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
+const logger = require('../server/logger');
 
-const logger = loggers.get('default');
 /**
  * Converts an array of FHIR resources to a FHIR searchset bundle
  * @param {Array} resources an array of FHIR resources

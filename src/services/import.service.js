@@ -1,10 +1,8 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
 const { retrieveExportUrl } = require('../util/exportUtils');
 const { checkExportType } = require('../util/validationUtils');
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
-
-const logger = loggers.get('default');
 const importQueue = require('../queue/importQueue');
+const logger = require('../server/logger');
 
 /**
  * Executes an import of all the resources on the passed in server.

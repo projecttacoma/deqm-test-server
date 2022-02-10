@@ -1,8 +1,7 @@
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('./connection.js');
 
-const logger = loggers.get('default');
+const logger = require('../server/logger');
 
 /**
  * creates a new document in the specified collection

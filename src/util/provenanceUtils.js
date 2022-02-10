@@ -1,7 +1,7 @@
-const { resolveSchema, ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../server/logger');
 
-const logger = loggers.get('default');
 /**
  * Creates a raw JSON AuditEvent resource from the X-Provenance headers of a submission request
  * @param {string} provenance the provenance headers in string form from the request

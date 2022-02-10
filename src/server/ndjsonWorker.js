@@ -5,13 +5,7 @@ const axios = require('axios');
 const { updateResource, pushBulkFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
-const winston = require('winston');
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
-
-loggers.initialize();
-
-const logger = loggers.get('default');
-logger.transports[0].format = winston.format.printf(log => log.message);
+const logger = require('./logger');
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {

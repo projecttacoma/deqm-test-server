@@ -1,8 +1,8 @@
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const fs = require('fs');
 const path = require('path');
 
-const logger = loggers.get('default');
+const logger = require('../server/logger');
 /**
  * Finds and responds with requested file for some client id
  * @param {Object} req The express request object passed in by the user

@@ -1,7 +1,4 @@
 // Turns off the loggers for running tests
-const { loggers } = require('@projecttacoma/node-fhir-server-core');
-
-loggers.initialize();
-const logger = loggers.get('default');
+const logger = require('../src/server/logger');
 
 logger.transports[0].silent = true; // turns off

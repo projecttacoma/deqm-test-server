@@ -1,6 +1,6 @@
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const logger = require('../server/logger');
 
-const logger = loggers.get('default');
 /**
  * Uses request body parameter to search for the export server URL. Validates that
  * only one URL is present.

@@ -1,11 +1,11 @@
-const { ServerError, loggers } = require('@projecttacoma/node-fhir-server-core');
+const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 const { getBulkImportStatus } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../server/logger');
 
-const logger = loggers.get('default');
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
  * formats the information held there to return to the user
