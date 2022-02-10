@@ -17,7 +17,7 @@ const server = initialize(config, app);
 const workerTotal = parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS);
 
 if (workerTotal > os.cpus().length) {
-  console.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
+  logger.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
 }
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
