@@ -69,7 +69,7 @@ function validateEvalMeasureParams(query) {
             severity: 'error',
             code: 'BadRequest',
             details: {
-              text: `Invalid request. For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+              text: `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
             }
           }
         ]
