@@ -76,6 +76,24 @@ function validateEvalMeasureParams(query) {
       });
     }
   }
+
+  if (query.reportType === 'individual') {
+    const subjectReference = query.subject.split('/');
+    if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
+      throw new ServerError(null, {
+        statusCode: 400,
+        issue: [
+          {
+            severity: 'error',
+            code: 'BadRequest',
+            details: {
+              text: `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+            }
+          }
+        ]
+      });
+    }
+  }
 }
 
 /**

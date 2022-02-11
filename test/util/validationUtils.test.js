@@ -102,7 +102,26 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Invalid request. For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+        `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+      );
+    }
+  });
+
+  test('error thrown for individual $evaluate-measure with non-Patient reference subject', async () => {
+    const INDIVIDUAL_REQ = {
+      query: {
+        reportType: 'individual',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup'
+      }
+    };
+    try {
+      validateEvalMeasureParams(INDIVIDUAL_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
     }
   });
