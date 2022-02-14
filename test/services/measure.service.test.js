@@ -3,6 +3,8 @@ const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
+const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
+const testGroup = require('../fixtures/fhir-resources/testGroup.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
 const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
 const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
@@ -10,7 +12,7 @@ const testParamInvalidResourceType = require('../fixtures/fhir-resources/paramet
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
-const { testSetup, cleanUpTest } = require('../populateTestData');
+const { testSetup, cleanUpTest, createTestResource } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -110,6 +112,8 @@ describe('bulkImport with exportUrl', () => {
 describe('testing custom measure operation', () => {
   beforeAll(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
+    await createTestResource(testPatient2, 'Patient');
+    await createTestResource(testGroup, 'Group');
   });
 
   test('$submit-data returns 400 for incorrect resourceType', async () => {
@@ -221,6 +225,50 @@ describe('testing custom measure operation', () => {
         periodStart: '01-01-2020',
         periodEnd: '01-01-2021',
         reportType: 'population'
+      })
+      .expect(200);
+    expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021',
+      reportType: 'summary'
+    });
+  });
+
+  test('$evaluate-measure returns 200 when subject is existing group and reportType is set to population', async () => {
+    const { Calculator } = require('fqm-execution');
+    const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+      return {
+        results: [
+          {
+            resourceType: 'MeasureReport',
+            period: {},
+            measure: '',
+            status: 'complete',
+            type: 'individual'
+          }
+        ],
+        debugOutput: {}
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        reportType: 'population',
+        subject: 'Group/testGroup'
       })
       .expect(200);
     expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {

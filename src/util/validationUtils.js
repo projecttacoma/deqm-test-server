@@ -58,6 +58,42 @@ function validateEvalMeasureParams(query) {
       ]
     });
   }
+
+  if (query.reportType === 'population' && query.subject) {
+    const subjectReference = query.subject.split('/');
+    if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
+      throw new ServerError(null, {
+        statusCode: 400,
+        issue: [
+          {
+            severity: 'error',
+            code: 'BadRequest',
+            details: {
+              text: `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+            }
+          }
+        ]
+      });
+    }
+  }
+
+  if (query.reportType === 'individual') {
+    const subjectReference = query.subject.split('/');
+    if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
+      throw new ServerError(null, {
+        statusCode: 400,
+        issue: [
+          {
+            severity: 'error',
+            code: 'BadRequest',
+            details: {
+              text: `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+            }
+          }
+        ]
+      });
+    }
+  }
 }
 
 /**

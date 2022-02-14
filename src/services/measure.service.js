@@ -21,7 +21,8 @@ const { getPatientDataCollectionBundle } = require('../util/patientUtils');
 const {
   addPendingBulkImportRequest,
   findOneResourceWithQuery,
-  findResourcesWithQuery
+  findResourcesWithQuery,
+  findResourceById
 } = require('../database/dbOperations');
 const logger = require('../server/logger');
 
@@ -259,11 +260,33 @@ const evaluateMeasure = async (args, { req }) => {
   validateEvalMeasureParams(req.query);
 
   if (req.query.reportType === 'population') {
-    const patients = await findResourcesWithQuery({}, 'Patient');
-    let patientBundles = patients.map(async p => {
-      return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-    });
-
+    let patientBundles = [];
+    if (req.query.subject) {
+      const subjectReference = req.query.subject.split('/');
+      const group = await findResourceById(subjectReference[1], subjectReference[0]);
+      if (!group) {
+        throw new ServerError(null, {
+          statusCode: 404,
+          issue: [
+            {
+              severity: 'error',
+              code: 'ResourceNotFound',
+              details: {
+                text: `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+              }
+            }
+          ]
+        });
+      }
+      patientBundles = group.member.map(async m => {
+        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+      });
+    } else {
+      const patients = await findResourcesWithQuery({}, 'Patient');
+      patientBundles = patients.map(async p => {
+        return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
+      });
+    }
     patientBundles = await Promise.all(patientBundles);
     const { periodStart, periodEnd } = req.query;
     const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
