@@ -19,7 +19,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            tacoma/deqm-test-server
+            mitrehealthdocker/deqm-test-server
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
           # generate Docker tags based on the following events/attributes
