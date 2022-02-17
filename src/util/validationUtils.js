@@ -140,6 +140,22 @@ const validateCareGapsParams = query => {
       ]
     });
   }
+
+  const subjectReference = query.subject.split('/');
+  if (subjectReference.length !== 2 || !['Group', 'Patient'].includes(subjectReference[0])) {
+    throw new ServerError(null, {
+      statusCode: 400,
+      issue: [
+        {
+          severity: 'error',
+          code: 'BadRequest',
+          details: {
+            text: `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+          }
+        }
+      ]
+    });
+  }
 };
 
 /**

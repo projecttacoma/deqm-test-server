@@ -118,7 +118,6 @@ async function assembleCollectionBundleFromMeasure(measure) {
   const [mainLibraryRef] = measure.library;
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
-
   if (!mainLib) {
     throw new ServerError(null, {
       statusCode: 500,
