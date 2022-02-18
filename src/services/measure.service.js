@@ -235,7 +235,11 @@ const dataRequirements = async (args, { req }) => {
 
   const measureBundle = await getMeasureBundleFromId(id);
 
-  const { results } = Calculator.calculateDataRequirements(measureBundle, req.query);
+  const { periodStart, periodEnd } = req.query;
+  const { results } = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
   logger.info('Successfully generated $data-requirements report');
   return results;
 };
@@ -253,7 +257,10 @@ const evaluateMeasure = async (args, { req }) => {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = Calculator.calculateDataRequirements(measureBundle);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: req.query.periodStart,
+    measurementPeriodEnd: req.query.periodEnd
+  });
 
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
@@ -357,7 +364,10 @@ const careGaps = async (args, { req }) => {
   const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
 
   logger.info('Calculating data requirements');
-  const dataReq = Calculator.calculateDataRequirements(measureBundle);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
 
   const subjectReference = subject.split('/');
   let patientBundles;
