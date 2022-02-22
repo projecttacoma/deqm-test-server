@@ -435,8 +435,8 @@ const careGaps = async (args, { req }) => {
     }
     return responseParametersArray;
   });
-  gapsResults = await Promise.all(gapsResults).catch(e => console.log(e));
-  console.log(gapsResults);
+
+  gapsResults = await Promise.all(gapsResults);
   const responseParameters = {
     resourceType: 'Parameters',
     parameter: [...gapsResults]
@@ -452,7 +452,6 @@ const careGaps = async (args, { req }) => {
  */
 const retrieveSearchTerm = query => {
   const { measureId, measureIdentifier, measureUrl } = query;
-  console.log(query);
   if (measureId) {
     return { _id: measureId };
   } else if (measureIdentifier) {
