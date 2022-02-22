@@ -235,7 +235,11 @@ const dataRequirements = async (args, { req }) => {
 
   const measureBundle = await getMeasureBundleFromId(id);
 
-  const { results } = Calculator.calculateDataRequirements(measureBundle, req.query);
+  const { periodStart, periodEnd } = req.query;
+  const { results } = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
   logger.info('Successfully generated $data-requirements report');
   return results;
 };
@@ -253,7 +257,10 @@ const evaluateMeasure = async (args, { req }) => {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = Calculator.calculateDataRequirements(measureBundle);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: req.query.periodStart,
+    measurementPeriodEnd: req.query.periodEnd
+  });
 
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
@@ -357,24 +364,62 @@ const careGaps = async (args, { req }) => {
   const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
 
   logger.info('Calculating data requirements');
-  const dataReq = Calculator.calculateDataRequirements(measureBundle);
-
-  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
-
-  logger.info('Calculating gaps in care');
-  const { results } = await Calculator.calculateGapsInCare(measureBundle, [patientBundle], {
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd
   });
 
+  const subjectReference = subject.split('/');
+  let patientBundles;
+  if (subjectReference[0] === 'Group') {
+    const group = await findResourceById(subjectReference[1], subjectReference[0]);
+    if (!group) {
+      throw new ServerError(null, {
+        statusCode: 404,
+        issue: [
+          {
+            severity: 'error',
+            code: 'ResourceNotFound',
+            details: {
+              text: `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+            }
+          }
+        ]
+      });
+    }
+    patientBundles = group.member.map(async m => {
+      return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+    });
+    patientBundles = await Promise.all(patientBundles);
+  } else {
+    // single patient
+    patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
+  }
+
+  logger.info('Calculating gaps in care');
+  const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd
+  });
+
+  const responseParametersArray = [];
+  if (results.length > 1) {
+    results.forEach(result => {
+      responseParametersArray.push({
+        name: 'return',
+        resource: result
+      });
+    });
+  } else {
+    responseParametersArray.push({
+      name: 'return',
+      resource: results
+    });
+  }
+
   const responseParameters = {
     resourceType: 'Parameters',
-    parameter: [
-      {
-        name: 'return',
-        resource: results
-      }
-    ]
+    parameter: responseParametersArray
   };
   logger.info('Successfully generated $care-gaps report');
   return responseParameters;

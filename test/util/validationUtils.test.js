@@ -11,7 +11,7 @@ const VALID_QUERY = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
   status: 'open-gap',
-  subject: 'testPatient',
+  subject: 'Patient/testPatient',
   measureId: 'testID'
 };
 
@@ -139,7 +139,7 @@ describe('validateCareGapsParams', () => {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         status: 'open-gap',
-        subject: 'testPatient',
+        subject: 'Patient/testPatient',
         practitioner: 'testPractitioner'
       }
     };
@@ -159,7 +159,7 @@ describe('validateCareGapsParams', () => {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         status: 'open-gap',
-        subject: 'testPatient'
+        subject: 'Patient/testPatient'
       }
     };
     try {
@@ -178,7 +178,7 @@ describe('validateCareGapsParams', () => {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         status: 'invalid',
-        subject: 'testPatient',
+        subject: 'Patient/testPatient',
         measureId: 'testID'
       }
     };
@@ -187,6 +187,48 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(`Currently only supporting $care-gaps requests with status='open-gap'`);
+    }
+  });
+
+  test('error thrown for invalid subject resource format', async () => {
+    const INVALID_SUBJECT_REQ = {
+      query: {
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: '123',
+        status: 'open-gap',
+        measureId: 'testID'
+      }
+    };
+
+    try {
+      validateCareGapsParams(INVALID_SUBJECT_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+      );
+    }
+  });
+
+  test('error thrown for invalid subject resource type', async () => {
+    const INVALID_RESOURCE_TYPE_REQ = {
+      query: {
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Observation/123',
+        status: 'open-gap',
+        measureId: 'testID'
+      }
+    };
+
+    try {
+      validateCareGapsParams(INVALID_RESOURCE_TYPE_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+      );
     }
   });
 
@@ -209,7 +251,7 @@ describe('validateCareGapsParams', () => {
         parameter: [
           {
             name: 'subject',
-            valueString: 'testPatient'
+            valueString: 'Patient/testPatient'
           },
           {
             name: 'measureId',
