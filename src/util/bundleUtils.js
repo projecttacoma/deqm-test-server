@@ -5,6 +5,17 @@ const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
 const logger = require('../server/logger');
 
+const OUTDATED_CONNECTATHON_URLS = {
+  'http://hl7.org/fhir/Library/SupplementalDataElements|2.0.0':
+    'http://fhir.org/guides/dbcg/connectathon/Library/SupplementalDataElements|2.0.0',
+  'http://hl7.org/fhir/Library/TJCOverall|5.0.000':
+    'http://fhir.org/guides/dbcg/connectathon/Library/TJCOverall|5.0.000',
+  'http://hl7.org/fhir/Library/VTEICU|5.0.000': 'http://fhir.org/guides/dbcg/connectathon/Library/VTEICU|5.0.000',
+  'http://hl7.org/fhir/Library/Hospice|2.0.000': 'http://fhir.org/guides/dbcg/connectathon/Library/Hospice|2.0.000',
+  'http://hl7.org/fhir/Library/AdultOutpatientEncounters|2.0.000':
+    'http://fhir.org/guides/dbcg/connectathon/Library/AdultOutpatientEncounters|2.0.000'
+};
+
 /**
  * Converts an array of FHIR resources to a FHIR searchset bundle
  * @param {Array} resources an array of FHIR resources
@@ -187,6 +198,13 @@ async function getAllDependentLibraries(lib) {
     .map(ra => ra.resource);
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
+    // Quick fix for invalid connectathon url references
+    if (url in OUTDATED_CONNECTATHON_URLS) {
+      logger.warn(
+        `Using potentially outdated reference url: ${url}. Replacing with ${OUTDATED_CONNECTATHON_URLS[url]}`
+      );
+      url = OUTDATED_CONNECTATHON_URLS[url];
+    }
     const libQuery = getQueryFromReference(url);
     const lib = await findOneResourceWithQuery(libQuery, 'Library');
     return getAllDependentLibraries(lib);
