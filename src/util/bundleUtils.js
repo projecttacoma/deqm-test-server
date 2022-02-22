@@ -114,7 +114,7 @@ async function getMeasureBundleFromId(measureId) {
  * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
 async function assembleCollectionBundleFromMeasure(measure) {
-  logger.info('Assembling collection bundle from Measure');
+  logger.info(`Assembling collection bundle from Measure ${measure.id}`);
   const [mainLibraryRef] = measure.library;
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');

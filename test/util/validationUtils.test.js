@@ -153,25 +153,6 @@ describe('validateCareGapsParams', () => {
     }
   });
 
-  test('error thrown for missing measure identification for $care-gaps', async () => {
-    const MISSING_MEASURE_REQ = {
-      query: {
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        status: 'open-gap',
-        subject: 'Patient/testPatient'
-      }
-    };
-    try {
-      validateCareGapsParams(MISSING_MEASURE_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        `No measure identification parameter supplied. Must provide either 'measureId', 'measureUrl', or 'measureIdentifier' parameter for $care-gaps requests`
-      );
-    }
-  });
-
   test('error thrown for missing open-gap status for $care-gaps', async () => {
     const UNSUPPORTED_STATUS_REQ = {
       query: {

@@ -109,23 +109,6 @@ const validateCareGapsParams = query => {
   checkRequiredParams(query, REQUIRED_PARAMS, '$care-gaps');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$care-gaps');
 
-  const measureIdentification = query.measureId || query.measureIdentifier || query.measureUrl;
-
-  if (!measureIdentification) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `No measure identification parameter supplied. Must provide either 'measureId', 'measureUrl', or 'measureIdentifier' parameter for $care-gaps requests`
-          }
-        }
-      ]
-    });
-  }
-
   if (query.status !== 'open-gap') {
     throw new ServerError(null, {
       statusCode: 501,

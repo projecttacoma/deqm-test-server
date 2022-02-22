@@ -6,6 +6,12 @@ const { createResource } = require('../database/dbOperations');
 const connectathonPath = path.resolve(path.join(__dirname, '../../connectathon/fhir401/bundles/measure/'));
 // bundles that are not the latest available version
 const IGNORED_BUNDLES = ['EXM347-3.2.000-bundle.json'];
+//   'EXM347-4.3.000-bundle.json',
+//   'EXM529-1.0.000-bundle.json',
+//   'EXM104-8.2.000-bundle.json',
+//   'EXM108-8.3.000-bundle.json',
+//   'EXM124-8.2.000-bundle.json'
+// ];
 // files containing EXM bundles of interest from connectathon repo
 const bundleFiles = [];
 
