@@ -1,6 +1,7 @@
 require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
+const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
@@ -114,6 +115,7 @@ describe('testing custom measure operation', () => {
     await testSetup(testMeasure, testPatient, testLibrary);
     await createTestResource(testPatient2, 'Patient');
     await createTestResource(testGroup, 'Group');
+    await createTestResource(testMeasure2, 'Measure');
   });
 
   test('$submit-data returns 400 for incorrect resourceType', async () => {
@@ -343,7 +345,7 @@ describe('testing custom measure operation', () => {
       .expect(200);
   });
 
-  test('$care-gaps returns 200 with valid params', async () => {
+  test('$care-gaps returns 200 with valid params and specified measureId', async () => {
     const { Calculator } = require('fqm-execution');
     const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
       return {
@@ -474,6 +476,8 @@ describe('testing custom measure operation', () => {
         expect(response.body.issue[0].details.text).toEqual('Measure with id invalid-id does not exist in the server');
       });
   });
-
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   afterAll(cleanUpTest);
 });
