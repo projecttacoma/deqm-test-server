@@ -335,7 +335,6 @@ const careGaps = async (args, { req }) => {
   } else {
     query = req.query;
   }
-
   validateCareGapsParams(query);
 
   const { periodStart, periodEnd, subject } = query;

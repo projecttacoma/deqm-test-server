@@ -179,6 +179,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
     logger.debug(`Executing aggregation search over ${resourceType}s using query: ${JSON.stringify(filter.query)}`);
     // grab the results from aggregation. has metadata about counts and data with resources in the first array position
     const results = (await findResourcesWithAggregation(filter.query, resourceType))[0];
+
     // If this is undefined, there are no results.
     if (results && results.metadata[0]) {
       // create instances of each of the resulting resources
