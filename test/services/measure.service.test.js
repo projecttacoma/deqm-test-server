@@ -397,6 +397,56 @@ describe('testing custom measure operation', () => {
     expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
   });
 
+  test('$care-gaps returns 200 with valid params and no specified measureId', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        subject: 'Patient/testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledTimes(2);
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(2);
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+    expect(body.parameter[1].name).toEqual('return');
+    expect(body.parameter[1].resource).toBeDefined();
+    expect(body.parameter[1].resource.resourceType).toEqual('Bundle');
+  });
+
   test('$care-gaps returns 200 when subject is existing group', async () => {
     const { Calculator } = require('fqm-execution');
     const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {

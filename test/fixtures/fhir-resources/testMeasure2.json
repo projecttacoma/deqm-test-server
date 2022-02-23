@@ -1,0 +1,5 @@
+{
+  "resourceType": "Measure",
+  "id": "testMeasure2",
+  "library": ["Library/testLibrary"]
+}
