@@ -412,7 +412,7 @@ const careGaps = async (args, { req }) => {
       patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
     }
 
-    logger.info('Calculating gaps in care');
+    logger.info(`Calculating gaps in care for measure ${measure.id}`);
     const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd
@@ -436,6 +436,7 @@ const careGaps = async (args, { req }) => {
   });
 
   gapsResults = await Promise.all(gapsResults);
+  gapsResults = gapsResults.flat();
   const responseParameters = {
     resourceType: 'Parameters',
     parameter: [...gapsResults]
