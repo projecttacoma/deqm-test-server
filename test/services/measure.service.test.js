@@ -1,6 +1,7 @@
 require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
+const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
@@ -114,6 +115,7 @@ describe('testing custom measure operation', () => {
     await testSetup(testMeasure, testPatient, testLibrary);
     await createTestResource(testPatient2, 'Patient');
     await createTestResource(testGroup, 'Group');
+    await createTestResource(testMeasure2, 'Measure');
   });
 
   test('$submit-data returns 400 for incorrect resourceType', async () => {
@@ -343,7 +345,7 @@ describe('testing custom measure operation', () => {
       .expect(200);
   });
 
-  test('$care-gaps returns 200 with valid params', async () => {
+  test('$care-gaps returns 200 with valid params and specified measureId', async () => {
     const { Calculator } = require('fqm-execution');
     const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
       return {
@@ -393,6 +395,56 @@ describe('testing custom measure operation', () => {
     expect(body.parameter[0].name).toEqual('return');
     expect(body.parameter[0].resource).toBeDefined();
     expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+  });
+
+  test('$care-gaps returns 200 with valid params and no specified measureId', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        subject: 'Patient/testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledTimes(2);
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(2);
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+    expect(body.parameter[1].name).toEqual('return');
+    expect(body.parameter[1].resource).toBeDefined();
+    expect(body.parameter[1].resource.resourceType).toEqual('Bundle');
   });
 
   test('$care-gaps returns 200 when subject is existing group', async () => {
@@ -474,6 +526,8 @@ describe('testing custom measure operation', () => {
         expect(response.body.issue[0].details.text).toEqual('Measure with id invalid-id does not exist in the server');
       });
   });
-
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   afterAll(cleanUpTest);
 });

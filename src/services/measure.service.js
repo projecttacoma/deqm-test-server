@@ -344,36 +344,20 @@ const careGaps = async (args, { req }) => {
   } else {
     req.query = searchTerm;
   }
-  //Use the base search function here to allow search by measureId, measureUrl, and measureIdentifier
-  const measure = await search(args, { req });
-  if (measure.total === 0) {
-    //We know the search term will have exactly one key and value, so just fill them in in the error message
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
-          }
-        }
-      ]
-    });
-  }
-  const measureBundle = await assembleCollectionBundleFromMeasure(measure.entry[0].resource);
-
-  logger.info('Calculating data requirements');
-  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd
-  });
-
-  const subjectReference = subject.split('/');
-  let patientBundles;
-  if (subjectReference[0] === 'Group') {
-    const group = await findResourceById(subjectReference[1], subjectReference[0]);
-    if (!group) {
+  const measures = [];
+  if (!searchTerm) {
+    /*
+      If no search term, circumvent asymmetrik query builder and use mongo search directly to avoid
+      pagination bug
+      
+      TODO: Remove this code once pagination bug is fixed
+    */
+    measures.push(...(await findResourcesWithQuery({}, 'Measure')));
+  } else {
+    //Use the base search function here to allow search by measureId, measureUrl, and measureIdentifier
+    const searchResults = await search(args, { req });
+    if (searchResults.total === 0) {
+      //We know the search term will have exactly one key and value, so just fill them in in the error message
       throw new ServerError(null, {
         statusCode: 404,
         issue: [
@@ -381,45 +365,83 @@ const careGaps = async (args, { req }) => {
             severity: 'error',
             code: 'ResourceNotFound',
             details: {
-              text: `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+              text: `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
             }
           }
         ]
       });
     }
-    patientBundles = group.member.map(async m => {
-      return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
-    });
-    patientBundles = await Promise.all(patientBundles);
-  } else {
-    // single patient
-    patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
+
+    const measureResources = searchResults.entry.map(e => e.resource);
+    measures.push(...measureResources);
   }
 
-  logger.info('Calculating gaps in care');
-  const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd
-  });
+  let gapsResults = measures.map(async measure => {
+    const measureBundle = await assembleCollectionBundleFromMeasure(measure);
 
-  const responseParametersArray = [];
-  if (results.length > 1) {
-    results.forEach(result => {
+    logger.info(`Calculating data requirements for measure ${measure.id}`);
+    const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd
+    });
+
+    const subjectReference = subject.split('/');
+    let patientBundles;
+    if (subjectReference[0] === 'Group') {
+      const group = await findResourceById(subjectReference[1], subjectReference[0]);
+      if (!group) {
+        throw new ServerError(null, {
+          statusCode: 404,
+          issue: [
+            {
+              severity: 'error',
+              code: 'ResourceNotFound',
+              details: {
+                text: `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
+              }
+            }
+          ]
+        });
+      }
+      patientBundles = group.member.map(async m => {
+        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+      });
+      patientBundles = await Promise.all(patientBundles);
+    } else {
+      // single patient
+      patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
+    }
+
+    logger.info(`Calculating gaps in care for measure ${measure.id}`);
+    const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd
+    });
+
+    const responseParametersArray = [];
+    if (results.length > 1) {
+      results.forEach(result => {
+        responseParametersArray.push({
+          name: 'return',
+          resource: result
+        });
+      });
+    } else {
       responseParametersArray.push({
         name: 'return',
-        resource: result
+        resource: results
       });
-    });
-  } else {
-    responseParametersArray.push({
-      name: 'return',
-      resource: results
-    });
-  }
+    }
+    return responseParametersArray;
+  });
+
+  gapsResults = await Promise.all(gapsResults);
+  // Flatten nested gaps reports and only add the gaps reports that are non-empty
+  gapsResults = gapsResults.flat().filter(gapReport => gapReport.resource.resourceType);
 
   const responseParameters = {
     resourceType: 'Parameters',
-    parameter: responseParametersArray
+    parameter: [...gapsResults]
   };
   logger.info('Successfully generated $care-gaps report');
   return responseParameters;
@@ -432,7 +454,6 @@ const careGaps = async (args, { req }) => {
  */
 const retrieveSearchTerm = query => {
   const { measureId, measureIdentifier, measureUrl } = query;
-
   if (measureId) {
     return { _id: measureId };
   } else if (measureIdentifier) {
