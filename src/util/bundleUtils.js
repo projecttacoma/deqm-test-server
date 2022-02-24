@@ -5,7 +5,11 @@ const { v4: uuidv4 } = require('uuid');
 const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
 const logger = require('../server/logger');
 
-const OUTDATED_CONNECTATHON_URLS = {
+/*
+ Some connectathon bundles currently contain incorrect url references from the main library
+ to its dependent libraries. This map identifies those issues and provides the correct url reference
+*/
+const INCORRECT_CONNECTATHON_URLS_MAP = {
   'http://hl7.org/fhir/Library/SupplementalDataElements|2.0.0':
     'http://fhir.org/guides/dbcg/connectathon/Library/SupplementalDataElements|2.0.0',
   'http://hl7.org/fhir/Library/TJCOverall|5.0.000':
@@ -199,11 +203,11 @@ async function getAllDependentLibraries(lib) {
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
     // Quick fix for invalid connectathon url references
-    if (url in OUTDATED_CONNECTATHON_URLS) {
+    if (url in INCORRECT_CONNECTATHON_URLS_MAP) {
       logger.warn(
-        `Using potentially outdated reference url: ${url}. Replacing with ${OUTDATED_CONNECTATHON_URLS[url]}`
+        `Using potentially outdated reference url: ${url}. Replacing with ${INCORRECT_CONNECTATHON_URLS_MAP[url]}`
       );
-      url = OUTDATED_CONNECTATHON_URLS[url];
+      url = INCORRECT_CONNECTATHON_URLS_MAP[url];
     }
     const libQuery = getQueryFromReference(url);
     const lib = await findOneResourceWithQuery(libQuery, 'Library');

@@ -397,7 +397,7 @@ const careGaps = async (args, { req }) => {
               severity: 'error',
               code: 'ResourceNotFound',
               details: {
-                text: `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+                text: `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
               }
             }
           ]
@@ -436,7 +436,9 @@ const careGaps = async (args, { req }) => {
   });
 
   gapsResults = await Promise.all(gapsResults);
-  gapsResults = gapsResults.flat();
+  // Flatten nested gaps reports and only add the gaps reports that are non-empty
+  gapsResults = gapsResults.flat().filter(gapReport => gapReport.resource.resourceType);
+
   const responseParameters = {
     resourceType: 'Parameters',
     parameter: [...gapsResults]
