@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { NotFoundError, BulkStatusError } = require('../util/errorUtils');
 const { getBulkImportStatus } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
@@ -35,35 +35,16 @@ async function checkBulkStatus(req, res) {
     // TODO: Provide this file to the user. Ideally we'd add a coding, but no codings in the vs generically indicate not found
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotFound',
-          details: {
-            text: `Could not find bulk import request with id: ${clientId}`
-          }
-        }
-      ]
-    });
+    throw new NotFoundError(`Could not find bulk import request with id: ${clientId}`);
   }
 
   logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
   if (bulkStatus.status === 'Failed') {
     logger.debug(`bulkStatus entry is failed`);
-    throw new ServerError(null, {
-      statusCode: 500,
-      issue: [
-        {
-          severity: 'error',
-          code: bulkStatus.error.code || 'UnknownError',
-          details: {
-            text: bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`
-          }
-        }
-      ]
-    });
+    throw new BulkStatusError(
+      bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`,
+      bulkStatus.error.code || 'UnknownError'
+    );
   } else if (bulkStatus.status === 'In Progress') {
     logger.debug(`bulkStatus entry is in progress`);
     res.status(202);
@@ -155,18 +136,10 @@ async function checkBulkStatus(req, res) {
     const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
-    throw new ServerError(null, {
-      statusCode: 500,
-      issue: [
-        {
-          severity: 'error',
-          code: bulkStatus.error.code || 'UnknownError',
-          details: {
-            text: bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`
-          }
-        }
-      ]
-    });
+    throw new BulkStatusError(
+      bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`,
+      bulkStatus.error.code || 'UnknownError'
+    );
   }
 }
 

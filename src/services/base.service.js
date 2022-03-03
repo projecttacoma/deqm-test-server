@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
-const { getSearchParameters, resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { getSearchParameters, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const QueryBuilder = require('@asymmetrik/fhir-qb');
 const url = require('url');
 const {
@@ -111,18 +112,7 @@ const baseSearchById = async (args, resourceType) => {
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
   if (!result) {
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: `No resource found in collection: ${resourceType}, with: id ${args.id}`
-          }
-        }
-      ]
-    });
+    throw new ResourceNotFoundError(`No resource found in collection: ${resourceType}, with: id ${args.id}`);
   }
   return new dataType(result);
 };
@@ -199,18 +189,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   } else {
     // If there were issues with query building, throw an error. Use the provided error if possible.
     const errorMessage = filter.errors[0] ? filter.errors[0].message : 'Issue parsing parameters.';
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: errorMessage
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(errorMessage);
   }
   return searchBundle;
 };
@@ -234,18 +213,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: 'Argument id must match request body id for PUT request'
-          }
-        }
-      ]
-    });
+    throw new BadRequestError('Argument id must match request body id for PUT request');
   }
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
@@ -276,18 +244,9 @@ const checkContentTypeHeader = requestHeaders => {
     requestHeaders['content-type'] !== 'application/json+fhir' &&
     requestHeaders['content-type'] !== 'application/fhir+json'
   ) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: 'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
+    );
   }
 };
 

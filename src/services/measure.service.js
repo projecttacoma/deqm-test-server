@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
@@ -103,32 +103,10 @@ const submitData = async (args, { req }) => {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   if (req.body.resourceType !== 'Parameters') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected 'resourceType: Parameters'. Received 'type: ${req.body.resourceType}'.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Expected 'resourceType: Parameters'. Received 'type: ${req.body.resourceType}'.`);
   }
   if (!req.body.parameter) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Unreadable or empty entity for attribute 'parameter'. Received: ${req.body.parameter}`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Unreadable or empty entity for attribute 'parameter'. Received: ${req.body.parameter}`);
   }
   const parameters = req.body.parameter;
   // Ensure exactly 1 measureReport is in parameters
@@ -136,18 +114,9 @@ const submitData = async (args, { req }) => {
     param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
   ).length;
   if (numMeasureReportsInput !== 1) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
+    );
   }
 
   // check if we want to do a bulk import
@@ -272,18 +241,9 @@ const evaluateMeasure = async (args, { req }) => {
       const subjectReference = req.query.subject.split('/');
       const group = await findResourceById(subjectReference[1], subjectReference[0]);
       if (!group) {
-        throw new ServerError(null, {
-          statusCode: 404,
-          issue: [
-            {
-              severity: 'error',
-              code: 'ResourceNotFound',
-              details: {
-                text: `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
-              }
-            }
-          ]
-        });
+        throw new ResourceNotFoundError(
+          `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+        );
       }
       patientBundles = group.member.map(async m => {
         return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
@@ -358,18 +318,9 @@ const careGaps = async (args, { req }) => {
     const searchResults = await search(args, { req });
     if (searchResults.total === 0) {
       //We know the search term will have exactly one key and value, so just fill them in in the error message
-      throw new ServerError(null, {
-        statusCode: 404,
-        issue: [
-          {
-            severity: 'error',
-            code: 'ResourceNotFound',
-            details: {
-              text: `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
-            }
-          }
-        ]
-      });
+      throw new ResourceNotFoundError(
+        `no measure found with ${Object.keys(searchTerm)[0]}: ${searchTerm[Object.keys(searchTerm)[0]]}.`
+      );
     }
 
     const measureResources = searchResults.entry.map(e => e.resource);
@@ -390,18 +341,9 @@ const careGaps = async (args, { req }) => {
     if (subjectReference[0] === 'Group') {
       const group = await findResourceById(subjectReference[1], subjectReference[0]);
       if (!group) {
-        throw new ServerError(null, {
-          statusCode: 404,
-          issue: [
-            {
-              severity: 'error',
-              code: 'ResourceNotFound',
-              details: {
-                text: `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
-              }
-            }
-          ]
-        });
+        throw new ResourceNotFoundError(
+          `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
+        );
       }
       patientBundles = group.member.map(async m => {
         return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);

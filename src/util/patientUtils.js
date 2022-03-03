@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { ResourceNotFoundError } = require('./errorUtils');
 const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
@@ -46,18 +46,7 @@ async function getPatientDataSearchSetBundle(patientId, base_version, host) {
 async function getPatientData(patientId, dataRequirements) {
   const patient = await findResourceById(patientId, 'Patient');
   if (!patient) {
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: `Patient with id ${patientId} does not exist in the server`
-          }
-        }
-      ]
-    });
+    throw new ResourceNotFoundError(`Patient with id ${patientId} does not exist in the server`);
   }
   let requiredTypes;
   if (dataRequirements) {

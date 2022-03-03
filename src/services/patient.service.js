@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { NotImplementedError } = require('../util/errorUtils');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 const { getPatientData, getPatientDataSearchSetBundle } = require('../util/patientUtils');
@@ -91,7 +91,7 @@ const patientEverything = async (args, { req }) => {
 
 /**
  * Checks if unsupported parameters are provided in the http request.
- * If any unsupported parameters are present, a ServerError is thrown.
+ * If any unsupported parameters are present, a NotImplemented error is thrown.
  * @param {Object} req http request object
  */
 const validatePatientEverythingParams = req => {
@@ -102,20 +102,11 @@ const validatePatientEverythingParams = req => {
   const presentUnsupportedParams = UNSUPPORTED_PARAMS.filter(key => req.query[key]);
 
   if (presentUnsupportedParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `$everything functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
-              ', '
-            )}`
-          }
-        }
-      ]
-    });
+    throw new NotImplementedError(
+      `$everything functionality has not yet been implemented for requests with parameters: ${presentUnsupportedParams.join(
+        ', '
+      )}`
+    );
   }
 };
 

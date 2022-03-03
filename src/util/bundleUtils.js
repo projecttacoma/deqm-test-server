@@ -1,4 +1,5 @@
-const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { ResourceNotFoundError, InternalError } = require('./errorUtils');
 const _ = require('lodash');
 const url = require('url');
 const { v4: uuidv4 } = require('uuid');
@@ -106,18 +107,7 @@ function getQueryFromReference(reference) {
 async function getMeasureBundleFromId(measureId) {
   const measure = await findResourceById(measureId, 'Measure');
   if (!measure) {
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: `Measure with id ${measureId} does not exist in the server`
-          }
-        }
-      ]
-    });
+    throw new ResourceNotFoundError(`Measure with id ${measureId} does not exist in the server`);
   }
   return assembleCollectionBundleFromMeasure(measure);
 }
@@ -135,18 +125,7 @@ async function assembleCollectionBundleFromMeasure(measure) {
   const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
 
   if (!mainLib) {
-    throw new ServerError(null, {
-      statusCode: 500,
-      issue: [
-        {
-          severity: 'error',
-          code: 'internal',
-          details: {
-            text: `Could not find Library ${mainLibraryRef} referenced by Measure ${measure.id}`
-          }
-        }
-      ]
-    });
+    throw new InternalError(`Could not find Library ${mainLibraryRef} referenced by Measure ${measure.id}`);
   }
 
   // TODO: Could we simplify the logic to avoid the need for de-duplication?

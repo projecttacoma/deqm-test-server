@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { NotFoundError } = require('../util/errorUtils');
 const fs = require('fs');
 const path = require('path');
 
@@ -19,18 +19,7 @@ async function getClientFile(req, res) {
     res.set('Content-Type', 'application/ndjson+fhir');
     return path.resolve(`./tmp/${clientId}/${fileName}`);
   } else {
-    throw new ServerError(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'not-found',
-          details: {
-            text: `The following file was not found: ${clientId}/${fileName}`
-          }
-        }
-      ]
-    });
+    throw new NotFoundError(`The following file was not found: ${clientId}/${fileName}`);
   }
 }
 

@@ -223,7 +223,7 @@ describe('base.service', () => {
 });
 
 describe('checkContentTypeHeader', () => {
-  test('throw ServerError for invalid ContentType header', () => {
+  test('throw error for invalid ContentType header', () => {
     const INVALID_HEADER = 'INVALID';
     try {
       checkContentTypeHeader(INVALID_HEADER);
