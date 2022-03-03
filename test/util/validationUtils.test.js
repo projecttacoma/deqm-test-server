@@ -187,7 +187,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+        `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
   });
@@ -208,7 +208,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+        `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
   });

@@ -1,13 +1,16 @@
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 
-class BadRequestError extends ServerError {
-  constructor(message) {
+/**
+ * Child class of ServerError with custom options object
+ */
+class CustomServerError extends ServerError {
+  constructor(message, customStatusCode, customCode) {
     super(null, {
-      statusCode: 400,
+      statusCode: customStatusCode,
       issue: [
         {
           severity: 'error',
-          code: 'BadRequest',
+          code: customCode,
           details: {
             text: message
           }
@@ -17,105 +20,66 @@ class BadRequestError extends ServerError {
   }
 }
 
-class NotImplementedError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 400 and code BadRequest
+ */
+class BadRequestError extends CustomServerError {
   constructor(message) {
-    super(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 400, 'BadRequest');
   }
 }
 
-class ResourceNotFoundError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 501 and code NotImplemented
+ */
+class NotImplementedError extends CustomServerError {
   constructor(message) {
-    super(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'ResourceNotFound',
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 501, 'NotImplemented');
   }
 }
 
-class NotFoundError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 404 and code ResourceNotFound
+ */
+class ResourceNotFoundError extends CustomServerError {
   constructor(message) {
-    super(null, {
-      statusCode: 404,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotFound',
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 404, 'ResourceNotFound');
   }
 }
 
-class InternalError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 404 and code NotFound
+ */
+class NotFoundError extends CustomServerError {
   constructor(message) {
-    super(null, {
-      statusCode: 500,
-      issue: [
-        {
-          severity: 'error',
-          code: 'internal',
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 404, 'NotFound');
   }
 }
 
-class UnprocessableEntityError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 500 and code Internal
+ */
+class InternalError extends CustomServerError {
   constructor(message) {
-    super(null, {
-      statusCode: 422,
-      issue: [
-        {
-          severity: 'error',
-          code: 'UnprocessableEntity',
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 500, 'Internal');
   }
 }
 
-class BulkStatusError extends ServerError {
+/**
+ * Error class that throws ServerError with status code 422 and code UnprocessableEntity
+ */
+class UnprocessableEntityError extends CustomServerError {
+  constructor(message) {
+    super(message, 422, 'UnprocessableEntity');
+  }
+}
+
+/**
+ * Error class that throws ServerError with status code 500 and custom error code
+ */
+class BulkStatusError extends CustomServerError {
   constructor(message, errorCode) {
-    super(null, {
-      statusCode: 500,
-      issue: [
-        {
-          severity: 'error',
-          code: errorCode,
-          details: {
-            text: message
-          }
-        }
-      ]
-    });
+    super(message, 500, errorCode);
   }
 }
 
