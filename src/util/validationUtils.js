@@ -1,7 +1,7 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError, NotImplementedError } = require('./errorUtils');
 
 /**
- * Checks that the parameters input to $evaluate-measure are valid. Throws a ServerError
+ * Checks that the parameters input to $evaluate-measure are valid. Throws an error
  * for missing parameters, the use of unsupported parameters, and the use of unsupported
  * report types.
  * @param {Object} query query from http request object
@@ -14,84 +14,35 @@ function validateEvalMeasureParams(query) {
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate-measure');
 
   if (query.reportType === 'subject-list') {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `The subject-list reportType is not currently supported by the server.`
-          }
-        }
-      ]
-    });
+    throw new NotImplementedError(`The subject-list reportType is not currently supported by the server.`);
   }
 
   // returns unsupported report type that is included in the http request
   if (!['individual', 'population', 'subject-list', undefined].includes(query.reportType)) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `reportType ${query.reportType} is not supported for $evaluate-measure`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate-measure`);
   }
 
   if (!query.subject && query.reportType !== 'population') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Must specify subject for all $evaluate-measure requests with reportType: ${query.reportType}`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      `Must specify subject for all $evaluate-measure requests with reportType: ${query.reportType}`
+    );
   }
 
   if (query.reportType === 'population' && query.subject) {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
-      throw new ServerError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
-            }
-          }
-        ]
-      });
+      throw new BadRequestError(
+        `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+      );
     }
   }
 
   if (query.reportType === 'individual') {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
-      throw new ServerError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
-            }
-          }
-        ]
-      });
+      throw new BadRequestError(
+        `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+      );
     }
   }
 }
@@ -110,34 +61,14 @@ const validateCareGapsParams = query => {
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$care-gaps');
 
   if (query.status !== 'open-gap') {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `Currently only supporting $care-gaps requests with status='open-gap'`
-          }
-        }
-      ]
-    });
+    throw new NotImplementedError(`Currently only supporting $care-gaps requests with status='open-gap'`);
   }
 
   const subjectReference = query.subject.split('/');
   if (subjectReference.length !== 2 || !['Group', 'Patient'].includes(subjectReference[0])) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+    );
   }
 };
 
@@ -162,18 +93,7 @@ const checkRequiredParams = (query, requiredParams, operationName) => {
   // Returns a list of all required params which are undefined on req.query
   const missingParams = requiredParams.filter(key => !query[key]);
   if (missingParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Missing required parameters for ${operationName}: ${missingParams.join(', ')}.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Missing required parameters for ${operationName}: ${missingParams.join(', ')}.`);
   }
 };
 
@@ -187,20 +107,11 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
   const includedUnsupportedParams = unsupportedParams.filter(key => query[key]);
   // returns all unsupported params that are included in the http request
   if (includedUnsupportedParams.length > 0) {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: `The following parameters were included and are not supported for ${operationName}: ${includedUnsupportedParams.join(
-              ', '
-            )}`
-          }
-        }
-      ]
-    });
+    throw new NotImplementedError(
+      `The following parameters were included and are not supported for ${operationName}: ${includedUnsupportedParams.join(
+        ', '
+      )}`
+    );
   }
 };
 
@@ -237,18 +148,7 @@ const checkExportType = parameters => {
       return entry.valueString;
     });
   if (exportTypes.includes('static')) {
-    throw new ServerError(null, {
-      statusCode: 501,
-      issue: [
-        {
-          severity: 'error',
-          code: 'NotImplemented',
-          details: {
-            text: 'static exportType is not supported on this server'
-          }
-        }
-      ]
-    });
+    throw new NotImplementedError('static exportType is not supported on this server');
   }
 };
 

@@ -1,4 +1,4 @@
-const { ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError } = require('./errorUtils');
 const logger = require('../server/logger');
 
 /**
@@ -35,47 +35,14 @@ const retrieveExportUrl = parameters => {
  */
 const checkExportUrlArray = exportUrlArray => {
   if (exportUrlArray.length === 0) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `No exportUrl parameter was found.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`No exportUrl parameter was found.`);
   }
   if (exportUrlArray.length !== 1) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected exactly one export URL. Received: ${exportUrlArray.length}`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Expected exactly one export URL. Received: ${exportUrlArray.length}`);
   }
   // if one export URL exists, check that valueUrl exists
   if (!exportUrlArray[0].valueUrl) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected a valueUrl for the exportUrl, but none was found`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Expected a valueUrl for the exportUrl, but none was found`);
   }
 };
 

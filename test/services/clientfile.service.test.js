@@ -21,7 +21,7 @@ describe('check client file', () => {
       .get('/4_0_1/file/testid/invalid.ndjson')
       .expect(404)
       .then(response => {
-        expect(response.body.issue[0].code).toEqual('not-found');
+        expect(response.body.issue[0].code).toEqual('NotFound');
         expect(response.body.issue[0].details.text).toEqual('The following file was not found: testid/invalid.ndjson');
       });
   });

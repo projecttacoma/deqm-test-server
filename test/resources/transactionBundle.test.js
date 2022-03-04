@@ -37,7 +37,7 @@ describe('Test functionality for adding resource entry to the bundle', () => {
       expect(e.statusCode).toEqual(422);
       expect(e.issue[0].details.text).toEqual(
         `Invalid request type for transaction bundle entry for resource with id: ${testPatient.id}. 
-              Request must be of type POST or PUT, received type: INVALID`
+        Request must be of type POST or PUT, received type: INVALID`
       );
     }
   });

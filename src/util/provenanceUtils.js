@@ -1,4 +1,5 @@
-const { resolveSchema, ServerError } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError } = require('./errorUtils');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../server/logger');
 
@@ -99,48 +100,17 @@ const buildDelegator = reference => {
 const checkProvenanceHeader = requestHeaders => {
   const provenanceRequest = JSON.parse(requestHeaders['x-provenance']);
   if (provenanceRequest.resourceType !== 'Provenance') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected resourceType 'Provenance' for Provenance header. Received ${provenanceRequest.resourceType}.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      `Expected resourceType 'Provenance' for Provenance header. Received ${provenanceRequest.resourceType}.`
+    );
   }
 
   if (provenanceRequest.target) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `The 'target' attribute should not be populated in the provenance header`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`The 'target' attribute should not be populated in the provenance header`);
   }
 
   if (!provenanceRequest.agent || provenanceRequest.agent.length === 0) {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `The provenance header must specify at least 1 agent in the agent attribute`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`The provenance header must specify at least 1 agent in the agent attribute`);
   }
 };
 

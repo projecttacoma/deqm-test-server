@@ -1,6 +1,7 @@
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { ServerError, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
+const { BadRequestError } = require('../util/errorUtils');
 const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
@@ -117,32 +118,10 @@ async function uploadTransactionBundle(req, res) {
   checkContentTypeHeader(headers);
   // TODO: we will need to somehow store all data that is uploaded, even if it's bad data
   if (resourceType !== 'Bundle') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected 'resourceType: Bundle', but received 'resourceType: ${resourceType}'.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Expected 'resourceType: Bundle', but received 'resourceType: ${resourceType}'.`);
   }
   if (type.toLowerCase() !== 'transaction') {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected 'type: transaction'. Received 'type: ${type}'.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`Expected 'type: transaction'. Received 'type: ${type}'.`);
   }
   let xprovenanceIncluded;
   if (req.headers['x-provenance']) {
@@ -223,18 +202,9 @@ async function insertBundleResources(entry, method) {
       entry.statusText = 'OK';
     }
   } else {
-    throw new ServerError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `Expected requests of type PUT or POST, received ${method} for ${entry.resource.resourceType}/${entry.resource.id}`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(
+      `Expected requests of type PUT or POST, received ${method} for ${entry.resource.resourceType}/${entry.resource.id}`
+    );
   }
   return entry;
 }
