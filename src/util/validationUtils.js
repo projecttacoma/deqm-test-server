@@ -81,7 +81,7 @@ const validateCareGapsParams = query => {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length !== 2 || !['Group', 'Patient'].includes(subjectReference[0])) {
       throw new BadRequestError(
-        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+        `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
   }
