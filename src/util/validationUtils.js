@@ -65,64 +65,24 @@ const validateCareGapsParams = query => {
   }
 
   if (!query.subject && !query.organization) {
-    throw new BadRequestError(null, {
-      statusCode: 400,
-      issue: [
-        {
-          severity: 'error',
-          code: 'BadRequest',
-          details: {
-            text: `$care-gaps requests must identify either a subject or an organization.`
-          }
-        }
-      ]
-    });
+    throw new BadRequestError(`$care-gaps requests must identify either a subject or an organization.`);
   } else if (query.organization) {
     if (query.subject) {
       // Cannot provide both a subject and organization
-      throw new BadRequestError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: 'must provide either subject or organization. Received both'
-            }
-          }
-        ]
-      });
+      throw new BadRequestError('must provide either subject or organization. Received both');
     }
     const orgReference = query.organization.split('/');
     if (orgReference[0] !== 'Organization') {
-      throw new BadRequestError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: `organization may only be an Organization resource of format "Organization/{id}". Received: ${query.organization}`
-            }
-          }
-        ]
-      });
+      throw new BadRequestError(
+        `organization may only be an Organization resource of format "Organization/{id}". Received: ${query.organization}`
+      );
     }
   } else if (query.subject) {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length !== 2 || !['Group', 'Patient'].includes(subjectReference[0])) {
-      throw new BadRequestError(null, {
-        statusCode: 400,
-        issue: [
-          {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
-            }
-          }
-        ]
-      });
+      throw new BadRequestError(
+        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+      );
     }
   }
 };

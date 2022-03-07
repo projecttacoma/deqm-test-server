@@ -6,7 +6,6 @@ const {
   checkExportType
 } = require('../../src/util/validationUtils');
 const queue = require('../../src/queue/importQueue');
-const { failBulkImportRequest } = require('../../src/database/dbOperations');
 
 const VALID_SUBJECT_QUERY = {
   periodStart: '2019-01-01',
@@ -205,7 +204,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
   });
@@ -226,7 +225,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
+        `subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
   });

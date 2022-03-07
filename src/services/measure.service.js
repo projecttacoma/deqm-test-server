@@ -383,18 +383,7 @@ const retrievePatients = async ({ subject, organization }) => {
   if (reference[0] !== 'Patient') {
     referencedObject = await findResourceById(reference[1], reference[0]);
     if (!referencedObject) {
-      throw new ResourceNotFoundError(null, {
-        statusCode: 404,
-        issue: [
-          {
-            severity: 'error',
-            code: 'ResourceNotFound',
-            details: {
-              text: `No resource found in collection: ${reference[0]}, with id: ${reference[1]}.`
-            }
-          }
-        ]
-      });
+      throw new ResourceNotFoundError(`No resource found in collection: ${reference[0]}, with id: ${reference[1]}.`);
     }
   }
 
