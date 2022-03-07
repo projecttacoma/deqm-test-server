@@ -6,11 +6,29 @@ const {
   checkExportType
 } = require('../../src/util/validationUtils');
 const queue = require('../../src/queue/importQueue');
+const { failBulkImportRequest } = require('../../src/database/dbOperations');
 
-const VALID_QUERY = {
+const VALID_SUBJECT_QUERY = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
   status: 'open-gap',
+  subject: 'Patient/testPatient',
+  measureId: 'testID'
+};
+
+const VALID_ORGANIZATION_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  organization: 'Organization/testOrganization',
+  measureId: 'testID'
+};
+
+const SUBJECT_AND_ORGANIZATION_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  organization: 'Organization/testOrganization',
   subject: 'Patient/testPatient',
   measureId: 'testID'
 };
@@ -213,11 +231,31 @@ describe('validateCareGapsParams', () => {
     }
   });
 
-  test('validateCareGapsParams does not throw error with correct params', async () => {
+  test('validateCareGapsParams does not throw error with correct params and defined subject', async () => {
     const VALID_REQ = {
-      query: VALID_QUERY
+      query: VALID_SUBJECT_QUERY
     };
     expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+  });
+
+  test('validateCareGapsParams does not throw error with organization instead of subject', async () => {
+    const VALID_REQ = {
+      query: VALID_ORGANIZATION_QUERY
+    };
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+  });
+
+  test('validateCareGapsParams does not throw error with organization instead of subject', async () => {
+    const INVALID_REQ = {
+      query: SUBJECT_AND_ORGANIZATION_QUERY
+    };
+    try {
+      validateCareGapsParams(INVALID_REQ.query);
+      throw new Error('validateCareGapsParams failed to throw an error when provided both subject and organization');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual('must provide either subject or organization. Received both');
+    }
   });
 
   test('gatherParams gathers params from query and body', () => {
@@ -241,7 +279,7 @@ describe('validateCareGapsParams', () => {
         ]
       }
     };
-    expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(VALID_QUERY);
+    expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(VALID_SUBJECT_QUERY);
   });
 
   afterAll(async () => await queue.close());

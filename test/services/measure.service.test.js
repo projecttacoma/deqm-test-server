@@ -6,6 +6,7 @@ const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
 const testGroup = require('../fixtures/fhir-resources/testGroup.json');
+const testOrganization = require('../fixtures/fhir-resources/testOrganization.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
 const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
 const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
@@ -116,6 +117,7 @@ describe('testing custom measure operation', () => {
     await createTestResource(testPatient2, 'Patient');
     await createTestResource(testGroup, 'Group');
     await createTestResource(testMeasure2, 'Measure');
+    await createTestResource(testOrganization, 'Organization');
   });
 
   test('$submit-data returns 400 for incorrect resourceType', async () => {
@@ -511,6 +513,77 @@ describe('testing custom measure operation', () => {
       expect(param.resource).toBeDefined();
       expect(param.resource.resourceType).toEqual('Bundle');
     });
+  });
+
+  test('$care-gaps returns 200 when passed a valid organization', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        measureId: 'testMeasure',
+        organization: 'Organization/testOrganization',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021'
+    });
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(1);
+
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+  });
+
+  test('$care-gaps fails if no organization found with referenced id', async () => {
+    await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        measureId: 'testMeasure',
+        organization: 'Organization/BAD_REFERENCE',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(404)
+      .then(async response => {
+        expect(response.body.issue[0].code).toEqual('ResourceNotFound');
+        expect(response.body.issue[0].details.text).toEqual(
+          'No resource found in collection: Organization, with id: BAD_REFERENCE.'
+        );
+      });
   });
 
   test('bulk import fails if measure bundle cannot be found', async () => {
