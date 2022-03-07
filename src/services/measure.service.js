@@ -297,7 +297,7 @@ const careGaps = async (args, { req }) => {
   }
   validateCareGapsParams(query);
 
-  const { periodStart, periodEnd, subject } = query;
+  const { periodStart, periodEnd } = query;
   const searchTerm = retrieveSearchTerm(query);
   if (req.method === 'POST') {
     req.body = searchTerm;
@@ -335,25 +335,13 @@ const careGaps = async (args, { req }) => {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd
     });
+    const patientIds = await retrievePatients(query);
 
-    const subjectReference = subject.split('/');
-    let patientBundles;
-    if (subjectReference[0] === 'Group') {
-      const group = await findResourceById(subjectReference[1], subjectReference[0]);
-      if (!group) {
-        throw new ResourceNotFoundError(
-          `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
-        );
-      }
-      patientBundles = group.member.map(async m => {
-        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
-      });
-      patientBundles = await Promise.all(patientBundles);
-    } else {
-      // single patient
-      patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
-    }
+    let patientBundles = patientIds.map(async m => {
+      return getPatientDataCollectionBundle(`Patient/${m}`, dataReq.results.dataRequirement);
+    });
 
+    patientBundles = await Promise.all(patientBundles);
     logger.info(`Calculating gaps in care for measure ${measure.id}`);
     const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
@@ -387,6 +375,37 @@ const careGaps = async (args, { req }) => {
   };
   logger.info('Successfully generated $care-gaps report');
   return responseParameters;
+};
+
+const retrievePatients = async ({ subject, organization }) => {
+  let referencedObject;
+  const reference = (subject || organization).split('/');
+  if (reference[0] !== 'Patient') {
+    referencedObject = await findResourceById(reference[1], reference[0]);
+    if (!referencedObject) {
+      throw new ResourceNotFoundError(null, {
+        statusCode: 404,
+        issue: [
+          {
+            severity: 'error',
+            code: 'ResourceNotFound',
+            details: {
+              text: `No resource found in collection: ${reference[0]}, with id: ${reference[1]}.`
+            }
+          }
+        ]
+      });
+    }
+  }
+
+  if (reference[0] === 'Group') {
+    return referencedObject.member.map(m => m.entity.reference);
+  } else if (reference[0] === 'Patient') {
+    return [subject];
+  } else {
+    const patients = await findResourcesWithQuery({ 'managingOrganization.identifier.value': organization }, 'Patient');
+    return patients.map(e => e.id);
+  }
 };
 
 /**
