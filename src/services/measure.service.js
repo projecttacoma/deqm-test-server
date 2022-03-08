@@ -342,6 +342,9 @@ const careGaps = async (args, { req }) => {
     });
 
     patientBundles = await Promise.all(patientBundles);
+    if (patientBundles.length === 0) {
+      return [];
+    }
     logger.info(`Calculating gaps in care for measure ${measure.id}`);
     const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
