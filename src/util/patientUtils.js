@@ -74,8 +74,9 @@ async function getPatientData(patientId, dataRequirements) {
 /**
  * Takes in a care-gaps query and retrieves the ids of the patients to be run against the measure
  * NOTE: Currently, this function assumes ResourceType/ResourceId-style references
- * @param {string} subject A reference to either the patient or group resource to run against a measure
- * @param {string} organization A reference to an organization that
+ * @param {string} subject A reference to either the FHIR Patient or Group resource to run against a measure
+ * @param {string} organization A reference to a FHIR Organization. All patients which list the referenced organization
+ * as their managingOrganization will be selected for gaps calculation run on them
  * @returns {Array} an array of patient ids
  */
 const retrievePatientIds = async ({ subject, organization }) => {
