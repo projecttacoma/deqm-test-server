@@ -261,7 +261,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        'organization may only be an Organization resource of format "Organization/{id}". Received: INVALID'
+        'Organization may only be an Organization resource of format "Organization/{id}". Received: INVALID'
       );
     }
   });
@@ -275,7 +275,7 @@ describe('validateCareGapsParams', () => {
       throw new Error('validateCareGapsParams failed to throw an error when provided both subject and organization');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual('must provide either subject or organization. Received both');
+      expect(e.issue[0].details.text).toEqual('Must provide either subject or organization. Received both');
     }
   });
 

@@ -69,12 +69,12 @@ const validateCareGapsParams = query => {
   } else if (query.organization) {
     if (query.subject) {
       // Cannot provide both a subject and organization
-      throw new BadRequestError('must provide either subject or organization. Received both');
+      throw new BadRequestError('Must provide either subject or organization. Received both');
     }
     const orgReference = query.organization.split('/');
     if (orgReference[0] !== 'Organization') {
       throw new BadRequestError(
-        `organization may only be an Organization resource of format "Organization/{id}". Received: ${query.organization}`
+        `Organization may only be an Organization resource of format "Organization/{id}". Received: ${query.organization}`
       );
     }
   } else if (query.subject) {
