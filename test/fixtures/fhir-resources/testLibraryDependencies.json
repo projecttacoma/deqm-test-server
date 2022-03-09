@@ -1,0 +1,10 @@
+{
+  "id": "LibraryWithDependencies",
+  "resourceType": "Library",
+  "relatedArtifact": [
+    {
+      "type": "depends-on",
+      "resource": "Library/Missing"
+    }
+  ]
+}
