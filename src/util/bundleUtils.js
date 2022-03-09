@@ -194,7 +194,7 @@ async function getAllDependentLibraries(lib) {
       throw new InternalError(
         `Failed to find dependent library with ${
           libQuery.id ? `id: ${libQuery.id}` : `canonical url: ${libQuery.url}`
-        }${libQuery.version ? `and version: ${libQuery.version}` : ''}`
+        }${libQuery.version ? ` and version: ${libQuery.version}` : ''}`
       );
     }
     return getAllDependentLibraries(lib);
