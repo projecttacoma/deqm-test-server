@@ -20,11 +20,13 @@ const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
-const test = require('../fixtures/fhir-resources/testResource.json');
+const testResource = require('../fixtures/fhir-resources/testResource2.json');
 
 const config = buildConfig();
 const server = initialize(config);
 const updateMeasure = { resourceType: 'Measure', id: 'testMeasure', name: 'anUpdate' };
+
+JSON.stringify(testResource);
 
 describe('measure.service CRUD operations', () => {
   beforeAll(async () => {
