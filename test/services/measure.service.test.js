@@ -588,7 +588,7 @@ describe('testing custom measure operation', () => {
       });
   });
 
-  test('$care-gaps fails if no organization found with referenced id', async () => {
+  test('$care-gaps gives length 0 response if no patients are associated with organization referenced id', async () => {
     await supertest(server.app)
       .get('/4_0_1/Measure/$care-gaps')
       .query({
