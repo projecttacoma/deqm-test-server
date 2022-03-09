@@ -192,7 +192,9 @@ async function getAllDependentLibraries(lib) {
     const lib = await findOneResourceWithQuery(libQuery, 'Library');
     if (lib === null) {
       throw new InternalError(
-        `Failed to find dependent library with canonical url: ${libQuery.url} and version: ${libQuery.version}`
+        `Failed to find dependent library with ${
+          libQuery.id ? `id: ${libQuery.id}` : `canonical url: ${libQuery.url}`
+        }${libQuery.version ? `and version: ${libQuery.version}` : ''}`
       );
     }
     return getAllDependentLibraries(lib);
@@ -265,5 +267,6 @@ module.exports = {
   replaceReferences,
   assembleCollectionBundleFromMeasure,
   getQueryFromReference,
-  mapResourcesToCollectionBundle
+  mapResourcesToCollectionBundle,
+  getAllDependentLibraries
 };

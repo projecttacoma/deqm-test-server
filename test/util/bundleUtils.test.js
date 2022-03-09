@@ -1,4 +1,5 @@
 const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
+const { client } = require('../../src/database/connection');
 const queue = require('../../src/queue/importQueue');
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
@@ -7,8 +8,10 @@ const {
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
   EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
 } = require('../fixtures/bundleUtilFixtures');
-
 const { v4: uuidv4 } = require('uuid');
+const libraryWithDependencies = require('../fixtures/fhir-resources/testLibraryDependencies.json');
+const { createTestResource, cleanUpTest } = require('../populateTestData');
+const { getAllDependentLibraries } = require('../../src/util/bundleUtils');
 
 jest.mock('uuid', () => {
   return {
@@ -67,4 +70,22 @@ describe('Testing getQueryFromReference', () => {
   afterAll(async () => {
     await queue.close();
   });
+});
+
+describe('Testing getAllDependentLibraries()', () => {
+  beforeAll(async () => {
+    await client.connect();
+    await createTestResource(libraryWithDependencies, 'Library');
+  });
+
+  test('throws 500 error when dependent lib is missing', async () => {
+    try {
+      await getAllDependentLibraries(libraryWithDependencies);
+      expect.fail('getAllDependentLibraries did not throw an error with missing dependent library');
+    } catch (e) {
+      expect(e.statusCode).toBe(500);
+      expect(e.issue[0].details.text).toEqual(`Failed to find dependent library with id: Missing`);
+    }
+  });
+  afterAll(cleanUpTest);
 });
