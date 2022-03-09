@@ -55,7 +55,7 @@ function validateEvalMeasureParams(query) {
 const validateCareGapsParams = query => {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status'];
   // These params are not supported. We should throw an error if we receive them
-  const UNSUPPORTED_PARAMS = ['topic', 'practitioner', 'program'];
+  const UNSUPPORTED_PARAMS = ['topic', 'program'];
 
   checkRequiredParams(query, REQUIRED_PARAMS, '$care-gaps');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$care-gaps');
@@ -83,6 +83,11 @@ const validateCareGapsParams = query => {
       throw new BadRequestError(
         `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
+    }
+  } else if (query.practitioner) {
+    //Cannot provide both a subject and an organization
+    if (query.subject) {
+      throw new BadRequestError(`Can only provide either an practitioner or subject but not both`);
     }
   }
 };
