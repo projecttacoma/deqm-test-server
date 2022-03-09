@@ -190,6 +190,11 @@ async function getAllDependentLibraries(lib) {
     }
     const libQuery = getQueryFromReference(url);
     const lib = await findOneResourceWithQuery(libQuery, 'Library');
+    if (lib === null) {
+      throw new InternalError(
+        `Failed to find dependent library with canonical url: ${libQuery.url} and version: ${libQuery.version}`
+      );
+    }
     return getAllDependentLibraries(lib);
   });
 
