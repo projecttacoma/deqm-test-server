@@ -39,7 +39,30 @@ const SUBJECT_AND_ORGANIZATION_QUERY = {
   subject: 'Patient/testPatient',
   measureId: 'testID'
 };
-
+const SUBJECT_AND_PRACTITIONER_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  practitioner: 'Practitioner/testPractitioner',
+  subject: 'Patient/testPatient',
+  measureId: 'testID'
+};
+const VALID_PRACTITIONER_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  organization: 'Organization/testOrganization',
+  practitioner: 'Practitioner/testPractitioner',
+  measureId: 'testID'
+};
+const INVALID_PRACTITIONER_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  organization: 'Organization/testOrganization',
+  practitioner: 'INVALID',
+  measureId: 'testID'
+};
 describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {
     const req = { query: {} };
@@ -165,7 +188,7 @@ describe('validateCareGapsParams', () => {
         periodEnd: '2019-12-31',
         status: 'open-gap',
         subject: 'Patient/testPatient',
-        practitioner: 'testPractitioner'
+        topic: 'testTopic'
       }
     };
     try {
@@ -173,7 +196,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        `The following parameters were included and are not supported for $care-gaps: practitioner`
+        `The following parameters were included and are not supported for $care-gaps: topic`
       );
     }
   });
@@ -276,6 +299,35 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual('Must provide either subject or organization. Received both');
+    }
+  });
+
+  test('validateCareGapsParams does not throw error with practitioner instead of subject', async () => {
+    const VALID_REQ = {
+      query: VALID_PRACTITIONER_QUERY
+    };
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+  });
+  test('validateCareGapsParams throws error with both practitioner and subject', async () => {
+    try {
+      validateCareGapsParams(SUBJECT_AND_PRACTITIONER_QUERY);
+      throw new Error('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual('Must provide either subject or practitioner. Received both');
+    }
+  });
+  test('validateCareGapsParams throws error with invalid organization format', async () => {
+    const INVALID_REQ = {
+      query: INVALID_PRACTITIONER_QUERY
+    };
+    try {
+      expect(validateCareGapsParams(INVALID_REQ.query)).toBeUndefined();
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        'Practitioner may only be an Practitioner resource of format "Practitioner/{id}". Received: INVALID'
+      );
     }
   });
 

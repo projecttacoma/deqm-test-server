@@ -1,0 +1,9 @@
+{
+    "resourceType": "Patient",
+    "id": "testPatient",
+    "generalPractitioner": {
+      "identifier": {
+        "value": "Practitioner/testPractitioner"
+      }
+    }
+  }
