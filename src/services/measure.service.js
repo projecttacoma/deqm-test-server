@@ -17,7 +17,7 @@ const {
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
-const { getPatientDataCollectionBundle } = require('../util/patientUtils');
+const { getPatientDataCollectionBundle, retrievePatientIds } = require('../util/patientUtils');
 const {
   addPendingBulkImportRequest,
   findOneResourceWithQuery,
@@ -297,7 +297,7 @@ const careGaps = async (args, { req }) => {
   }
   validateCareGapsParams(query);
 
-  const { periodStart, periodEnd, subject } = query;
+  const { periodStart, periodEnd } = query;
   const searchTerm = retrieveSearchTerm(query);
   if (req.method === 'POST') {
     req.body = searchTerm;
@@ -335,25 +335,16 @@ const careGaps = async (args, { req }) => {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd
     });
+    const patientIds = await retrievePatientIds(query);
 
-    const subjectReference = subject.split('/');
-    let patientBundles;
-    if (subjectReference[0] === 'Group') {
-      const group = await findResourceById(subjectReference[1], subjectReference[0]);
-      if (!group) {
-        throw new ResourceNotFoundError(
-          `No resource found in collection: ${subjectReference[0]}, with id: ${subjectReference[1]}.`
-        );
-      }
-      patientBundles = group.member.map(async m => {
-        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
-      });
-      patientBundles = await Promise.all(patientBundles);
-    } else {
-      // single patient
-      patientBundles = [await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement)];
+    let patientBundles = patientIds.map(async m => {
+      return getPatientDataCollectionBundle(`Patient/${m}`, dataReq.results.dataRequirement);
+    });
+
+    patientBundles = await Promise.all(patientBundles);
+    if (patientBundles.length === 0) {
+      return [];
     }
-
     logger.info(`Calculating gaps in care for measure ${measure.id}`);
     const { results } = await Calculator.calculateGapsInCare(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,

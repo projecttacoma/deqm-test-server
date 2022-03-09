@@ -145,10 +145,15 @@ Required parameters include:
 
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject for which the measure will be calculated
 - `status`: status of the care gap
 
-Currently, `topic`, `practitioner`, `organization`, and `program` are not supported by the test server.
+The user also SHALL include either
+
+- `subject`: subject for which the measure will be calculated
+  OR
+- `organization`: Reference to an organization for which the gaps in care report will be created
+
+Currently, `topic`, `practitioner`, and `program` are not supported by the test server.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/$care-gaps` with the required parameters.
 

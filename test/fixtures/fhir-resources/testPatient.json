@@ -1,4 +1,9 @@
 {
   "resourceType": "Patient",
-  "id": "testPatient"
+  "id": "testPatient",
+  "managingOrganization": {
+    "identifier": {
+      "value": "Organization/testOrganization"
+    }
+  }
 }
