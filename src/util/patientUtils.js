@@ -93,10 +93,14 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
     return referencedObject.member.map(m => m.entity.reference.split('/')[1]);
   } else if (reference[0] === 'Patient') {
     return [subject.split('/')[1]];
-  } else if (reference[0] === 'Practitioner') {
-    const patients = await findResourcesWithQuery({ 'generalPractitioner.identifier.value': practitioner }, 'Patient');
-    return patients.map(e => e.id);
   } else {
+    if (practitioner) {
+      const patients = await findResourcesWithQuery(
+        { 'generalPractitioner.identifier.value': practitioner, 'managingOrganization.identifier.value': organization },
+        'Patient'
+      );
+      return patients.map(e => e.id);
+    }
     const patients = await findResourcesWithQuery({ 'managingOrganization.identifier.value': organization }, 'Patient');
     return patients.map(e => e.id);
   }

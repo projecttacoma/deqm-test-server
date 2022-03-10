@@ -5,5 +5,11 @@
     "identifier": {
       "value": "Organization/testOrganization"
     }
+    
+  },
+  "generalPractitioner":{
+    "identifier":{
+      "value": "Practitioner/testPractitioner"
+    }
   }
 }

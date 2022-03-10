@@ -605,6 +605,58 @@ describe('testing custom measure operation', () => {
       });
   });
 
+  test('$care-gaps returns 200 when passed a valid practitioner', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        measureId: 'testMeasure',
+        organization: 'Organization/testOrganization',
+        practitioner: 'Practitioner/testPractitioner',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021'
+    });
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(1);
+
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+  });
   test('bulk import fails if measure bundle cannot be found', async () => {
     await supertest(server.app)
       .post('/4_0_1/Measure/invalid-id/$submit-data')
