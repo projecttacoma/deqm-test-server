@@ -70,6 +70,13 @@ const validateCareGapsParams = query => {
     if (query.subject) {
       // Cannot provide both a subject and organization
       throw new BadRequestError('Must provide either subject or organization. Received both');
+    } else if (query.practitioner) {
+      const pracReference = query.practitioner.split('/');
+      if (pracReference[0] !== 'Practitioner') {
+        throw new BadRequestError(
+          `Practitioner may only be an Practitioner resource of format "Practitioner/{id}". Received: ${query.practitioner}`
+        );
+      }
     }
     const orgReference = query.organization.split('/');
     if (orgReference[0] !== 'Organization') {
@@ -79,7 +86,7 @@ const validateCareGapsParams = query => {
     }
   } else if (query.subject) {
     if (query.practitioner) {
-      throw new BadRequestError('Must provide either subject or practitioner. Received both');
+      throw new BadRequestError('Cannot provide both a subject and practitioner');
     }
     const subjectReference = query.subject.split('/');
     if (subjectReference.length !== 2 || !['Group', 'Patient'].includes(subjectReference[0])) {
@@ -88,12 +95,7 @@ const validateCareGapsParams = query => {
       );
     }
   } else if (query.practitioner) {
-    const pracReference = query.practitioner.split('/');
-    if (pracReference[0] !== 'Practitioner') {
-      throw new BadRequestError(
-        `Practitioner may only be an Practitioner resource of format "Practitioner/{id}". Received: ${query.practitioner}`
-      );
-    }
+    throw new BadRequestError('Must provide either subject or practitioner. Received neither');
   }
 };
 

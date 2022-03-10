@@ -47,6 +47,14 @@ const SUBJECT_AND_PRACTITIONER_QUERY = {
   subject: 'Patient/testPatient',
   measureId: 'testID'
 };
+const PRACTITIONER_AND_NO_ORG = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  practitioner: 'Practitioner/testPractitioner',
+  subject: 'Patient/testPatient',
+  measureId: 'testID'
+};
 const VALID_PRACTITIONER_QUERY = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
@@ -276,10 +284,11 @@ describe('validateCareGapsParams', () => {
   });
 
   test('validateCareGapsParams throws error with invalid organization format', async () => {
+    
     const INVALID_REQ = {
       query: INVALID_ORGANIZATION_QUERY
-    };
-    try {
+    };   
+     try {
       expect(validateCareGapsParams(INVALID_REQ.query)).toBeUndefined();
     } catch (e) {
       expect(e.statusCode).toEqual(400);
@@ -303,26 +312,31 @@ describe('validateCareGapsParams', () => {
   });
 
   test('validateCareGapsParams does not throw error with practitioner instead of subject', async () => {
-    const VALID_REQ = {
-      query: VALID_PRACTITIONER_QUERY
-    };
-    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+   
+    expect(validateCareGapsParams(VALID_PRACTITIONER_QUERY)).toBeUndefined();
   });
   test('validateCareGapsParams throws error with both practitioner and subject', async () => {
     try {
       validateCareGapsParams(SUBJECT_AND_PRACTITIONER_QUERY);
-      throw new Error('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
+      expect.fail('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual('Must provide either subject or practitioner. Received both');
+      expect(e.issue[0].details.text).toEqual('Cannot provide both a subject and practitioner');
     }
   });
-  test('validateCareGapsParams throws error with invalid organization format', async () => {
-    const INVALID_REQ = {
-      query: INVALID_PRACTITIONER_QUERY
-    };
+  test('validateCareGapsParams throws error with a  practitioner but no organization', async () => {
     try {
-      expect(validateCareGapsParams(INVALID_REQ.query)).toBeUndefined();
+      validateCareGapsParams(PRACTITIONER_AND_NO_ORG);
+      expect.fail('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual('Cannot provide both a subject and practitioner');
+    }
+  })
+  test('validateCareGapsParams throws error with invalid practitioner format', async () => {
+    
+    try {
+      expect(validateCareGapsParams(INVALID_PRACTITIONER_QUERY)).toBeUndefined();
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(

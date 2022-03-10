@@ -152,8 +152,8 @@ The user also SHALL include either
 - `subject`: subject for which the measure will be calculated
   OR
 - `organization`: Reference to an organization for which the gaps in care report will be created
- OR 
- -`practitioner`: Reference to a generalPractirioner for which the gaps in care report should be created.
+
+ -`practitioner`: Reference to a generalPractirioner for which the gaps in care report should be created, this needs to be submitted with an organzation but it is mutually exclusive with subject 
 Currently, `topic`, and `program` are not supported by the test server.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/$care-gaps` with the required parameters.
