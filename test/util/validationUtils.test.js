@@ -332,7 +332,8 @@ describe('validateCareGapsParams', () => {
   });
   test('validateCareGapsParams throws error with invalid practitioner format', async () => {
     try {
-      expect(validateCareGapsParams(INVALID_PRACTITIONER_QUERY)).toBeUndefined();
+      validateCareGapsParams(INVALID_PRACTITIONER_QUERY);
+      expect.fail('Practitioner may only be a Practitioner resource of format "Practitioner/{id}". Received: INVALID');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(

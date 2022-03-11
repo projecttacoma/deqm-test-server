@@ -94,8 +94,6 @@ const validateCareGapsParams = query => {
         `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
-  } else if (query.practitioner) {
-    throw new BadRequestError('Must provide either subject or practitioner. Received neither');
   }
 };
 
