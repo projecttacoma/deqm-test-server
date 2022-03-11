@@ -52,7 +52,6 @@ const PRACTITIONER_AND_NO_ORG = {
   periodEnd: '2019-12-31',
   status: 'open-gap',
   practitioner: 'Practitioner/testPractitioner',
-  subject: 'Patient/testPatient',
   measureId: 'testID'
 };
 const VALID_PRACTITIONER_QUERY = {
@@ -328,7 +327,7 @@ describe('validateCareGapsParams', () => {
       expect.fail('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual('Cannot provide both a subject and practitioner');
+      expect(e.issue[0].details.text).toEqual('$care-gaps requests must identify either a subject or an organization.');
     }
   });
   test('validateCareGapsParams throws error with invalid practitioner format', async () => {
