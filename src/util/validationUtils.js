@@ -74,7 +74,7 @@ const validateCareGapsParams = query => {
       const pracReference = query.practitioner.split('/');
       if (pracReference[0] !== 'Practitioner') {
         throw new BadRequestError(
-          `Practitioner may only be an Practitioner resource of format "Practitioner/{id}". Received: ${query.practitioner}`
+          `Practitioner may only be a Practitioner resource of format "Practitioner/{id}". Received: ${query.practitioner}`
         );
       }
     }

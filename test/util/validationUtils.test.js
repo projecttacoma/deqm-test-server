@@ -309,7 +309,7 @@ describe('validateCareGapsParams', () => {
     }
   });
 
-  test('validateCareGapsParams does not throw error with practitioner instead of subject', async () => {
+  test('validateCareGapsParams does not throw error with practitioner and organization instead of subject', async () => {
     expect(validateCareGapsParams(VALID_PRACTITIONER_QUERY)).toBeUndefined();
   });
   test('validateCareGapsParams throws error with both practitioner and subject', async () => {
@@ -336,7 +336,7 @@ describe('validateCareGapsParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        'Practitioner may only be an Practitioner resource of format "Practitioner/{id}". Received: INVALID'
+        'Practitioner may only be a Practitioner resource of format "Practitioner/{id}". Received: INVALID'
       );
     }
   });
