@@ -152,8 +152,8 @@ The user also SHALL include either
 - `subject`: subject for which the measure will be calculated
   OR
 - `organization`: Reference to an organization for which the gaps in care report will be created 
-    OR
--`organization` and `practitioner`: Reference to a generalPractitioner for which the gaps in care report should be created
+  OR
+- `organization` and `practitioner`: Reference to a generalPractitioner for which the gaps in care report should be created
 
 Currently, `topic`, and `program` are not supported by the test server.
 
