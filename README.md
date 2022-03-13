@@ -151,11 +151,19 @@ The user also SHALL include either
 
 - `subject`: subject for which the measure will be calculated
   OR
-- `organization`: Reference to an organization for which the gaps in care report will be created 
+- `organization`: Reference to an organization for which the gaps in care report will be created
   OR
 - `organization` and `practitioner`: Reference to a generalPractitioner for which the gaps in care report should be created
 
-Currently, `topic`, and `program` are not supported by the test server.
+The user MAY include
+
+- `measureId` OR `measureIdentifier` OR `measureURL`: a measure identification field for which the gaps in care will be reported
+  OR
+- `program`: programs that a provider participates in, for which only associated measures will be used to report gaps in care
+
+Otherwise all available measures will be used.
+
+Currently, `topic` and using both a measure identification and 'program' at the same time is not yet supported by the test server.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/$care-gaps` with the required parameters.
 

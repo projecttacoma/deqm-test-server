@@ -70,6 +70,24 @@ const INVALID_PRACTITIONER_QUERY = {
   practitioner: 'INVALID',
   measureId: 'testID'
 };
+
+const PROGRAM_AND_MEASURE_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  subject: 'Patient/testPatient',
+  measureId: 'testID',
+  program: 'testProgram'
+};
+
+const VALID_PROGRAM_QUERY = {
+  periodStart: '2019-01-01',
+  periodEnd: '2019-12-31',
+  status: 'open-gap',
+  subject: 'Patient/testPatient',
+  program: 'testProgram'
+};
+
 describe('checkRequiredParams', () => {
   test('check checkRequiredParams throws error on missing params', () => {
     const req = { query: {} };
@@ -282,6 +300,13 @@ describe('validateCareGapsParams', () => {
     expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
   });
 
+  test('validateCareGapsParams does not throw error with correct params and defined program', async () => {
+    const VALID_REQ = {
+      query: VALID_PROGRAM_QUERY
+    };
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
+  });
+
   test('validateCareGapsParams throws error with invalid organization format', async () => {
     const INVALID_REQ = {
       query: INVALID_ORGANIZATION_QUERY
@@ -342,6 +367,23 @@ describe('validateCareGapsParams', () => {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
         'Practitioner may only be a Practitioner resource of format "Practitioner/{id}". Received: INVALID'
+      );
+    }
+  });
+
+  test('validateCareGapsParams throws error with both program and measure identification', async () => {
+    const INVALID_REQ = {
+      query: PROGRAM_AND_MEASURE_QUERY
+    };
+    try {
+      validateCareGapsParams(INVALID_REQ.query);
+      throw new Error(
+        'validateCareGapsParams failed to throw an error when provided both program and measure identification'
+      );
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        'May provide program or measure identification (measureId/measureIdentifier/measureUrl) but not both.'
       );
     }
   });

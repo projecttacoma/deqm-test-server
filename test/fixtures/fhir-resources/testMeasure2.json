@@ -1,5 +1,15 @@
 {
   "resourceType": "Measure",
   "id": "testMeasure2",
-  "library": ["Library/testLibrary"]
+  "library": ["Library/testLibrary"],
+  "useContext": [
+    {
+        "code" : {
+            "code" : "program"
+        },
+        "valueCodeableConcept" : {
+            "text" : "testProgram"
+        }
+    }
+  ]
 }

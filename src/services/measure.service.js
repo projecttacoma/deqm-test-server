@@ -305,7 +305,20 @@ const careGaps = async (args, { req }) => {
     req.query = searchTerm;
   }
   const measures = [];
-  if (!searchTerm) {
+  if (query.program) {
+    // check all measures for (useContext -> program -> valueCodeableConcept) = query param program code
+    const all = await findResourcesWithQuery({}, 'Measure');
+    const programMeasures = all.filter(
+      measure =>
+        measure.useContext &&
+        measure.useContext.some(context => {
+          const checkCode = context.code?.code === 'program';
+          const checkValue = context.valueCodeableConcept?.text === query.program;
+          return checkCode && checkValue;
+        })
+    );
+    measures.push(...programMeasures);
+  } else if (!searchTerm) {
     /*
       If no search term, circumvent asymmetrik query builder and use mongo search directly to avoid
       pagination bug
