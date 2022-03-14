@@ -306,7 +306,7 @@ const careGaps = async (args, { req }) => {
   }
   const measures = [];
   if (query.program) {
-    // check all measures for (useContext -> program -> valueCodeableConcept) = query param program code
+    // check all measures for (useContext -> valueCodeableConcept -> text) = query param program code
     const all = await findResourcesWithQuery({}, 'Measure');
     const programMeasures = all.filter(
       measure =>
