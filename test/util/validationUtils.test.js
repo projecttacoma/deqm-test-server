@@ -321,10 +321,10 @@ describe('validateCareGapsParams', () => {
       expect(e.issue[0].details.text).toEqual('Cannot provide both a subject and practitioner');
     }
   });
-  test('validateCareGapsParams throws error with a  practitioner but no organization', async () => {
+  test('validateCareGapsParams throws error with a practitioner but no organization', async () => {
     try {
       validateCareGapsParams(PRACTITIONER_AND_NO_ORG);
-      expect.fail('validateCareGapsParams failed to throw an error when provided both subject and practitioner');
+      expect.fail('validateCareGapsParams failed to throw an error when provided a practitioner without an organization');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual('$care-gaps requests must identify either a subject or an organization.');
@@ -333,7 +333,7 @@ describe('validateCareGapsParams', () => {
   test('validateCareGapsParams throws error with invalid practitioner format', async () => {
     try {
       validateCareGapsParams(INVALID_PRACTITIONER_QUERY);
-      expect.fail('Practitioner may only be a Practitioner resource of format "Practitioner/{id}". Received: INVALID');
+      expect.fail('validateCareGapsParams failed to throw an error when provided a practitioner with invalid formatting');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
