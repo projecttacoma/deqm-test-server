@@ -79,7 +79,7 @@ async function getPatientData(patientId, dataRequirements) {
  * as their managingOrganization will be selected for gaps calculation run on them
  * @returns {Array} an array of patient ids
  */
-const retrievePatientIds = async ({ subject, organization }) => {
+const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   let referencedObject;
   const reference = (subject || organization).split('/');
   if (reference[0] !== 'Patient') {
@@ -94,6 +94,13 @@ const retrievePatientIds = async ({ subject, organization }) => {
   } else if (reference[0] === 'Patient') {
     return [subject.split('/')[1]];
   } else {
+    if (practitioner) {
+      const patients = await findResourcesWithQuery(
+        { 'generalPractitioner.identifier.value': practitioner, 'managingOrganization.identifier.value': organization },
+        'Patient'
+      );
+      return patients.map(e => e.id);
+    }
     const patients = await findResourcesWithQuery({ 'managingOrganization.identifier.value': organization }, 'Patient');
     return patients.map(e => e.id);
   }
