@@ -97,8 +97,8 @@ const validateCareGapsParams = query => {
   }
 
   if (query.program && (query.measureId || query.measureIdentifier || query.measureUrl)) {
-    throw new BadRequestError(
-      'May provide program or measure identification (measureId/measureIdentifier/measureUrl) but not both.'
+    throw new NotImplementedError(
+      'Simultaneous program and measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
     );
   }
 };

@@ -381,9 +381,9 @@ describe('validateCareGapsParams', () => {
         'validateCareGapsParams failed to throw an error when provided both program and measure identification'
       );
     } catch (e) {
-      expect(e.statusCode).toEqual(400);
+      expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        'May provide program or measure identification (measureId/measureIdentifier/measureUrl) but not both.'
+        'Simultaneous program and measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
       );
     }
   });

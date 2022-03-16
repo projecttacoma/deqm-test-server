@@ -10,6 +10,17 @@
         "valueCodeableConcept" : {
             "text" : "testProgram"
         }
+    },
+    {
+      "code" : {
+        "code" : "program"
+      },
+      "valueCodeableConcept" : {
+        "coding":[{
+          "system":"http://hl7.org/fhir/us/cqfmeasures/CodeSystem/quality-programs",
+          "code" : "testProgram2"
+        }]
+      }
     }
   ]
 }
