@@ -657,6 +657,129 @@ describe('testing custom measure operation', () => {
     expect(body.parameter[0].resource).toBeDefined();
     expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
   });
+
+  test('$care-gaps returns 200 when passed a program', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        program: 'testProgram',
+        subject: 'Patient/testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+
+    expect(gapsSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021'
+    });
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(1);
+
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+  });
+
+  test('$care-gaps returns 200 when passed a complicated program parameter', async () => {
+    const { Calculator } = require('fqm-execution');
+    const gapsSpy = jest.spyOn(Calculator, 'calculateGapsInCare').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Bundle',
+          type: 'document',
+          entry: [
+            {
+              resource: testCareGapsMeasureReport
+            }
+          ]
+        }
+      };
+    });
+
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+
+    const { body } = await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        program: ['testProgram', 'http://hl7.org/fhir/us/cqfmeasures/CodeSystem/quality-programs|testProgram2'],
+        subject: 'Patient/testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200);
+    expect(gapsSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021'
+    });
+    expect(body.resourceType).toEqual('Parameters');
+    expect(body.parameter).toHaveLength(1);
+
+    expect(body.parameter[0].name).toEqual('return');
+    expect(body.parameter[0].resource).toBeDefined();
+    expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
+  });
+  // TODO: create test with program query combos and make sure it's only calculated against the correct measure(s)?
+  // probably need another measure fixture with a program (but still keep the one with no program and the one with 2)
+
+  test('$care-gaps gives length 0 response if no measures are associated with program given', async () => {
+    await supertest(server.app)
+      .get('/4_0_1/Measure/$care-gaps')
+      .query({
+        program: 'testProgram-unassociated',
+        subject: 'Patient/testPatient',
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        status: 'open-gap'
+      })
+      .expect(200)
+      .then(async response => {
+        expect(response.body.resourceType).toEqual('Parameters');
+        expect(response.body.parameter.length).toEqual(0);
+      });
+  });
+
   test('bulk import fails if measure bundle cannot be found', async () => {
     await supertest(server.app)
       .post('/4_0_1/Measure/invalid-id/$submit-data')

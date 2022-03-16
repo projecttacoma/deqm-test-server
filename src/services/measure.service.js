@@ -305,7 +305,22 @@ const careGaps = async (args, { req }) => {
     req.query = searchTerm;
   }
   const measures = [];
-  if (!searchTerm) {
+  if (query.program) {
+    const progArr = Array.isArray(query.program) ? query.program : [query.program];
+    // build query AND-ing all potential program parameters
+    const programQuery = {
+      $and: progArr.map(program => {
+        if (program.includes('|')) {
+          return systemCodeProgramQuery(program);
+        } else {
+          return basicProgramQuery(program);
+        }
+      })
+    };
+    // TODO: add any searchTerm (measure identifier) query ANDed with above query
+    const programMeasures = await findResourcesWithQuery(programQuery, 'Measure');
+    measures.push(...programMeasures);
+  } else if (!searchTerm) {
     /*
       If no search term, circumvent asymmetrik query builder and use mongo search directly to avoid
       pagination bug
@@ -378,6 +393,44 @@ const careGaps = async (args, { req }) => {
   };
   logger.info('Successfully generated $care-gaps report');
   return responseParameters;
+};
+
+/**
+ * Creates a query that searches for the program parameter as either a code or text element
+ * @param {string} program program parameter of single code or text format
+ * @returns {Object} the query data that searches for this program parameter
+ */
+const basicProgramQuery = program => {
+  return {
+    useContext: {
+      $elemMatch: {
+        'code.code': 'program',
+        $or: [{ 'valueCodeableConcept.coding.code': program }, { 'valueCodeableConcept.text': program }]
+      }
+    }
+  };
+};
+
+/**
+ * Creates a query for a system|code formatted program parameter
+ * @param {string} program program parameter of system|code format
+ * @returns {Object} the query data that searches for this program parameter
+ */
+const systemCodeProgramQuery = program => {
+  const [system, code] = program.split('|');
+  return {
+    useContext: {
+      $elemMatch: {
+        'code.code': 'program',
+        'valueCodeableConcept.coding': {
+          $elemMatch: {
+            code: code,
+            system: system
+          }
+        }
+      }
+    }
+  };
 };
 
 /**

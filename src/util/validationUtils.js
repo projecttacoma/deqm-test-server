@@ -55,7 +55,7 @@ function validateEvalMeasureParams(query) {
 const validateCareGapsParams = query => {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status'];
   // These params are not supported. We should throw an error if we receive them
-  const UNSUPPORTED_PARAMS = ['topic', 'program'];
+  const UNSUPPORTED_PARAMS = ['topic'];
 
   checkRequiredParams(query, REQUIRED_PARAMS, '$care-gaps');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$care-gaps');
@@ -94,6 +94,12 @@ const validateCareGapsParams = query => {
         `Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".`
       );
     }
+  }
+
+  if (query.program && (query.measureId || query.measureIdentifier || query.measureUrl)) {
+    throw new NotImplementedError(
+      'Simultaneous program and measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
+    );
   }
 };
 
