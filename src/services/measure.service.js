@@ -245,11 +245,33 @@ const evaluateMeasure = async (args, { req }) => {
           `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
         );
       }
-      patientBundles = group.member.map(async m => {
-        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
-      });
+      if (req.query.practitioner) {
+        const patientPromises = group.member.map(async m => {
+          const query = {
+            id: m.entity.reference.split('/')[1],
+            'generalPractitioner.identifier.value': req.query.practitioner
+          };
+          return await findOneResourceWithQuery(query, 'Patient');
+        });
+        const patients = (await Promise.all(patientPromises)).filter(a => a);
+        patientBundles = patients.map(async p => {
+          return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
+        });
+      } else {
+        patientBundles = group.member.map(async m => {
+          return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+        });
+      }
     } else {
-      const patients = await findResourcesWithQuery({}, 'Patient');
+      let patients;
+      if (req.query.practitioner) {
+        patients = await findResourcesWithQuery(
+          { 'generalPractitioner.identifier.value': req.query.practitioner },
+          'Patient'
+        );
+      } else {
+        patients = await findResourcesWithQuery({}, 'Patient');
+      }
       patientBundles = patients.map(async p => {
         return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
       });
@@ -266,8 +288,22 @@ const evaluateMeasure = async (args, { req }) => {
     return results;
   }
 
-  const { periodStart, periodEnd, reportType = 'individual', subject } = req.query;
-  const patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
+  const { periodStart, periodEnd, reportType = 'individual', subject, practitioner } = req.query;
+  let patientBundle;
+  if (practitioner) {
+    const query = {
+      id: subject,
+      'generalPractitioner.identifier.value': practitioner
+    };
+    const patient = await findOneResourceWithQuery(query, 'Patient');
+    if (patient) {
+      patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
+    } else {
+      throw new BadRequestError('this subject does not ref the given practitioner, plz change this msg to be better');
+    }
+  } else {
+    patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
+  }
 
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,

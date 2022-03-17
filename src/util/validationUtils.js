@@ -8,7 +8,7 @@ const { BadRequestError, NotImplementedError } = require('./errorUtils');
  */
 function validateEvalMeasureParams(query) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
-  const UNSUPPORTED_PARAMS = ['measure', 'practitioner', 'lastReceivedOn'];
+  const UNSUPPORTED_PARAMS = ['measure', 'lastReceivedOn'];
 
   checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate-measure');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate-measure');

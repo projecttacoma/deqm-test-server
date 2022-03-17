@@ -131,7 +131,11 @@ Required parameters include:
 - `periodEnd`: end of the measurement period
 - `subject`: subject for which the measure will be calculated (unless a `population` `reportType` is specified)
 
-Currently, `measure`, `practitioner`, and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `individual` and `population` `reportTypes` are supported at this time.
+Optional parameters include:
+
+- `practitioner`: practitioner for which the measure will be calculated
+
+Currently, `measure` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `individual` and `population` `reportTypes` are supported at this time.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
