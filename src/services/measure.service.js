@@ -236,6 +236,7 @@ const evaluateMeasure = async (args, { req }) => {
   validateEvalMeasureParams(req.query);
 
   if (req.query.reportType === 'population') {
+    //TODO: add BadRequestError for subject and no subject that dont reference practitioner
     let patientBundles = [];
     if (req.query.subject) {
       const subjectReference = req.query.subject.split('/');
@@ -299,7 +300,9 @@ const evaluateMeasure = async (args, { req }) => {
     if (patient) {
       patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
     } else {
-      throw new BadRequestError('this subject does not ref the given practitioner, plz change this msg to be better');
+      throw new BadRequestError(
+        `The given subject, ${subject}, does not reference the given practitioner, ${practitioner}`
+      );
     }
   } else {
     patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);

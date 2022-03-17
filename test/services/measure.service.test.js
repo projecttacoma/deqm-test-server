@@ -327,6 +327,103 @@ describe('testing custom measure operation', () => {
     });
   });
 
+  test('$evaluate-measure returns 200 when passed a practitioner referenced by a Patient subject, individual report type', async () => {});
+
+  test('$evaluate-measure returns 200 when passed a practitioner referenced by a patient in the Group subject, population report type', async () => {
+    const { Calculator } = require('fqm-execution');
+    const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+      return {
+        results: [
+          {
+            resourceType: 'MeasureReport',
+            period: {},
+            measure: '',
+            status: 'complete',
+            type: 'individual'
+          }
+        ],
+        debugOutput: {}
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        reportType: 'population',
+        subject: 'Group/testGroup',
+        practitioner: 'Practitioner/testPractitioner'
+      })
+      .expect(200);
+    expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021',
+      reportType: 'summary'
+    });
+  });
+
+  test('$evaluate-measure returns 200 when passed a practitioner referenced by a patient, population report type, no subject', async () => {
+    const { Calculator } = require('fqm-execution');
+    const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+      return {
+        results: [
+          {
+            resourceType: 'MeasureReport',
+            period: {},
+            measure: '',
+            status: 'complete',
+            type: 'individual'
+          }
+        ],
+        debugOutput: {}
+      };
+    });
+    jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+      return {
+        results: {
+          resourceType: 'Library',
+          type: {
+            coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+          },
+          status: 'draft',
+          dataRequirement: []
+        }
+      };
+    });
+    await supertest(server.app)
+      .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+      .query({
+        periodStart: '01-01-2020',
+        periodEnd: '01-01-2021',
+        reportType: 'population',
+        practitioner: 'Practitioner/testPractitioner'
+      })
+      .expect(200);
+    expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      measurementPeriodStart: '01-01-2020',
+      measurementPeriodEnd: '01-01-2021',
+      reportType: 'summary'
+    });
+  });
+
+  test('$evaluate-measure returns 400 when practitioner is not referenced by Patient subject, individual report type', async () => {});
+
+  test('$evaluate-measure returns 400 when practitioner is not referenced by any patients in Group subject, population report type', async () => {});
+
+  test('$evaluate-measure returns 400 when practitioner is not referenced by any patients, population report type, no subject', async () => {});
+
   test('$data-requirements returns 400 when required param is omitted', async () => {
     const { Calculator } = require('fqm-execution');
     jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
