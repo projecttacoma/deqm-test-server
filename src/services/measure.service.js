@@ -229,70 +229,95 @@ const evaluateMeasure = async (args, { req }) => {
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
-  const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
-    measurementPeriodStart: req.query.periodStart,
-    measurementPeriodEnd: req.query.periodEnd
-  });
-
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
   validateEvalMeasureParams(req.query);
 
   if (req.query.reportType === 'population') {
-    let patientBundles = [];
-    if (req.query.subject) {
-      const subjectReference = req.query.subject.split('/');
-      const group = await findResourceById(subjectReference[1], subjectReference[0]);
-      if (!group) {
-        throw new ResourceNotFoundError(
-          `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+    await evaluateMeasureForPopulation(args, { req });
+  } else {
+    await evaluateMeasureForIndividual(args, { req });
+  }
+};
+
+/**
+ * Evaluate measure for "population" report type
+ * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} req http request object
+ * @returns {Object} FHIR MeasureReport with population results
+ */
+const evaluateMeasureForPopulation = async (args, { req }) => {
+  const measureBundle = await getMeasureBundleFromId(args.id);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: req.query.periodStart,
+    measurementPeriodEnd: req.query.periodEnd
+  });
+  let patientBundles = [];
+  if (req.query.subject) {
+    const subjectReference = req.query.subject.split('/');
+    const group = await findResourceById(subjectReference[1], subjectReference[0]);
+    if (!group) {
+      throw new ResourceNotFoundError(
+        `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+      );
+    }
+    if (req.query.practitioner) {
+      const patients = await filterPatientIdsFromGroup(group, req.query.practitioner);
+      if (patients.length === 0) {
+        throw new BadRequestError(
+          `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
         );
-      }
-      if (req.query.practitioner) {
-        const patients = await filterPatientIdsFromGroup(group, req.query.practitioner);
-        if (patients.length === 0) {
-          throw new BadRequestError(
-            `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
-          );
-        } else {
-          patientBundles = patients.map(async p => {
-            return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-          });
-        }
       } else {
-        patientBundles = group.member.map(async m => {
-          return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+        patientBundles = patients.map(async p => {
+          return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
         });
       }
     } else {
-      let patients;
-      if (req.query.practitioner) {
-        patients = await findResourcesWithQuery(
-          { 'generalPractitioner.identifier.value': req.query.practitioner },
-          'Patient'
-        );
-        if (patients.length === 0) {
-          throw new BadRequestError(`No Patient resources reference the given practitioner, ${req.query.practitioner}`);
-        }
-      } else {
-        patients = await findResourcesWithQuery({}, 'Patient');
-      }
-      patientBundles = patients.map(async p => {
-        return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
+      patientBundles = group.member.map(async m => {
+        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
       });
     }
-    patientBundles = await Promise.all(patientBundles);
-    const { periodStart, periodEnd } = req.query;
-    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
-      measurementPeriodStart: periodStart,
-      measurementPeriodEnd: periodEnd,
-      reportType: 'summary'
+  } else {
+    let patients;
+    if (req.query.practitioner) {
+      patients = await findResourcesWithQuery(
+        { 'generalPractitioner.identifier.value': req.query.practitioner },
+        'Patient'
+      );
+      if (patients.length === 0) {
+        throw new BadRequestError(`No Patient resources reference the given practitioner, ${req.query.practitioner}`);
+      }
+    } else {
+      patients = await findResourcesWithQuery({}, 'Patient');
+    }
+    patientBundles = patients.map(async p => {
+      return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
     });
-
-    logger.info('Successfully generated $evaluate-measure report');
-    return results;
   }
+  patientBundles = await Promise.all(patientBundles);
+  const { periodStart, periodEnd } = req.query;
+  const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd,
+    reportType: 'summary'
+  });
+
+  logger.info('Successfully generated $evaluate-measure report');
+  return results;
+};
+
+/**
+ * Evaluate measure for "individual" report type
+ * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} req http request object
+ * @returns {Object} FHIR MeasureReport with population results
+ */
+const evaluateMeasureForIndividual = async (args, { req }) => {
+  const measureBundle = await getMeasureBundleFromId(args.id);
+  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    measurementPeriodStart: req.query.periodStart,
+    measurementPeriodEnd: req.query.periodEnd
+  });
 
   const { periodStart, periodEnd, reportType = 'individual', subject, practitioner } = req.query;
   let patientBundle;
