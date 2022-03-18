@@ -214,7 +214,7 @@ const dataRequirements = async (args, { req }) => {
 };
 
 /**
- * Execute the measure for a given Patient
+ * Execute the measure for a given Patient or Group
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
  * @returns {Object} FHIR MeasureReport with population results
@@ -236,7 +236,6 @@ const evaluateMeasure = async (args, { req }) => {
   validateEvalMeasureParams(req.query);
 
   if (req.query.reportType === 'population') {
-    //TODO: add BadRequestError for subject and no subject that dont reference practitioner
     let patientBundles = [];
     if (req.query.subject) {
       const subjectReference = req.query.subject.split('/');
@@ -255,9 +254,15 @@ const evaluateMeasure = async (args, { req }) => {
           return await findOneResourceWithQuery(query, 'Patient');
         });
         const patients = (await Promise.all(patientPromises)).filter(a => a);
-        patientBundles = patients.map(async p => {
-          return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-        });
+        if (patients.length !== 0) {
+          patientBundles = patients.map(async p => {
+            return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
+          });
+        } else {
+          throw new BadRequestError(
+            `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
+          );
+        }
       } else {
         patientBundles = group.member.map(async m => {
           return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
@@ -270,6 +275,9 @@ const evaluateMeasure = async (args, { req }) => {
           { 'generalPractitioner.identifier.value': req.query.practitioner },
           'Patient'
         );
+        if (patients.length === 0) {
+          throw new BadRequestError(`No Patient resources reference the given practitioner, ${req.query.practitioner}`);
+        }
       } else {
         patients = await findResourcesWithQuery({}, 'Patient');
       }
