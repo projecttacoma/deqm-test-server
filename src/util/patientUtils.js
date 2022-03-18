@@ -3,9 +3,10 @@ const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
-const { findResourceById, findResourcesWithQuery } = require('../database/dbOperations');
+const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 const logger = require('../server/logger');
+const req = require('express/lib/request');
 
 /**
  * Wrapper function to get patient data and data
@@ -77,9 +78,10 @@ async function getPatientData(patientId, dataRequirements) {
  * @param {string} subject A reference to either the FHIR Patient or Group resource to run against a measure
  * @param {string} organization A reference to a FHIR Organization. All patients which list the referenced organization
  * as their managingOrganization will be selected for gaps calculation run on them
+ * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
+ * as their generalPractitioner will be selected for gaps calculation run on them
  * @returns {Array} an array of patient ids
  */
-
 const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   let referencedObject;
   const reference = (subject || organization).split('/');
@@ -107,4 +109,30 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   }
 };
 
-module.exports = { getPatientDataCollectionBundle, getPatientDataSearchSetBundle, getPatientData, retrievePatientIds };
+/**
+ * Takes in a Group resource and practitioner from an evaluate-measure query and filters the
+ * patients from the Group to those which reference the Practitioner resource
+ * @param {Object} group A Group Resource
+ * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
+ * as their generalPractitioner will be selected for gaps calculation run on them
+ * @returns array of patient IDs
+ */
+const filterPatientIdsFromGroup = async (group, practitioner) => {
+  const patientPromises = group.member.map(async m => {
+    const query = {
+      id: m.entity.reference.split('/')[1],
+      'generalPractitioner.identifier.value': practitioner
+    };
+    return await findOneResourceWithQuery(query, 'Patient');
+  });
+  const patients = (await Promise.all(patientPromises)).filter(a => a);
+  return patients;
+};
+
+module.exports = {
+  getPatientDataCollectionBundle,
+  getPatientDataSearchSetBundle,
+  getPatientData,
+  retrievePatientIds,
+  filterPatientIdsFromGroup
+};

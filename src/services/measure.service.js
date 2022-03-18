@@ -17,7 +17,11 @@ const {
   assembleCollectionBundleFromMeasure,
   getQueryFromReference
 } = require('../util/bundleUtils');
-const { getPatientDataCollectionBundle, retrievePatientIds } = require('../util/patientUtils');
+const {
+  getPatientDataCollectionBundle,
+  retrievePatientIds,
+  filterPatientIdsFromGroup
+} = require('../util/patientUtils');
 const {
   addPendingBulkImportRequest,
   findOneResourceWithQuery,
@@ -246,22 +250,15 @@ const evaluateMeasure = async (args, { req }) => {
         );
       }
       if (req.query.practitioner) {
-        const patientPromises = group.member.map(async m => {
-          const query = {
-            id: m.entity.reference.split('/')[1],
-            'generalPractitioner.identifier.value': req.query.practitioner
-          };
-          return await findOneResourceWithQuery(query, 'Patient');
-        });
-        const patients = (await Promise.all(patientPromises)).filter(a => a);
-        if (patients.length !== 0) {
-          patientBundles = patients.map(async p => {
-            return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-          });
-        } else {
+        const patients = await filterPatientIdsFromGroup(group, req.query.practitioner);
+        if (patients.length === 0) {
           throw new BadRequestError(
             `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
           );
+        } else {
+          patientBundles = patients.map(async p => {
+            return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
+          });
         }
       } else {
         patientBundles = group.member.map(async m => {
