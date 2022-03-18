@@ -6,7 +6,6 @@ const patientRefs = require('../compartment-definition/patient-references');
 const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 const logger = require('../server/logger');
-const req = require('express/lib/request');
 
 /**
  * Wrapper function to get patient data and data
