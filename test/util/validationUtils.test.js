@@ -199,6 +199,23 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
+  test('should throw error for invalid Practitioner reference', () => {
+    try {
+      validateEvalMeasureParams({
+        reportType: 'individual',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Patient/testPatient',
+        practitioner: 'INVALID'
+      });
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        'practitioner may only be a Practitioner resource of format "Practitioner/{id}".'
+      );
+    }
+  });
+
   test('validateEvalMeasureParams does not throw error with correct params', async () => {
     const VALID_REQ = { query: { reportType: 'population', periodStart: '2019-01-01', periodEnd: '2019-12-31' } };
     expect(validateEvalMeasureParams(VALID_REQ.query)).toBeUndefined();

@@ -45,6 +45,13 @@ function validateEvalMeasureParams(query) {
       );
     }
   }
+
+  if (query.practitioner) {
+    const practitionerReference = query.practitioner.split('/');
+    if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
+      throw new BadRequestError(`practitioner may only be a Practitioner resource of format "Practitioner/{id}".`);
+    }
+  }
 }
 
 /**

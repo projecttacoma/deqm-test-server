@@ -132,7 +132,9 @@ const filterPatientIdsFromGroup = async (group, practitioner) => {
 
     return findOneResourceWithQuery(query, 'Patient');
   });
-  const patients = (await Promise.all(patientPromises)).filter(a => a);
+
+  // Consolidate results to only patients that satisfy above query
+  const patients = (await Promise.all(patientPromises)).filter(a => a != null);
   return patients;
 };
 
