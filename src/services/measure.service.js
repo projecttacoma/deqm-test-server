@@ -28,6 +28,7 @@ const {
   findResourcesWithQuery,
   findResourceById
 } = require('../database/dbOperations');
+const { getResourceReference } = require('../util/referenceUtils');
 const logger = require('../server/logger');
 
 /**
@@ -233,11 +234,9 @@ const evaluateMeasure = async (args, { req }) => {
   // or using unsupported report type
   validateEvalMeasureParams(req.query);
 
-  if (req.query.reportType === 'population') {
-    await evaluateMeasureForPopulation(args, { req });
-  } else {
-    await evaluateMeasureForIndividual(args, { req });
-  }
+  return req.query.reportType === 'population'
+    ? evaluateMeasureForPopulation(args, { req })
+    : evaluateMeasureForIndividual(args, { req });
 };
 
 /**
@@ -281,7 +280,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     let patients;
     if (req.query.practitioner) {
       patients = await findResourcesWithQuery(
-        { 'generalPractitioner.identifier.value': req.query.practitioner },
+        getResourceReference('generalPractitioner', req.query.practitioner),
         'Patient'
       );
       if (patients.length === 0) {
@@ -322,10 +321,17 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
   const { periodStart, periodEnd, reportType = 'individual', subject, practitioner } = req.query;
   let patientBundle;
   if (practitioner) {
+    let patientId = subject;
+
+    if (subject.includes('/')) {
+      patientId = subject.split('/')[1];
+    }
+
     const query = {
-      id: subject,
-      'generalPractitioner.identifier.value': practitioner
+      id: patientId,
+      ...getResourceReference('generalPractitioner', practitioner)
     };
+
     const patient = await findOneResourceWithQuery(query, 'Patient');
     if (patient) {
       patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);

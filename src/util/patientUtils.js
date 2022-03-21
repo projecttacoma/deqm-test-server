@@ -5,6 +5,7 @@ const supportedResources = require('../server/supportedResources');
 const patientRefs = require('../compartment-definition/patient-references');
 const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
+const { getResourceReference } = require('./referenceUtils');
 const logger = require('../server/logger');
 
 /**
@@ -98,12 +99,18 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   } else {
     if (practitioner) {
       const patients = await findResourcesWithQuery(
-        { 'generalPractitioner.identifier.value': practitioner, 'managingOrganization.identifier.value': organization },
+        {
+          ...getResourceReference('generalPractitioner', practitioner),
+          ...getResourceReference('managingOrganization', organization)
+        },
         'Patient'
       );
       return patients.map(e => e.id);
     }
-    const patients = await findResourcesWithQuery({ 'managingOrganization.identifier.value': organization }, 'Patient');
+    const patients = await findResourcesWithQuery(
+      getResourceReference('managingOrganization', organization),
+      'Patient'
+    );
     return patients.map(e => e.id);
   }
 };
@@ -120,9 +127,10 @@ const filterPatientIdsFromGroup = async (group, practitioner) => {
   const patientPromises = group.member.map(async m => {
     const query = {
       id: m.entity.reference.split('/')[1],
-      'generalPractitioner.identifier.value': practitioner
+      ...getResourceReference('generalPractitioner', practitioner)
     };
-    return await findOneResourceWithQuery(query, 'Patient');
+
+    return findOneResourceWithQuery(query, 'Patient');
   });
   const patients = (await Promise.all(patientPromises)).filter(a => a);
   return patients;
