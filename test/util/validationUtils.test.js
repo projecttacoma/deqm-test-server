@@ -111,14 +111,14 @@ describe('checkRequiredParams', () => {
 describe('validateEvalMeasureParams', () => {
   test('error thrown for unsupported $evaluate-measure params', async () => {
     const UNSUPPORTEDREQ = {
-      query: { practitioner: 'testPractitioner', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: { lastReceivedOn: '2019-01-01', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
       validateEvalMeasureParams(UNSUPPORTEDREQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        `The following parameters were included and are not supported for $evaluate-measure: practitioner`
+        `The following parameters were included and are not supported for $evaluate-measure: lastReceivedOn`
       );
     }
   });
@@ -195,6 +195,23 @@ describe('validateEvalMeasureParams', () => {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
         `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+      );
+    }
+  });
+
+  test('should throw error for invalid Practitioner reference', () => {
+    try {
+      validateEvalMeasureParams({
+        reportType: 'individual',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Patient/testPatient',
+        practitioner: 'INVALID'
+      });
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        'practitioner may only be a Practitioner resource of format "Practitioner/{id}".'
       );
     }
   });

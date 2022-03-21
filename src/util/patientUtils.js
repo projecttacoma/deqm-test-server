@@ -3,8 +3,9 @@ const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
 const patientRefs = require('../compartment-definition/patient-references');
-const { findResourceById, findResourcesWithQuery } = require('../database/dbOperations');
+const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
+const { getResourceReference } = require('./referenceUtils');
 const logger = require('../server/logger');
 
 /**
@@ -77,6 +78,8 @@ async function getPatientData(patientId, dataRequirements) {
  * @param {string} subject A reference to either the FHIR Patient or Group resource to run against a measure
  * @param {string} organization A reference to a FHIR Organization. All patients which list the referenced organization
  * as their managingOrganization will be selected for gaps calculation run on them
+ * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
+ * as their generalPractitioner will be selected for gaps calculation run on them
  * @returns {Array} an array of patient ids
  */
 const retrievePatientIds = async ({ subject, organization, practitioner }) => {
@@ -96,14 +99,49 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   } else {
     if (practitioner) {
       const patients = await findResourcesWithQuery(
-        { 'generalPractitioner.identifier.value': practitioner, 'managingOrganization.identifier.value': organization },
+        {
+          ...getResourceReference('generalPractitioner', practitioner),
+          ...getResourceReference('managingOrganization', organization)
+        },
         'Patient'
       );
       return patients.map(e => e.id);
     }
-    const patients = await findResourcesWithQuery({ 'managingOrganization.identifier.value': organization }, 'Patient');
+    const patients = await findResourcesWithQuery(
+      getResourceReference('managingOrganization', organization),
+      'Patient'
+    );
     return patients.map(e => e.id);
   }
 };
 
-module.exports = { getPatientDataCollectionBundle, getPatientDataSearchSetBundle, getPatientData, retrievePatientIds };
+/**
+ * Takes in a Group resource and practitioner from an evaluate-measure query and filters the
+ * patients from the Group to those which reference the Practitioner resource
+ * @param {Object} group A Group Resource
+ * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
+ * as their generalPractitioner will be selected for gaps calculation run on them
+ * @returns array of patient IDs
+ */
+const filterPatientIdsFromGroup = async (group, practitioner) => {
+  const patientPromises = group.member.map(async m => {
+    const query = {
+      id: m.entity.reference.split('/')[1],
+      ...getResourceReference('generalPractitioner', practitioner)
+    };
+
+    return findOneResourceWithQuery(query, 'Patient');
+  });
+
+  // Consolidate results to only patients that satisfy above query
+  const patients = (await Promise.all(patientPromises)).filter(a => a != null);
+  return patients;
+};
+
+module.exports = {
+  getPatientDataCollectionBundle,
+  getPatientDataSearchSetBundle,
+  getPatientData,
+  retrievePatientIds,
+  filterPatientIdsFromGroup
+};

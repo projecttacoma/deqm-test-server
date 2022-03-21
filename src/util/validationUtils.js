@@ -8,7 +8,7 @@ const { BadRequestError, NotImplementedError } = require('./errorUtils');
  */
 function validateEvalMeasureParams(query) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
-  const UNSUPPORTED_PARAMS = ['measure', 'practitioner', 'lastReceivedOn'];
+  const UNSUPPORTED_PARAMS = ['measure', 'lastReceivedOn'];
 
   checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate-measure');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate-measure');
@@ -43,6 +43,13 @@ function validateEvalMeasureParams(query) {
       throw new BadRequestError(
         `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
+    }
+  }
+
+  if (query.practitioner) {
+    const practitionerReference = query.practitioner.split('/');
+    if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
+      throw new BadRequestError(`practitioner may only be a Practitioner resource of format "Practitioner/{id}".`);
     }
   }
 }

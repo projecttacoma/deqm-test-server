@@ -2,14 +2,9 @@
   "resourceType": "Patient",
   "id": "testPatient",
   "managingOrganization": {
-    "identifier": {
-      "value": "Organization/testOrganization"
-    }
-    
+    "reference": "Organization/testOrganization"
   },
-  "generalPractitioner":{
-    "identifier":{
-      "value": "Practitioner/testPractitioner"
-    }
+  "generalPractitioner": {
+    "reference": "Practitioner/testPractitioner"
   }
 }
