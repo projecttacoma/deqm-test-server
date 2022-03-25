@@ -5,7 +5,6 @@ const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
 const { BadRequestError } = require('../util/errorUtils');
-const { calculate } = require('fqm-execution/build/calculation/Calculator');
 
 class DEQMServer extends Server {
   enableTransactionRoute() {
@@ -25,18 +24,20 @@ class DEQMServer extends Server {
     this.app.get('/:base_version/file/:clientId/:fileName', configClientFile.clientFile);
     return this;
   }
-  enableValidationMiddleWare() {
+  async enableValidationMiddleWare() {
+    await axios.put('http://localhost:4567/igs/hl7.fhir.us.qicore');
+    // how to make this async logic work correctly? Does it work correctly?
     this.app.put('*', validateFhir);
     this.app.post('*', validateFhir);
     return this;
   }
 }
 
-function initialize(config, app) {
+async function initialize(config, app) {
   let server = new DEQMServer(config, app);
 
   if (process.env.VALIDATE) {
-    server = server.enableValidationMiddleWare();
+    server = await server.enableValidationMiddleWare();
   }
   server = server
     .configureMiddleware()
@@ -55,45 +56,78 @@ function initialize(config, app) {
 }
 
 async function validateFhir(req, res, next) {
-  const resourceType = retrieveResourceType(req.originalUrl);
-  if (resourceType !== 'Calculation') {
-    const validationUrl = `http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/validate?profile=${resourceType}`;
-    const response = await axios.post(validationUrl, req.body);
-    if (response.data.issue[0].severity !== 'information') {
-      res.status(400).json(response.data);
-    } else {
-      if (req.body?.meta?.profile && !req.body.meta.profile.includes(resourceType)) {
-        req.body.meta.profile.push(resourceType);
-      } else {
-        req.body['meta'] = { profile: [resourceType] };
+  const profiles = retrieveProfiles(req.originalUrl);
+  if (profiles !== 'Calculation') {
+    //We know the profile pulled from the URL will be the last profile added to the array
+    const qicoreProfile = `http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-${profiles[
+      profiles.length - 1
+    ].toLowerCase()}`;
+    const qicoreValidationUrl = `http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/validate?profile=${qicoreProfile}`;
+
+    const qicoreValidationInfo = await getValidationInfo(res, qicoreValidationUrl, req.body);
+    const validationUrl = `http://${process.env.VALIDATOR_HOST}:${
+      process.env.VALIDATOR_PORT
+    }/validate?profile=${profiles.join(',')}`;
+    const validationInfo = await getValidationInfo(res, validationUrl, req.body);
+    if (validationInfo.isValid) {
+      if (qicoreValidationInfo.isValid) {
+        profiles.push(qicoreProfile);
       }
+      if (req.body?.meta?.profile) {
+        const validatedProfiles = new Set(req.body.meta.profile);
+        profiles.forEach(profile => {
+          validatedProfiles.add(profile);
+        });
+        req.body.meta.profile = Array.from(validatedProfiles);
+      } else {
+        req.body['meta'] = { profile: profiles };
+      }
+
       next();
+    } else {
+      res.status(400).json(validationInfo.data);
     }
   } else {
     next();
   }
 }
-function retrieveResourceType(originalUrl) {
+
+function retrieveProfiles(originalUrl, body) {
+  const profiles = [];
   const params = originalUrl.split('/');
-  console.log(params);
+
+  const metaProfiles = body?.meta?.profile;
+  if (metaProfiles) {
+    profiles.push(...metaProfiles);
+  }
   if (params[params.length - 1] === '$submit-data') {
-    return 'Parameters';
+    profiles.push('Parameters');
   }
   // We don't need to validate posted Parameters bodies for dollar-sign operations since these aren't stored in the db
-  if (params[params.length - 1][0] === '$') {
+  else if (params[params.length - 1][0] === '$') {
     return 'Calculation';
   }
   // Only param was base_version, so this is a transaction bundle upload
-  if (params.length === 2) {
-    return 'Bundle';
+  else if (params.length === 2) {
+    profiles.push('Bundle');
+  } else if (params.length > 2) {
+    /*
+     * If two or more params and not dollar-sign operation, third param must be the resourceType
+     * keep in mind, the first param will always be the empty string since originalUrl starts with '/'
+     */
+    profiles.push(params[2]);
+  } else {
+    throw new BadRequestError('Unable to retrieve expected profile type for validation');
   }
-  /*
-   * If two or more params and not dollar-sign operation, third param must be the resourceType
-   * keep in mind, the first param will always be the empty string since originalUrl starts with '/'
-   */
-  if (params.length > 2) {
-    return params[2];
+  return profiles;
+}
+
+async function getValidationInfo(res, validationUrl, body) {
+  const response = await axios.post(validationUrl, body);
+  if (response.data.issue[0].severity !== 'information') {
+    return { isValid: false, data: response.data };
   }
+  return { isValid: true };
 }
 
 module.exports = { DEQMServer, initialize };

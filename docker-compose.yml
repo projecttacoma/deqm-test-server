@@ -41,7 +41,7 @@ services:
   validator:
     image: infernocommunity/fhir-validator-service
     ports:
-      - '3001:3001'
+      - '4567:4567'
 
   keycloak:
     environment:
