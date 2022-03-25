@@ -1,6 +1,6 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
 const { retrieveExportUrl } = require('../util/exportUtils');
-const { checkExportType } = require('../util/validationUtils');
+const { checkExportType } = require('../util/operationValidationUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
 

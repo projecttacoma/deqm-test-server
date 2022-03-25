@@ -4,7 +4,7 @@ const {
   validateCareGapsParams,
   gatherParams,
   checkExportType
-} = require('../../src/util/validationUtils');
+} = require('../../src/util/operationValidationUtils');
 const queue = require('../../src/queue/importQueue');
 
 const VALID_SUBJECT_QUERY = {

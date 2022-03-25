@@ -11,7 +11,7 @@ const {
   validateCareGapsParams,
   validateDataRequirementsParams,
   gatherParams
-} = require('../util/validationUtils');
+} = require('../util/operationValidationUtils');
 const {
   getMeasureBundleFromId,
   assembleCollectionBundleFromMeasure,
