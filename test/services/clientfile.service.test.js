@@ -3,11 +3,14 @@ const { clientFileSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 
-const config = buildConfig();
-const server = initialize(config);
+let server;
 
 describe('check client file', () => {
-  beforeAll(clientFileSetup);
+  beforeAll(async () => {
+    clientFileSetup();
+    const config = buildConfig();
+    server = await initialize(config);
+  });
   test('check 200 returned for successful file request', async () => {
     await supertest(server.app)
       .get('/4_0_1/file/testid/OperationOutcome.ndjson')

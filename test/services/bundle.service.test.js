@@ -8,8 +8,7 @@ const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 
-const config = buildConfig();
-const server = initialize(config);
+let server;
 
 const NON_BUNDLE_REQ = {
   body: { resourceType: 'invalidType', type: 'transaction' },
@@ -39,95 +38,101 @@ const INVALID_METHOD_REQ = {
     }
   ]
 };
-describe('uploadTransactionBundle Server errors', () => {
-  test('error thrown if resource type is not Bundle', async () => {
-    try {
-      await uploadTransactionBundle(NON_BUNDLE_REQ, {});
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        `Expected 'resourceType: Bundle', but received 'resourceType: invalidType'.`
-      );
-    }
-  });
-
-  test('error thrown if type is not transaction', async () => {
-    try {
-      await uploadTransactionBundle(NON_TXN_REQ, {});
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(`Expected 'type: transaction'. Received 'type: invalidType'.`);
-    }
-  });
-});
-describe('Test transaction bundle upload', () => {
+describe('bundle.service', () => {
   beforeAll(async () => {
-    await client.connect();
+    const config = buildConfig();
+    server = await initialize(config);
   });
-
-  test('Transaction bundle upload populates provenance target', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/')
-      .send(testBundle)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(async response => {
-        // Check the response
-        expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
-      });
-  });
-
-  test('error thrown if method type is not PUT or POST', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/')
-      .send(INVALID_METHOD_REQ)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(async response => {
-        expect(response.body.resourceType).toEqual('Bundle');
-        expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
-        expect(response.body.entry[0].response.outcome.issue[0].details.text).toEqual(
-          'Expected requests of type PUT or POST, received GET for Measure/test-measure'
+  describe('uploadTransactionBundle Server errors', () => {
+    test('error thrown if resource type is not Bundle', async () => {
+      try {
+        await uploadTransactionBundle(NON_BUNDLE_REQ, {});
+      } catch (e) {
+        expect(e.statusCode).toEqual(400);
+        expect(e.issue[0].details.text).toEqual(
+          `Expected 'resourceType: Bundle', but received 'resourceType: invalidType'.`
         );
-      });
-  });
-});
-describe('Test handle submit data bundle', () => {
-  beforeAll(async () => {
-    await client.connect();
-  });
+      }
+    });
 
-  test('Submit data bundle with resources creates AuditEvent with resources', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/Measure/$submit-data')
-      .send(testParamResource)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(async response => {
-        // Check the response
-        expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
-      });
-    // Check for AuditEvent with resources
-    await supertest(server.app)
-      .get('/4_0_1/AuditEvent')
-      .set('Accept', 'application/json+fhir')
-      .expect(200)
-      .then(async response => {
-        expect(response.body.resourceType).toEqual('Bundle');
-        expect(response.body.type).toEqual('searchset');
-        expect(response.body.total).toEqual(1);
-        expect(response.body.entry[0].resource.resourceType).toEqual('AuditEvent');
-        const entities = response.body.entry[0].resource.entity;
-        expect(entities.some(ent => ent.what.reference.startsWith('MeasureReport'))).toBe(true);
-        expect(entities.some(ent => ent.what.reference.startsWith('Encounter'))).toBe(true);
-      });
+    test('error thrown if type is not transaction', async () => {
+      try {
+        await uploadTransactionBundle(NON_TXN_REQ, {});
+      } catch (e) {
+        expect(e.statusCode).toEqual(400);
+        expect(e.issue[0].details.text).toEqual(`Expected 'type: transaction'. Received 'type: invalidType'.`);
+      }
+    });
   });
+  describe('Test transaction bundle upload', () => {
+    beforeAll(async () => {
+      await client.connect();
+    });
 
-  afterAll(cleanUpTest);
+    test('Transaction bundle upload populates provenance target', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/')
+        .send(testBundle)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(async response => {
+          // Check the response
+          expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+        });
+    });
+
+    test('error thrown if method type is not PUT or POST', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/')
+        .send(INVALID_METHOD_REQ)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(async response => {
+          expect(response.body.resourceType).toEqual('Bundle');
+          expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
+          expect(response.body.entry[0].response.outcome.issue[0].details.text).toEqual(
+            'Expected requests of type PUT or POST, received GET for Measure/test-measure'
+          );
+        });
+    });
+  });
+  describe('Test handle submit data bundle', () => {
+    beforeAll(async () => {
+      await client.connect();
+    });
+
+    test('Submit data bundle with resources creates AuditEvent with resources', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testParamResource)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(async response => {
+          // Check the response
+          expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+        });
+      // Check for AuditEvent with resources
+      await supertest(server.app)
+        .get('/4_0_1/AuditEvent')
+        .set('Accept', 'application/json+fhir')
+        .expect(200)
+        .then(async response => {
+          expect(response.body.resourceType).toEqual('Bundle');
+          expect(response.body.type).toEqual('searchset');
+          expect(response.body.total).toEqual(1);
+          expect(response.body.entry[0].resource.resourceType).toEqual('AuditEvent');
+          const entities = response.body.entry[0].resource.entity;
+          expect(entities.some(ent => ent.what.reference.startsWith('MeasureReport'))).toBe(true);
+          expect(entities.some(ent => ent.what.reference.startsWith('Encounter'))).toBe(true);
+        });
+    });
+
+    afterAll(cleanUpTest);
+  });
 });

@@ -9,10 +9,13 @@ const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const { client } = require('../../src/database/connection');
 const { cleanUpTest } = require('../populateTestData');
 
-const config = buildConfig();
-const server = initialize(config);
+let server;
 
 describe('Testing $import with no specified measure bundle', () => {
+  beforeAll(async () => {
+    const config = buildConfig();
+    server = await initialize(config);
+  });
   beforeEach(async () => {
     await client.connect();
   });

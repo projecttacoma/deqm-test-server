@@ -1,5 +1,6 @@
+const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const axios = require('axios');
-const { BadRequestError } = require('./errorUtils');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Checks body of request by querying a FHIR validation server. Updates the submitted resource to
@@ -9,19 +10,21 @@ const { BadRequestError } = require('./errorUtils');
  * @param {Function} next express function which passes info along after clearing the middleware
  */
 async function validateFhir(req, res, next) {
-  const profiles = retrieveProfiles(req.originalUrl);
+  const profiles = retrieveProfiles(req.originalUrl, req.body);
   if (profiles !== 'Calculation') {
     //We know the profile pulled from the URL will be the last profile added to the array
     const qicoreProfile = `http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-${profiles[
       profiles.length - 1
     ].toLowerCase()}`;
-    const qicoreValidationUrl = `http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/validate?profile=${qicoreProfile}`;
-    const qicoreValidationInfo = await getValidationInfo(qicoreValidationUrl, req.body);
-    const validationUrl = `http://${process.env.VALIDATOR_HOST}:${
-      process.env.VALIDATOR_PORT
-    }/validate?profile=${profiles.join(',')}`;
-    const validationInfo = await getValidationInfo(validationUrl, req.body);
+    console.log(profiles);
+    const qicoreValidationInfo = await getValidationInfo([qicoreProfile], req.body, req.base_version);
+    const validationInfo = await getValidationInfo(profiles, req.body, req.base_version);
+
     if (validationInfo.isValid) {
+      /*
+       * We don't want the qicore failure to cause the whole resource to fail validation,
+       * so simply don't add it and move on if it fails
+       */
       if (qicoreValidationInfo.isValid) {
         profiles.push(qicoreProfile);
       }
@@ -37,7 +40,7 @@ async function validateFhir(req, res, next) {
 
       next();
     } else {
-      res.status(400).json(validationInfo.data);
+      res.status(validationInfo.code).json(validationInfo.data);
     }
   } else {
     next();
@@ -74,8 +77,6 @@ function retrieveProfiles(originalUrl, body) {
      * keep in mind, the first param will always be the empty string since originalUrl starts with '/'
      */
     profiles.push(params[2]);
-  } else {
-    throw new BadRequestError('Unable to retrieve expected profile type for validation');
   }
   return profiles;
 }
@@ -87,11 +88,34 @@ function retrieveProfiles(originalUrl, body) {
  * @param {Object} body the body of an express request containing a FHIR resource
  * @returns Object
  */
-async function getValidationInfo(validationUrl, body) {
-  const response = await axios.post(validationUrl, body);
-  console.log(response);
-  if (response.data.issue[0].severity !== 'information') {
-    return { isValid: false, data: response.data };
+async function getValidationInfo(profiles, body, base_version) {
+  const validationUrl = `http://${process.env.VALIDATOR_HOST}:${
+    process.env.VALIDATOR_PORT
+  }/validate?profile=${profiles.join(',')}`;
+  let response;
+  try {
+    response = await axios.post(validationUrl, body);
+  } catch (e) {
+    /*
+        We can't throw server errors inside this middleware, so best to construct
+        our own operation outcomes and return them
+    */
+    const outcome = {};
+    outcome.id = uuidv4();
+    outcome.issue = [
+      {
+        severity: 'error',
+        code: 'exception',
+        details: {
+          text: `Validation server failed while validating against profiles: ${profiles.join(',')}`
+        }
+      }
+    ];
+    const OperationOutcome = resolveSchema(base_version, 'operationoutcome');
+    return { isValid: false, code: 500, data: new OperationOutcome(outcome).toJSON() };
+  }
+  if (response.data.issue[0].details.text !== 'All OK') {
+    return { isValid: false, code: 400, data: response.data };
   }
   return { isValid: true };
 }

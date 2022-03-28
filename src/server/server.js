@@ -25,8 +25,8 @@ class DEQMServer extends Server {
   }
   async enableValidationMiddleWare() {
     await axios.put('http://localhost:4567/igs/hl7.fhir.us.qicore');
-    this.app.put('*', validateFhir);
-    this.app.post('*', validateFhir);
+    this.app.put('/:base_version*', validateFhir);
+    this.app.post('/:base_version*', validateFhir);
     return this;
   }
 }

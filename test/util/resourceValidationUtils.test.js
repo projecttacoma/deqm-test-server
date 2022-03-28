@@ -25,13 +25,15 @@ describe('resourceValidationInfo tests', () => {
           resourceType: 'OperationOutcome',
           issue: [
             {
-              severity: 'information'
+              details: {
+                text: 'All OK'
+              }
             }
           ]
         }
       };
     });
-    const outcome = await getValidationInfo('http://example.com', {});
+    const outcome = await getValidationInfo(['TestProfile'], {});
     expect(outcome).toEqual({ isValid: true });
   });
   test('getValidationInfo returns correct object on invalid FHIR response', async () => {
@@ -41,7 +43,9 @@ describe('resourceValidationInfo tests', () => {
         resourceType: 'OperationOutcome',
         issue: [
           {
-            severity: 'error'
+            details: {
+              text: 'error'
+            }
           }
         ]
       }
@@ -49,7 +53,7 @@ describe('resourceValidationInfo tests', () => {
     jest.spyOn(axios, 'post').mockImplementationOnce(() => {
       return validationReturn;
     });
-    const outcome = await getValidationInfo('http://example.com', {});
-    expect(outcome).toEqual({ isValid: false, data: validationReturn.data });
+    const outcome = await getValidationInfo(['TestProfile'], {});
+    expect(outcome).toEqual({ isValid: false, code: 400, data: validationReturn.data });
   });
 });
