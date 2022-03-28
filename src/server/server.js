@@ -4,8 +4,7 @@ const configBulkImport = require('../controllers/import.controller');
 const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
-const { BadRequestError } = require('../util/errorUtils');
-
+const { validateFhir } = require('../util/resourceValidationUtils');
 class DEQMServer extends Server {
   enableTransactionRoute() {
     this.app.post('/:base_version/', configTransaction.transaction);
@@ -26,7 +25,6 @@ class DEQMServer extends Server {
   }
   async enableValidationMiddleWare() {
     await axios.put('http://localhost:4567/igs/hl7.fhir.us.qicore');
-    // how to make this async logic work correctly? Does it work correctly?
     this.app.put('*', validateFhir);
     this.app.post('*', validateFhir);
     return this;
