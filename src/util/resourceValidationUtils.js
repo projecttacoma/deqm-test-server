@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 /**
  * Checks body of request by querying a FHIR validation server. Updates the submitted resource to
  * include validated profiles in the meta.profile field. Responds with 400 if body is not valid FHIR
+ * 500 if validation server error
  * @param {Object} req request object of an express request
  * @param {Object} res response object of an express request
  * @param {Function} next express function which passes info along after clearing the middleware
