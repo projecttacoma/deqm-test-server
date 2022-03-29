@@ -30,6 +30,7 @@ const {
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
 const logger = require('../server/logger');
+const { ScaledCalculation } = require('../queue/execQueue');
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -247,11 +248,13 @@ const evaluateMeasure = async (args, { req }) => {
  */
 const evaluateMeasureForPopulation = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+  // Only do this for calculations done here instead of in workers
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
     measurementPeriodStart: req.query.periodStart,
     measurementPeriodEnd: req.query.periodEnd
   });
-  let patientBundles = [];
+  // Collect patientId instead of bundles
+  let patientIds = [];
   if (req.query.subject) {
     const subjectReference = req.query.subject.split('/');
     const group = await findResourceById(subjectReference[1], subjectReference[0]);
@@ -267,13 +270,12 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
           `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
         );
       } else {
-        patientBundles = patients.map(async p => {
-          return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-        });
+        patientIds = patients.map(p => p.id);
       }
     } else {
-      patientBundles = group.member.map(async m => {
-        return getPatientDataCollectionBundle(m.entity.reference, dataReq.results.dataRequirement);
+      patientIds = group.member.map(m => {
+        const ref = m.entity.reference.split('/');
+        return ref[1];
       });
     }
   } else {
@@ -289,20 +291,30 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     } else {
       patients = await findResourcesWithQuery({}, 'Patient');
     }
-    patientBundles = patients.map(async p => {
-      return getPatientDataCollectionBundle(p.id, dataReq.results.dataRequirement);
-    });
+    patientIds = patients.map(p => p.id);
   }
-  patientBundles = await Promise.all(patientBundles);
-  const { periodStart, periodEnd } = req.query;
-  const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd,
-    reportType: 'summary'
-  });
 
-  logger.info('Successfully generated $evaluate-measure report');
-  return results;
+  // count number of patientIds, if over threshold, then do them with workers, otherwise do it here
+  if (patientIds.length > process.env.SCALED_EXEC_THRESHOLD) {
+    logger.info(`Starting scaled calculation run with ${patientIds.length}`);
+    const calc = new ScaledCalculation(measureBundle, patientIds, req.query.periodStart, req.query.periodEnd);
+    return await calc.execute();
+  } else {
+    logger.info(`Starting regular calculation run with ${patientIds.length}`);
+    let patientBundles = patientIds.map(async id => {
+      return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
+    });
+    patientBundles = await Promise.all(patientBundles);
+    const { periodStart, periodEnd } = req.query;
+    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd,
+      reportType: 'summary'
+    });
+
+    logger.info('Successfully generated $evaluate-measure report');
+    return results;
+  }
 };
 
 /**
