@@ -21,7 +21,7 @@ async function validateFhir(req, res, next) {
     ].toLowerCase()}`;
     logger.debug(`Validating request body against profiles: ${profiles.join(',')}, ${qicoreProfile}`);
     const qicoreValidationInfo = await getValidationInfo([qicoreProfile], req.body, req.base_version);
-    const validationInfo = await getValidationInfo(profiles, req.body, req.base_version);
+    const validationInfo = await getValidationInfo(profiles, req.body, req.params.base_version);
 
     if (validationInfo.isValid) {
       /*
@@ -30,7 +30,7 @@ async function validateFhir(req, res, next) {
        */
       logger.debug(
         `Verified validity of request body against profiles: ${profiles.join(',')}${
-          qicoreValidationInfo.isValid ? qicoreProfile : ''
+          qicoreValidationInfo.isValid ? `, ${qicoreProfile}` : ''
         }`
       );
       if (qicoreValidationInfo.isValid) {
@@ -123,7 +123,7 @@ async function getValidationInfo(profiles, body, base_version) {
     const OperationOutcome = resolveSchema(base_version, 'operationoutcome');
     return { isValid: false, code: 500, data: new OperationOutcome(outcome).toJSON() };
   }
-  if (!isValidFHIR(response)) {
+  if (!isValidFhir(response)) {
     return { isValid: false, code: 400, data: response.data };
   }
   return { isValid: true };
@@ -135,9 +135,9 @@ async function getValidationInfo(profiles, body, base_version) {
  * @param {Object} validationResponse an OperationOutcome object returned by the validation server
  * @returns boolean
  */
-function isValidFHIR(validationResponse) {
+function isValidFhir(validationResponse) {
   const numInvalid = validationResponse.data.issue.filter(e => e.severity === 'error');
   return numInvalid.length === 0;
 }
 
-module.exports = { validateFhir, retrieveProfiles, getValidationInfo, isValidFHIR };
+module.exports = { validateFhir, retrieveProfiles, getValidationInfo, isValidFhir };
