@@ -13,7 +13,7 @@ const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpd
 let server;
 
 describe('base.service', () => {
-  beforeAll(async () => {
+  beforeAll(() => {
     const config = buildConfig();
     server = initialize(config);
   });

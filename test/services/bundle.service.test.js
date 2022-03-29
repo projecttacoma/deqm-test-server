@@ -42,6 +42,7 @@ describe('bundle.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
+    await client.connect();
   });
   describe('uploadTransactionBundle Server errors', () => {
     test('error thrown if resource type is not Bundle', async () => {
@@ -65,10 +66,6 @@ describe('bundle.service', () => {
     });
   });
   describe('Test transaction bundle upload', () => {
-    beforeAll(async () => {
-      await client.connect();
-    });
-
     test('Transaction bundle upload populates provenance target', async () => {
       await supertest(server.app)
         .post('/4_0_1/')
@@ -101,10 +98,6 @@ describe('bundle.service', () => {
     });
   });
   describe('Test handle submit data bundle', () => {
-    beforeAll(async () => {
-      await client.connect();
-    });
-
     test('Submit data bundle with resources creates AuditEvent with resources', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
@@ -132,7 +125,6 @@ describe('bundle.service', () => {
           expect(entities.some(ent => ent.what.reference.startsWith('Encounter'))).toBe(true);
         });
     });
-
-    afterAll(cleanUpTest);
   });
+  afterAll(cleanUpTest);
 });

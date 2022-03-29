@@ -8,9 +8,9 @@ describe('bulkstatus.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
+    await bulkStatusSetup();
   });
   describe('checkBulkStatus logic', () => {
-    beforeAll(bulkStatusSetup);
     test('check 202 returned for pending request', async () => {
       await supertest(server.app)
         .get('/4_0_1/bulkstatus/PENDING_REQUEST')
@@ -96,11 +96,9 @@ describe('bulkstatus.service', () => {
           expect(resourceStr.includes('successfully imported 200'));
         });
     });
-    afterAll(cleanUpTest);
   });
 
   describe('Dynamic X-Progress logic', () => {
-    beforeAll(bulkStatusSetup);
     test('check X-Progress header calculates percent complete when only file counts are available', async () => {
       await supertest(server.app)
         .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_FILE_COUNT')
@@ -120,7 +118,6 @@ describe('bulkstatus.service', () => {
           expect(response.headers['x-progress']).toEqual('60.00% Done');
         });
     });
-
-    afterAll(cleanUpTest);
   });
+  afterAll(cleanUpTest);
 });

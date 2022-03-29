@@ -3,12 +3,12 @@ const supertest = require('supertest');
 const { testSetup, createTestResource, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
-const { client } = require('../../src/database/connection');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
+const deletePatient = require('../fixtures/fhir-resources/deletePatient.json');
 
 let server;
 const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
@@ -17,12 +17,11 @@ describe('patient.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
+    await testSetup(testMeasure, testPatient, testLibrary);
+    await createTestResource(testPatient2, 'Patient');
+    await createTestResource(deletePatient, 'Patient');
   });
   describe('CRUD operations', () => {
-    beforeAll(async () => {
-      await testSetup(testMeasure, testPatient, testLibrary);
-    });
-
     test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
@@ -62,19 +61,11 @@ describe('patient.service', () => {
     });
 
     test('removing the patient from the database when the patient is indeed present', async () => {
-      await supertest(server.app).delete('/4_0_1/Measure/testPatient').expect(204);
+      await supertest(server.app).delete('/4_0_1/Measure/deletePatient').expect(204);
     });
-
-    afterAll(cleanUpTest);
   });
 
   describe('testing custom measure operation', () => {
-    beforeAll(async () => {
-      await client.connect();
-      await createTestResource(testPatient2, 'Patient');
-      await testSetup(testMeasure, testPatient, testLibrary);
-    });
-
     test('$everything returns 500 for non-implemented params', async () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/$everything?start=STARTDATE')
@@ -86,7 +77,6 @@ describe('patient.service', () => {
           );
         });
     });
-
     test('$everything returns patient info for single patient', async () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/testPatient/$everything')
@@ -105,7 +95,6 @@ describe('patient.service', () => {
           expect(response.body).toBeDefined();
         });
     });
-
-    afterAll(cleanUpTest);
   });
+  afterAll(cleanUpTest);
 });

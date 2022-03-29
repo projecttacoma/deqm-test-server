@@ -7,9 +7,9 @@ let server;
 
 describe('check client file', () => {
   beforeAll(async () => {
-    clientFileSetup();
     const config = buildConfig();
     server = initialize(config);
+    await clientFileSetup();
   });
   test('check 200 returned for successful file request', async () => {
     await supertest(server.app)

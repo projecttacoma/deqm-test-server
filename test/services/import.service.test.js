@@ -15,10 +15,9 @@ describe('Testing $import with no specified measure bundle', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-  });
-  beforeEach(async () => {
     await client.connect();
   });
+
   test('Returns 202 on Valid Request', async () => {
     await supertest(server.app)
       .post('/4_0_1/$import')

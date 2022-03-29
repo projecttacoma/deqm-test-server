@@ -2,6 +2,7 @@ require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
+const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
@@ -29,12 +30,15 @@ describe('measure.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
+    await testSetup(testMeasure, testPatient, testLibrary);
+    await createTestResource(testPatient2, 'Patient');
+    await createTestResource(testGroup, 'Group');
+    await createTestResource(testMeasure2, 'Measure');
+    await createTestResource(deleteMeasure, 'Measure');
+    await createTestResource(testOrganization, 'Organization');
+    await createTestResource(testOrganization2, 'Organization');
   });
   describe('CRUD operations', () => {
-    beforeAll(async () => {
-      await testSetup(testMeasure, testPatient, testLibrary);
-    });
-
     test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure')
@@ -74,16 +78,11 @@ describe('measure.service', () => {
     });
 
     test('removing the measure from the database when the measure is indeed present', async () => {
-      await supertest(server.app).delete('/4_0_1/Measure/testMeasure').expect(204);
+      await supertest(server.app).delete('/4_0_1/Measure/deleteMeasure').expect(204);
     });
-
-    afterAll(cleanUpTest);
   });
 
   describe('bulkImport with exportUrl', () => {
-    beforeAll(async () => {
-      await testSetup(testMeasure, testPatient, testLibrary);
-    });
     test('FHIR Parameters object is missing export URL', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
@@ -113,20 +112,9 @@ describe('measure.service', () => {
         .set('prefer', 'respond-async')
         .expect(400);
     });
-
-    afterAll(cleanUpTest);
   });
 
   describe('testing custom measure operation', () => {
-    beforeAll(async () => {
-      await testSetup(testMeasure, testPatient, testLibrary);
-      await createTestResource(testPatient2, 'Patient');
-      await createTestResource(testGroup, 'Group');
-      await createTestResource(testMeasure2, 'Measure');
-      await createTestResource(testOrganization, 'Organization');
-      await createTestResource(testOrganization2, 'Organization');
-    });
-
     test('$submit-data returns 400 for incorrect resourceType', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
@@ -635,9 +623,9 @@ describe('measure.service', () => {
         })
         .expect(200);
 
-      expect(gapsSpy).toHaveBeenCalledTimes(2);
+      expect(gapsSpy).toHaveBeenCalledTimes(3);
       expect(body.resourceType).toEqual('Parameters');
-      expect(body.parameter).toHaveLength(2);
+      expect(body.parameter).toHaveLength(3);
       expect(body.parameter[0].name).toEqual('return');
       expect(body.parameter[0].resource).toBeDefined();
       expect(body.parameter[0].resource.resourceType).toEqual('Bundle');
@@ -993,6 +981,6 @@ describe('measure.service', () => {
     afterEach(() => {
       jest.clearAllMocks();
     });
-    afterAll(cleanUpTest);
   });
+  afterAll(cleanUpTest);
 });
