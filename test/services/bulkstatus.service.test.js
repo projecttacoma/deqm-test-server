@@ -7,7 +7,7 @@ let server;
 describe('bulkstatus.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
   });
   describe('checkBulkStatus logic', () => {
     beforeAll(bulkStatusSetup);

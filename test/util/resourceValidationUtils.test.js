@@ -1,9 +1,9 @@
-const { retrieveProfiles, getValidationInfo } = require('../../src/util/resourceValidationUtils');
-
+const { retrieveProfiles, getValidationInfo, isValidFHIR } = require('../../src/util/resourceValidationUtils');
+const axios = require('axios');
 describe('resourceValidationInfo tests', () => {
   test('retrieveProfiles returns Calculation on dollar-sign operation', () => {
-    const profile = retrieveProfiles('/4_0_1/Measure/$dataRequirements', {});
-    expect(profile).toEqual('Calculation');
+    const profile = retrieveProfiles('/4_0_1/Measure/$data-requirements', {});
+    expect(profile).toEqual([]);
   });
   test('retrieveProfiles returns Bundle on transaction bundle upload URL', () => {
     const profile = retrieveProfiles('/4_0_1', {});
@@ -18,7 +18,6 @@ describe('resourceValidationInfo tests', () => {
     expect(profile).toEqual(['testProfile', 'testProfile2', 'Patient'], {});
   });
   test('getValidationInfo returns correct object on valid FHIR response', async () => {
-    const axios = require('axios');
     jest.spyOn(axios, 'post').mockImplementationOnce(() => {
       return {
         data: {
@@ -27,7 +26,8 @@ describe('resourceValidationInfo tests', () => {
             {
               details: {
                 text: 'All OK'
-              }
+              },
+              severity: 'informational'
             }
           ]
         }
@@ -37,7 +37,6 @@ describe('resourceValidationInfo tests', () => {
     expect(outcome).toEqual({ isValid: true });
   });
   test('getValidationInfo returns correct object on invalid FHIR response', async () => {
-    const axios = require('axios');
     const validationReturn = {
       data: {
         resourceType: 'OperationOutcome',
@@ -45,7 +44,8 @@ describe('resourceValidationInfo tests', () => {
           {
             details: {
               text: 'error'
-            }
+            },
+            severity: 'error'
           }
         ]
       }
@@ -55,5 +55,25 @@ describe('resourceValidationInfo tests', () => {
     });
     const outcome = await getValidationInfo(['TestProfile'], {});
     expect(outcome).toEqual({ isValid: false, code: 400, data: validationReturn.data });
+  });
+  test('isValidFHIR returns true on object with no errors', () => {
+    const response = {
+      data: {
+        resourceType: 'OperationOutcome',
+        id: 'testOutcome',
+        issue: [
+          {
+            severity: 'warning'
+          },
+          {
+            severity: 'warning'
+          }
+        ]
+      }
+    };
+    expect(isValidFHIR(response)).toBe(true);
+  });
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 });

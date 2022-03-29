@@ -42,7 +42,7 @@ server.listen(port, async () => {
   await mongoUtil.client.connect();
   logger.info('Connected to database');
   if (process.env.VALIDATE) {
-    await axios.put(`http://${process.env.VALIDATION_HOST}:${process.env.VALIDATION_PORT}/igs/hl7.fhir.us.qicore`);
+    await axios.put(`http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/igs/hl7.fhir.us.qicore`);
     logger.info('Added qicore profiles to validator server');
   }
 });

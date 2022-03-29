@@ -16,7 +16,7 @@ const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpd
 describe('patient.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
   });
   describe('CRUD operations', () => {
     beforeAll(async () => {

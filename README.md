@@ -90,7 +90,7 @@ Debugging with terminal input can be facilitated with `stdin_open: true` and `tt
 
 Once MongoDB is running on your machine, run the `npm start` command to start up the FHIR server at `localhost:3000`. The server can also be run in "watch" mode with `npm run start:watch` and in "debug" mode by running `NODE_ENV=development npm start`.
 
-DEQM test server offers optional FHIR resource validation using the Inferno FHIR Validator. The FHIR Validator acts as middleware on all `PUT` and `POST` requests that attempt to write data to the server. To set this up locally, first pull the docker image for the Inferno FHIR Validator by running `docker pull infernocommunity/fhir-validator-service`. Start it up using `docker run -p 4567:4567 hl7_validator`. Then start up the test server using `VALIDATE=true VALIDATION_HOST=localhost VALIDATION_PORT=4567 npm run start`.
+DEQM test server offers optional FHIR resource validation using the Inferno FHIR Validator. The FHIR Validator acts as middleware on all `PUT` and `POST` requests that attempt to write data to the server. To set this up locally, pull and run the Inferno FHIR Validator docker image using `docker run -p 4567:4567 infernocommunity/fhir-validator-service`. Then start up the test server using `VALIDATE=true VALIDATOR_HOST=localhost VALIDATOR_PORT=4567 npm run start`. These environment variables can be changed in the .env file as well to prevent lengthy start-up commands.
 
 For ease of testing, it is recommended to download [Insomnia API Client and Design Tool](https://insomnia.rest) for sending HTTP requests to the server and [Robo 3T](https://robomongo.org) as a GUI for viewing the Mongo database.
 

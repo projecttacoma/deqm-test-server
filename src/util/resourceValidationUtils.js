@@ -1,6 +1,7 @@
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../server/logger');
 
 /**
  * Checks body of request by querying a FHIR validation server. Updates the submitted resource to
@@ -12,12 +13,13 @@ const { v4: uuidv4 } = require('uuid');
  */
 async function validateFhir(req, res, next) {
   const profiles = retrieveProfiles(req.originalUrl, req.body);
-  if (profiles !== 'Calculation') {
+  if (profiles.length > 0) {
+    logger.info('Checking request body is valid FHIR');
     //We know the profile pulled from the URL will be the last profile added to the array
     const qicoreProfile = `http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-${profiles[
       profiles.length - 1
     ].toLowerCase()}`;
-    console.log(profiles);
+    logger.debug(`Validating request body against profiles: ${profiles.join(',')}, ${qicoreProfile}`);
     const qicoreValidationInfo = await getValidationInfo([qicoreProfile], req.body, req.base_version);
     const validationInfo = await getValidationInfo(profiles, req.body, req.base_version);
 
@@ -26,6 +28,11 @@ async function validateFhir(req, res, next) {
        * We don't want the qicore failure to cause the whole resource to fail validation,
        * so simply don't add it and move on if it fails
        */
+      logger.debug(
+        `Verified validity of request body against profiles: ${profiles.join(',')}${
+          qicoreValidationInfo.isValid ? qicoreProfile : ''
+        }`
+      );
       if (qicoreValidationInfo.isValid) {
         profiles.push(qicoreProfile);
       }
@@ -67,7 +74,7 @@ function retrieveProfiles(originalUrl, body) {
   }
   // We don't need to validate posted Parameters bodies for dollar-sign operations since these aren't stored in the db
   else if (params[params.length - 1][0] === '$') {
-    return 'Calculation';
+    return [];
   }
   // Only param was base_version, so this is a transaction bundle upload
   else if (params.length === 2) {
@@ -95,6 +102,7 @@ async function getValidationInfo(profiles, body, base_version) {
   }/validate?profile=${profiles.join(',')}`;
   let response;
   try {
+    logger.debug(`Validating request body using url: ${validationUrl}`);
     response = await axios.post(validationUrl, body);
   } catch (e) {
     /*
@@ -115,10 +123,21 @@ async function getValidationInfo(profiles, body, base_version) {
     const OperationOutcome = resolveSchema(base_version, 'operationoutcome');
     return { isValid: false, code: 500, data: new OperationOutcome(outcome).toJSON() };
   }
-  if (response.data.issue[0].details.text !== 'All OK') {
+  if (!isValidFHIR(response)) {
     return { isValid: false, code: 400, data: response.data };
   }
   return { isValid: true };
 }
 
-module.exports = { validateFhir, retrieveProfiles, getValidationInfo };
+/**
+ * Parses through the list of issues returned on a validation response and returns false if at least
+ * one issue of severity error is discovered, otherwise true.
+ * @param {Object} validationResponse an OperationOutcome object returned by the validation server
+ * @returns boolean
+ */
+function isValidFHIR(validationResponse) {
+  const numInvalid = validationResponse.data.issue.filter(e => e.severity === 'error');
+  return numInvalid.length === 0;
+}
+
+module.exports = { validateFhir, retrieveProfiles, getValidationInfo, isValidFHIR };

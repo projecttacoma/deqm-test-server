@@ -28,7 +28,7 @@ let server;
 describe('measure.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
   });
   describe('CRUD operations', () => {
     beforeAll(async () => {

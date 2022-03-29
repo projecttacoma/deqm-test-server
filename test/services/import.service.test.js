@@ -14,7 +14,7 @@ let server;
 describe('Testing $import with no specified measure bundle', () => {
   beforeAll(async () => {
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
   });
   beforeEach(async () => {
     await client.connect();
