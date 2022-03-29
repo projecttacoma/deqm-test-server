@@ -15,7 +15,7 @@ let server;
 describe('base.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
   });
   beforeEach(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
