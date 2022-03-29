@@ -102,9 +102,11 @@ const validateCareGapsParams = query => {
       );
     }
   }
-  //can only provide one type identification
 
-  if (query.measureId && (query.measureIdentifier || query.measureUrl)) {
+  if (
+    (query.measureId && (query.measureIdentifier || query.measureUrl)) ||
+    ((query.measureId || query.measureIdentifier) && query.measureUrl)
+  ) {
     throw new NotImplementedError(
       'Simultaneous measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
     );

@@ -1,5 +1,4 @@
 {
   "resourceType": "Patient",
-  "id": "testPatient2", 
-  "program": "testProgram"
+  "id": "testPatient2"
 }
