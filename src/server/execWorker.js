@@ -1,4 +1,6 @@
 const Queue = require('bee-queue');
+const { AsyncPatientSource } = require('cql-exec-fhir');
+const { Calculator } = require('fqm-execution');
 const logger = require('./logger');
 const mongoUtil = require('../database/connection');
 const { getMeasureBundleFromId } = require('../util/bundleUtils');
@@ -32,6 +34,7 @@ async function getMeasureBundle(measureId) {
 
   // load from mongo
   logger.info(`exec-worker-${process.pid}: Loading ${measureId} from mongo.`);
+  await mongoUtil.client.connect();
   const measureBundle = await getMeasureBundleFromId(measureId);
   measureBundleCache[measureId] = {
     timeLoaded: Date.now(),
@@ -42,11 +45,15 @@ async function getMeasureBundle(measureId) {
 
 execQueue.process(async job => {
   logger.info(`exec-worker-${process.pid}: Execution Job Received!`);
-  await mongoUtil.client.connect();
   const measureBundle = await getMeasureBundle(job.data.measureId);
 
-  //console.log(job.data);
-  await new Promise(r => setTimeout(r, 1000));
-
-  return job.data.patientIds.length;
+  const patientSource = AsyncPatientSource.FHIRv401('http://localhost:3000/4_0_1/');
+  patientSource.loadPatientIds(job.data.patientIds);
+  const results = await Calculator.calculate(measureBundle, [], {
+    verboseCalculationResults: false,
+    patientSource: patientSource,
+    measurementPeriodStart: job.data.periodStart,
+    measurementPeriodEnd: job.data.periodEnd
+  });
+  return results;
 });

@@ -92,9 +92,15 @@ class ScaledCalculation {
     return this._mrBuilder.getReport();
   }
 
+  /**
+   *
+   * @param {import('fqm-execution/build/types/Calculator').CalculationOutput} jobResult
+   */
   async tabulateResults(jobResult) {
-    this._count += jobResult;
-    console.log(this._count);
+    this._count += jobResult.results.length;
+    jobResult.results.forEach(execResult => {
+      this._mrBuilder.addPatientResults(execResult);
+    });
   }
 }
 

@@ -107,7 +107,7 @@ const baseCreate = async ({ req }, resourceType) => {
  * @returns {Object} the object with the desired id cast to the requested type
  */
 const baseSearchById = async (args, resourceType) => {
-  logger.info(`${resourceType} >>> read`);
+  logger.debug(`${resourceType} >>> read`);
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   const dataType = resolveSchema(args.base_version, resourceType.toLowerCase());
   const result = await findResourceById(args.id, resourceType);
@@ -127,7 +127,7 @@ const baseSearchById = async (args, resourceType) => {
  * @returns {Object} Search set result bundle
  */
 const baseSearch = async (args, { req }, resourceType, paramDefs) => {
-  logger.info(`${resourceType} >>> search`);
+  logger.debug(`${resourceType} >>> search`);
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
