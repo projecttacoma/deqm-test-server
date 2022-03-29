@@ -385,18 +385,15 @@ const careGaps = async (args, { req }) => {
     const progArr = Array.isArray(query.program) ? query.program : [query.program];
     // build query AND-ing all potential program parameters
 
-    let measureQuery={};
-    if(searchTerm){
+    let measureQuery = {};
+    if (searchTerm) {
       const prop = Object.keys(searchTerm)[0];
-      
+
       ///for now assume we only support one measure  and one  of  a possible identifier property
-      if(Array.isArray(searchTerm[prop])){
-        //{ field: { $in: [<value1>, <value2>, ... <valueN> ] } }
-        searchTerm[prop] = {$in: searchTerm[prop]};
+      if (Array.isArray(searchTerm[prop])) {
+        searchTerm[prop] = { $in: searchTerm[prop] };
       }
-        measureQuery=searchTerm;
-        console.log(JSON.stringify(measureQuery));
-      
+      measureQuery = searchTerm;
     }
     const programQuery = {
       $and: progArr.map(program => {
@@ -405,14 +402,13 @@ const careGaps = async (args, { req }) => {
         } else {
           return basicProgramQuery(program);
         }
-      }),
-
+      })
     };
 
     // TODO: add any searchTerm (measure identifier) query ANDed with above query
-    const programMeasures = await findResourcesWithQuery({$and:[programQuery, measureQuery]}, 'Measure');
+    const programMeasures = await findResourcesWithQuery({ $and: [programQuery, measureQuery] }, 'Measure');
     measures.push(...programMeasures);
-  }else if (!searchTerm) {
+  } else if (!searchTerm) {
     /*
       If no search term, circumvent asymmetrik query builder and use mongo search directly to avoid
       pagination bug
