@@ -4,6 +4,7 @@ const { Calculator } = require('fqm-execution');
 const logger = require('./logger');
 const mongoUtil = require('../database/connection');
 const { getMeasureBundleFromId } = require('../util/bundleUtils');
+const { getPatientDataCollectionBundle } = require('../util/patientUtils');
 
 logger.info(`exec-worker-${process.pid}: Execution Worker Started!`);
 const execQueue = new Queue('exec', {
@@ -14,11 +15,13 @@ const execQueue = new Queue('exec', {
   removeOnSuccess: true
 });
 
-// Hold measure bundles for quick reuse indexed by id with { timeLoaded, bundle }
+const MONGO_PATIENTS = true;
+
+// Hold measure bundles for quick reuse indexed by id with { timeLoaded, bundle, dataRequirements }
 const measureBundleCache = {};
 
 // Gets a measure bundle from either mongo or cache
-async function getMeasureBundle(measureId) {
+async function getMeasureBundle(measureId, periodStart, periodEnd) {
   // first check in cache if it has been more than 20seconds dump it.
   const cachedBundle = measureBundleCache[measureId];
   if (cachedBundle != null) {
@@ -28,7 +31,7 @@ async function getMeasureBundle(measureId) {
       logger.info(`exec-worker-${process.pid}: Wiping ${measureId} from cache.`);
     } else {
       logger.info(`exec-worker-${process.pid}: Using ${measureId} from cache.`);
-      return cachedBundle.bundle;
+      return cachedBundle;
     }
   }
 
@@ -40,20 +43,40 @@ async function getMeasureBundle(measureId) {
     timeLoaded: Date.now(),
     bundle: measureBundle
   };
-  return measureBundle;
+  if (MONGO_PATIENTS) {
+    measureBundleCache[measureId].dataReq = await Calculator.calculateDataRequirements(measureBundle, {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd
+    });
+  }
+  return measureBundleCache[measureId];
 }
 
 execQueue.process(async job => {
   logger.info(`exec-worker-${process.pid}: Execution Job Received!`);
-  const measureBundle = await getMeasureBundle(job.data.measureId);
-
-  const patientSource = AsyncPatientSource.FHIRv401('http://localhost:3000/4_0_1/');
-  patientSource.loadPatientIds(job.data.patientIds);
-  const results = await Calculator.calculate(measureBundle, [], {
-    verboseCalculationResults: false,
-    patientSource: patientSource,
-    measurementPeriodStart: job.data.periodStart,
-    measurementPeriodEnd: job.data.periodEnd
-  });
+  const measureBundle = await getMeasureBundle(job.data.measureId, job.data.periodStart, job.data.periodEnd);
+  let results;
+  if (MONGO_PATIENTS) {
+    logger.info(`exec-worker-${process.pid}: Executing with reaching to mongo for patient bundles.`);
+    let patientBundles = job.data.patientIds.map(async id => {
+      return getPatientDataCollectionBundle(id, measureBundle.dataReq.results.dataRequirement);
+    });
+    patientBundles = await Promise.all(patientBundles);
+    results = await Calculator.calculate(measureBundle.bundle, patientBundles, {
+      verboseCalculationResults: false,
+      measurementPeriodStart: job.data.periodStart,
+      measurementPeriodEnd: job.data.periodEnd
+    });
+  } else {
+    logger.info(`exec-worker-${process.pid}: Executing with reaching to FHIR server for patient data.`);
+    const patientSource = AsyncPatientSource.FHIRv401('http://localhost:3000/4_0_1/');
+    patientSource.loadPatientIds(job.data.patientIds);
+    results = await Calculator.calculate(measureBundle.bundle, [], {
+      verboseCalculationResults: false,
+      patientSource: patientSource,
+      measurementPeriodStart: job.data.periodStart,
+      measurementPeriodEnd: job.data.periodEnd
+    });
+  }
   return results;
 });
