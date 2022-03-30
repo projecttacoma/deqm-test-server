@@ -33,7 +33,7 @@ class DEQMServer extends Server {
 function initialize(config, app) {
   let server = new DEQMServer(config, app);
 
-  if (process.env.VALIDATE) {
+  if (process.env.VALIDATE === 'true') {
     logger.info('Configuring server to use FHIR profile validation');
     server = server.enableValidationMiddleWare();
   }
