@@ -389,9 +389,14 @@ const careGaps = async (args, { req }) => {
     if (searchTerm) {
       const prop = Object.keys(searchTerm)[0];
 
-      ///for now assume we only support one measure  and one  of  a possible identifier property
+      console.log('the value of prop is:' + JSON.stringify(prop));
+
+      ///for now assume we only support one  of  a possible identifier property
+
       if (Array.isArray(searchTerm[prop])) {
         searchTerm[prop] = { $in: searchTerm[prop] };
+
+        console.log('the value of search term is:' + JSON.stringify(searchTerm));
       }
       measureQuery = searchTerm;
     }
@@ -532,7 +537,7 @@ const retrieveSearchTerm = query => {
     //keep for now but it doesn't seem right _id seems like it should be id
     // this would now return an array it would look like id: EXM130, EXM124.....
 
-    return { id: measureId };
+    return { _id: measureId };
   } else if (measureIdentifier) {
     return { identifier: measureIdentifier };
   } else if (measureUrl) {
