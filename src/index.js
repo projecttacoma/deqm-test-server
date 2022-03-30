@@ -41,7 +41,7 @@ server.listen(port, async () => {
   logger.info(`Starting the FHIR Server at localhost:${port}`);
   await mongoUtil.client.connect();
   logger.info('Connected to database');
-  if (process.env.VALIDATE) {
+  if (process.env.VALIDATE === 'true') {
     await axios.put(`http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/igs/hl7.fhir.us.qicore`);
     logger.info('Added qicore profiles to validator server');
   }
