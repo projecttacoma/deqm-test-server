@@ -9,11 +9,14 @@ const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 
-const config = buildConfig();
-const server = initialize(config);
 const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
+let server;
 
 describe('base.service', () => {
+  beforeAll(() => {
+    const config = buildConfig();
+    server = initialize(config);
+  });
   beforeEach(async () => {
     await testSetup(testMeasure, testPatient, testLibrary);
   });
@@ -218,20 +221,18 @@ describe('base.service', () => {
         .expect(204);
     });
   });
-
-  afterEach(cleanUpTest);
-});
-
-describe('checkContentTypeHeader', () => {
-  test('throw error for invalid ContentType header', () => {
-    const INVALID_HEADER = 'INVALID';
-    try {
-      checkContentTypeHeader(INVALID_HEADER);
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
-      );
-    }
+  describe('checkContentTypeHeader', () => {
+    test('throw error for invalid ContentType header', () => {
+      const INVALID_HEADER = 'INVALID';
+      try {
+        checkContentTypeHeader(INVALID_HEADER);
+      } catch (e) {
+        expect(e.statusCode).toEqual(400);
+        expect(e.issue[0].details.text).toEqual(
+          'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
+        );
+      }
+    });
   });
+  afterEach(cleanUpTest);
 });

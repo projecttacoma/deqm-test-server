@@ -3,7 +3,8 @@ const configBulkImport = require('../controllers/import.controller');
 const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
-
+const { validateFhir } = require('../util/resourceValidationUtils');
+const logger = require('./logger.js');
 class DEQMServer extends Server {
   enableTransactionRoute() {
     this.app.post('/:base_version/', configTransaction.transaction);
@@ -22,10 +23,21 @@ class DEQMServer extends Server {
     this.app.get('/:base_version/file/:clientId/:fileName', configClientFile.clientFile);
     return this;
   }
+  enableValidationMiddleWare() {
+    this.app.put('/:base_version*', validateFhir);
+    this.app.post('/:base_version*', validateFhir);
+    return this;
+  }
 }
 
 function initialize(config, app) {
-  return new DEQMServer(config, app)
+  let server = new DEQMServer(config, app);
+
+  if (process.env.VALIDATE === 'true') {
+    logger.info('Configuring server to use FHIR profile validation');
+    server = server.enableValidationMiddleWare();
+  }
+  server = server
     .configureMiddleware()
     .configureSession()
     .configureHelmet()
@@ -37,6 +49,8 @@ function initialize(config, app) {
     .enableClientFileRoute()
     .setProfileRoutes()
     .setErrorRoutes();
+
+  return server;
 }
 
 module.exports = { DEQMServer, initialize };
