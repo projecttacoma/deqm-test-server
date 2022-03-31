@@ -2,6 +2,7 @@ const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
 const queue = require('../src/queue/importQueue');
+const { execQueue } = require('../src/queue/execQueue');
 const fs = require('fs');
 
 const createTestResource = async (data, resourceType) => {
@@ -20,6 +21,7 @@ async function cleanUpTest() {
   if (fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
   await queue.close();
+  await execQueue.close();
 }
 
 const testSetup = async testfixtureList => {
