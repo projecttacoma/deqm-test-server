@@ -389,17 +389,23 @@ const careGaps = async (args, { req }) => {
     if (searchTerm) {
       const prop = Object.keys(searchTerm)[0];
 
-      console.log('the value of prop is:' + JSON.stringify(prop));
-
       ///for now assume we only support one  of  a possible identifier property
 
       if (Array.isArray(searchTerm[prop])) {
-        searchTerm[prop] = { $in: searchTerm[prop] };
+        if (prop.includes('_id')) {
+          searchTerm['id'] = searchTerm[prop];
 
-        console.log('the value of search term is:' + JSON.stringify(searchTerm));
+          searchTerm['id'] = { $in: searchTerm['id'] };
+
+          measureQuery = { id: searchTerm['id'] };
+        } else {
+          searchTerm[prop] = { $in: searchTerm[prop] };
+
+          measureQuery = searchTerm;
+        }
       }
-      measureQuery = searchTerm;
     }
+    console.log(JSON.stringify(measureQuery));
     const programQuery = {
       $and: progArr.map(program => {
         if (program.includes('|')) {
