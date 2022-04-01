@@ -40,6 +40,7 @@ class ScaledCalculation {
       logger.info(`exec-queue: Created MRBuilder for ${this._mrBuilder.measure.id}`);
     } catch (e) {
       logger.error(e);
+      throw new Error('Could not prepare report builder. Measure bundle may not have measure.', e);
     }
 
     // Prepare job data to be sent to workers.
@@ -58,14 +59,6 @@ class ScaledCalculation {
     logger.info(
       `exec-queue: Prepared ${this._jobs.length} jobs for scaled calculation of ${patientIds.length} patients.`
     );
-  }
-
-  prepMeasureReportBuilder() {
-    this._mrBuilder = new MeasureReportBuilder(this._measureBundle, {
-      measurementPeriodStart: this._periodStart,
-      measurementPeriodEnd: this._periodEnd,
-      reportType: 'summary'
-    });
   }
 
   async execute() {
