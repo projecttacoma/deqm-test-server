@@ -387,15 +387,15 @@ const careGaps = async (args, { req }) => {
 
     let measureQuery = {};
     if (searchTerm) {
-      const prop = Object.keys(searchTerm)[0];
+      let prop = Object.keys(searchTerm)[0];
 
       ///for now assume we only support one  of  a possible identifier property
 
       if (Array.isArray(searchTerm[prop])) {
-        if (prop.includes('_id')) {
-          searchTerm['id'] = searchTerm[prop];
-
-          searchTerm['id'] = { $in: searchTerm['id'] };
+        //since this method uses mongo queries need to swap between _id (which is something mongo generates)
+        // and id which is the field that mongo stores the measure id info in
+        if (prop === '_id') {
+          searchTerm['id'] = { $in: searchTerm[prop] };
 
           measureQuery = { id: searchTerm['id'] };
         } else {
@@ -540,9 +540,9 @@ const systemCodeProgramQuery = program => {
 const retrieveSearchTerm = query => {
   const { measureId, measureIdentifier, measureUrl } = query;
   if (measureId) {
-    //keep for now but it doesn't seem right _id seems like it should be id
-    // this would now return an array it would look like id: EXM130, EXM124.....
-
+    //some manipulation will be needed here because _id means a generated id when interacting with mongo
+    //however if this field is used with the asymetrik query builder it means the actual id of the measure
+    // this overlap can cause some confusion
     return { _id: measureId };
   } else if (measureIdentifier) {
     return { identifier: measureIdentifier };
