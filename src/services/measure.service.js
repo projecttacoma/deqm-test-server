@@ -380,7 +380,6 @@ const careGaps = async (args, { req }) => {
     req.query = searchTerm;
   }
   const measures = [];
-  // move search to inside
   if (query.program) {
     const progArr = Array.isArray(query.program) ? query.program : [query.program];
     // build query AND-ing all potential program parameters
@@ -389,7 +388,7 @@ const careGaps = async (args, { req }) => {
     if (searchTerm) {
       const prop = Object.keys(searchTerm)[0];
 
-      ///for now assume we only support one  of  a possible identifier property
+      // for now assume we only support one of a possible identifier property
 
       if (Array.isArray(searchTerm[prop])) {
         if (prop.includes('_id')) {
@@ -405,7 +404,6 @@ const careGaps = async (args, { req }) => {
         }
       }
     }
-    console.log(JSON.stringify(measureQuery));
     const programQuery = {
       $and: progArr.map(program => {
         if (program.includes('|')) {
