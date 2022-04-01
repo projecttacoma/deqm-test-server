@@ -394,9 +394,7 @@ const careGaps = async (args, { req }) => {
         //since this method uses mongo queries need to swap between _id (which is something mongo generates)
         // and id which is the field that mongo stores the measure id info in
         if (prop === '_id') {
-          searchTerm['id'] = { $in: searchTerm[prop] };
-
-          measureQuery = { id: searchTerm['id'] };
+          measureQuery = { id: { $in: searchTerm[prop] } };
         } else {
           searchTerm[prop] = { $in: searchTerm[prop] };
 
