@@ -389,10 +389,10 @@ describe('validateCareGapsParams', () => {
   });
 
   test('validateCareGapsParams does not throw an error with both program and measure identification', async () => {
-    const INVALID_REQ = {
+    const VALID_REQ = {
       query: PROGRAM_AND_MEASURE_QUERY
     };
-    expect(validateCareGapsParams(INVALID_REQ.query)).toBeUndefined();
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
   });
 
   test('gatherParams gathers params from query and body', () => {

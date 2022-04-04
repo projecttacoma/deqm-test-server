@@ -386,7 +386,7 @@ const careGaps = async (args, { req }) => {
 
     let measureQuery = {};
     if (searchTerm) {
-      let prop = Object.keys(searchTerm)[0];
+      const prop = Object.keys(searchTerm)[0];
 
       // for now assume we only support one of a possible identifier property
 
@@ -400,6 +400,8 @@ const careGaps = async (args, { req }) => {
 
           measureQuery = searchTerm;
         }
+      } else {
+        measureQuery = searchTerm;
       }
     }
     const programQuery = {
