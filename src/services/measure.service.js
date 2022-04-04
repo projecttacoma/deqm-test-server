@@ -414,7 +414,6 @@ const careGaps = async (args, { req }) => {
       })
     };
 
-    // TODO: add any searchTerm (measure identifier) query ANDed with above query
     const programMeasures = await findResourcesWithQuery({ $and: [programQuery, measureQuery] }, 'Measure');
     measures.push(...programMeasures);
   } else if (!searchTerm) {
