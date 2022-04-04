@@ -373,7 +373,7 @@ const careGaps = async (args, { req }) => {
   validateCareGapsParams(query);
 
   const { periodStart, periodEnd } = query;
-  const searchTerm = retrieveSearchTerm(query);
+  let searchTerm = retrieveSearchTerm(query, true);
   if (req.method === 'POST') {
     req.body = searchTerm;
   } else {
@@ -386,20 +386,15 @@ const careGaps = async (args, { req }) => {
 
     let measureQuery = {};
     if (searchTerm) {
+      searchTerm = retrieveSearchTerm(query, false);
       const prop = Object.keys(searchTerm)[0];
 
       // for now assume we only support one of a possible identifier property
 
       if (Array.isArray(searchTerm[prop])) {
-        //since this method uses mongo queries need to swap between _id (which is something mongo generates)
-        // and id which is the field that mongo stores the measure id info in
-        if (prop === '_id') {
-          measureQuery = { id: { $in: searchTerm[prop] } };
-        } else {
-          searchTerm[prop] = { $in: searchTerm[prop] };
+        searchTerm[prop] = { $in: searchTerm[prop] };
 
-          measureQuery = searchTerm;
-        }
+        measureQuery = searchTerm;
       } else {
         measureQuery = searchTerm;
       }
@@ -534,13 +529,13 @@ const systemCodeProgramQuery = program => {
  * @param {Object} query http request query
  * @returns {Object} an object containing the measure identifier with the appropriate key
  */
-const retrieveSearchTerm = query => {
+const retrieveSearchTerm = (query, isforqb) => {
   const { measureId, measureIdentifier, measureUrl } = query;
   if (measureId) {
     //some manipulation will be needed here because _id means a generated id when interacting with mongo
     //however if this field is used with the asymetrik query builder it means the actual id of the measure
     // this overlap can cause some confusion
-    return { _id: measureId };
+    return isforqb ? { _id: measureId } : { id: measureId };
   } else if (measureIdentifier) {
     return { identifier: measureIdentifier };
   } else if (measureUrl) {
