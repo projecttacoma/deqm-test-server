@@ -534,8 +534,8 @@ const systemCodeProgramQuery = program => {
 const retrieveSearchTerm = (query, isforqb) => {
   const { measureId, measureIdentifier, measureUrl } = query;
   if (measureId) {
-     //some manipulation will be needed here because _id means a generated id when interacting with mongo
-    //however if this field is used with the asymetrik query builder it means the actual id of the measure
+    //some manipulation will be needed here because _id means a generated id when interacting with mongo
+    //however if this field is used with the Asymmetrik query builder it means the actual id of the measure
     // this overlap can cause some confusion
     return isforqb ? { _id: measureId } : { id: measureId };
   } else if (measureIdentifier) {
