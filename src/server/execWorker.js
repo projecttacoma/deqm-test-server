@@ -15,41 +15,43 @@ const execQueue = new Queue('exec', {
   removeOnSuccess: true
 });
 
+// Flag for running with direct options to
 const MONGO_PATIENTS = true;
 
-// Hold measure bundles for quick reuse indexed by id with { timeLoaded, bundle, dataRequirements }
+// Hold measure bundles and dataRequirements for quick reuse indexed by id-MPstart-MPend with { timeLoaded, bundle, dataReq }
 const measureBundleCache = {};
 
 // Gets a measure bundle from either mongo or cache
 async function getMeasureBundle(measureId, periodStart, periodEnd) {
+  const cacheLabel = `${measureId}-${periodStart}-${periodEnd}`;
   // first check in cache if it has been more than 20seconds dump it.
-  const cachedBundle = measureBundleCache[measureId];
+  const cachedBundle = measureBundleCache[cacheLabel];
   if (cachedBundle != null) {
     if (Date.now() - cachedBundle.timeLoaded > 20000) {
       // Wipe out if older than 20 seconds and let the mongo load repopulate it
-      delete measureBundleCache[measureId];
-      logger.info(`exec-worker-${process.pid}: Wiping ${measureId} from cache.`);
+      delete measureBundleCache[cacheLabel];
+      logger.info(`exec-worker-${process.pid}: Wiping ${cacheLabel} from cache.`);
     } else {
-      logger.info(`exec-worker-${process.pid}: Using ${measureId} from cache.`);
+      logger.info(`exec-worker-${process.pid}: Using ${cacheLabel} from cache.`);
       return cachedBundle;
     }
   }
 
   // load from mongo
-  logger.info(`exec-worker-${process.pid}: Loading ${measureId} from mongo.`);
+  logger.info(`exec-worker-${process.pid}: Loading ${cacheLabel} from mongo.`);
   await mongoUtil.client.connect();
   const measureBundle = await getMeasureBundleFromId(measureId);
-  measureBundleCache[measureId] = {
+  measureBundleCache[cacheLabel] = {
     timeLoaded: Date.now(),
     bundle: measureBundle
   };
   if (MONGO_PATIENTS) {
-    measureBundleCache[measureId].dataReq = await Calculator.calculateDataRequirements(measureBundle, {
+    measureBundleCache[cacheLabel].dataReq = await Calculator.calculateDataRequirements(measureBundle, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd
     });
   }
-  return measureBundleCache[measureId];
+  return measureBundleCache[cacheLabel];
 }
 
 execQueue.process(async job => {
