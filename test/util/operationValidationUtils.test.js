@@ -388,21 +388,11 @@ describe('validateCareGapsParams', () => {
     }
   });
 
-  test('validateCareGapsParams throws error with both program and measure identification', async () => {
-    const INVALID_REQ = {
+  test('validateCareGapsParams does not throw an error with both program and measure identification', async () => {
+    const VALID_REQ = {
       query: PROGRAM_AND_MEASURE_QUERY
     };
-    try {
-      validateCareGapsParams(INVALID_REQ.query);
-      throw new Error(
-        'validateCareGapsParams failed to throw an error when provided both program and measure identification'
-      );
-    } catch (e) {
-      expect(e.statusCode).toEqual(501);
-      expect(e.issue[0].details.text).toEqual(
-        'Simultaneous program and measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
-      );
-    }
+    expect(validateCareGapsParams(VALID_REQ.query)).toBeUndefined();
   });
 
   test('gatherParams gathers params from query and body', () => {

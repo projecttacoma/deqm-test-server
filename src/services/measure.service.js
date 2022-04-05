@@ -373,7 +373,7 @@ const careGaps = async (args, { req }) => {
   validateCareGapsParams(query);
 
   const { periodStart, periodEnd } = query;
-  const searchTerm = retrieveSearchTerm(query);
+  let searchTerm = retrieveSearchTerm(query, true);
   if (req.method === 'POST') {
     req.body = searchTerm;
   } else {
@@ -383,6 +383,22 @@ const careGaps = async (args, { req }) => {
   if (query.program) {
     const progArr = Array.isArray(query.program) ? query.program : [query.program];
     // build query AND-ing all potential program parameters
+
+    let measureQuery = {};
+    if (searchTerm) {
+      searchTerm = retrieveSearchTerm(query, false);
+      const prop = Object.keys(searchTerm)[0];
+
+      // for now assume we only support one of a possible identifier property
+
+      if (Array.isArray(searchTerm[prop])) {
+        searchTerm[prop] = { $in: searchTerm[prop] };
+
+        measureQuery = searchTerm;
+      } else {
+        measureQuery = searchTerm;
+      }
+    }
     const programQuery = {
       $and: progArr.map(program => {
         if (program.includes('|')) {
@@ -392,8 +408,8 @@ const careGaps = async (args, { req }) => {
         }
       })
     };
-    // TODO: add any searchTerm (measure identifier) query ANDed with above query
-    const programMeasures = await findResourcesWithQuery(programQuery, 'Measure');
+
+    const programMeasures = await findResourcesWithQuery({ $and: [programQuery, measureQuery] }, 'Measure');
     measures.push(...programMeasures);
   } else if (!searchTerm) {
     /*
@@ -511,12 +527,17 @@ const systemCodeProgramQuery = program => {
 /**
  * Determines the type of identifier used by the client to identify the measure and returns it
  * @param {Object} query http request query
+ * @param {boolean} isForQb flag to indicate if the result will be used by the query build
+ * or for a mongo query
  * @returns {Object} an object containing the measure identifier with the appropriate key
  */
-const retrieveSearchTerm = query => {
+const retrieveSearchTerm = (query, isForQb) => {
   const { measureId, measureIdentifier, measureUrl } = query;
   if (measureId) {
-    return { _id: measureId };
+    //some manipulation will be needed here because _id means a generated id when interacting with mongo
+    //however if this field is used with the Asymmetrik query builder it means the actual id of the measure
+    // this overlap can cause some confusion
+    return isForQb ? { _id: measureId } : { id: measureId };
   } else if (measureIdentifier) {
     return { identifier: measureIdentifier };
   } else if (measureUrl) {
