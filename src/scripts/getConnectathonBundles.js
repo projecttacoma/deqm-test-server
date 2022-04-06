@@ -75,6 +75,7 @@ async function main() {
   if (process.argv[2]) {
     const bundlePath = path.resolve(process.argv[2]);
     try {
+      console.log(`Finding bundles in ${bundlePath}.`);
       getBundleFiles(bundlePath);
     } catch (e) {
       throw new Error('Provided directory not found.');
@@ -83,6 +84,7 @@ async function main() {
     // otherwise load from connectathon
   } else {
     try {
+      console.log(`Finding bundles in connectathon repo at ${connectathonPath}.`);
       getConnectathonBundleFiles(connectathonPath);
     } catch (e) {
       throw new Error(
@@ -111,7 +113,7 @@ async function main() {
     }
   });
   await Promise.all(bundlePromises);
-  return 'Connectathon bundle entries uploaded.';
+  return `${bundlePromises.length} Bundle entries uploaded.`;
 }
 
 main()
