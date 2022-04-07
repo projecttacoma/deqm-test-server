@@ -295,12 +295,12 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
   }
 
   // count number of patientIds, if over threshold, then do them with workers, otherwise do it here
-  if (patientIds.length > process.env.SCALED_EXEC_THRESHOLD) {
-    logger.info(`Starting scaled calculation run with ${patientIds.length}`);
+  if (process.env.EXEC_WORKERS > 0 && patientIds.length > process.env.SCALED_EXEC_THRESHOLD) {
+    logger.info(`Starting scaled calculation run with ${patientIds.length} patients`);
     const calc = new ScaledCalculation(measureBundle, patientIds, req.query.periodStart, req.query.periodEnd);
     return await calc.execute();
   } else {
-    logger.info(`Starting regular calculation run with ${patientIds.length}`);
+    logger.info(`Starting regular calculation run with ${patientIds.length} patients`);
     let patientBundles = patientIds.map(async id => {
       return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
     });

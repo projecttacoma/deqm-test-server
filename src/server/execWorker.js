@@ -15,7 +15,10 @@ const execQueue = new Queue('exec', {
   removeOnSuccess: true
 });
 
-// Flag for running with direct options to
+/**
+ * Flag to run directly connecting to mongo for patient data. If false will use FHIR server interactions for fetching
+ * patient data.
+ */
 const MONGO_PATIENTS = true;
 
 // Hold measure bundles and dataRequirements for quick reuse indexed by id-MPstart-MPend with { timeLoaded, bundle, dataReq }
@@ -71,7 +74,9 @@ execQueue.process(async job => {
     });
   } else {
     logger.info(`exec-worker-${process.pid}: Executing with reaching to FHIR server for patient data.`);
-    const patientSource = AsyncPatientSource.FHIRv401('http://localhost:3000/4_0_1/');
+    const patientSource = AsyncPatientSource.FHIRv401(
+      `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/4_0_1/`
+    );
     patientSource.loadPatientIds(job.data.patientIds);
     results = await Calculator.calculate(measureBundle.bundle, [], {
       verboseCalculationResults: false,

@@ -74,10 +74,7 @@ describe('execQueue', () => {
     });
 
     test('Prepares more jobs than workers if n/workers is more than limit', () => {
-      const patientIds = [];
-      for (let i = 0; i < 150; i++) {
-        patientIds.push(`pat${i}`);
-      }
+      const patientIds = Array.from({ length: 150 }, (_, i) => `pat${i}`);
 
       const calc = new ScaledCalculation(testBundle, patientIds, '2019-01-01', '2019-12-31');
       expect(calc._jobs.length).toEqual(6);

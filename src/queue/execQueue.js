@@ -2,7 +2,7 @@
 
 const Queue = require('bee-queue');
 const logger = require('../server/logger.js');
-const MeasureReportBuilder = require('fqm-execution').MeasureReportBuilder;
+const { MeasureReportBuilder } = require('fqm-execution');
 
 // Create a new queue to establish new Redis connection
 const execQueue = new Queue('exec', {
@@ -20,6 +20,10 @@ execQueue.on('error', err => {
 
 class ScaledCalculation {
   constructor(measureBundle, patientIds, periodStart, periodEnd) {
+    if (!(process.env.EXEC_WORKERS > 0)) {
+      throw new Error('Scalable Calculation is disabled. To enable set EXEC_WORKERS to a value greater than 0.');
+    }
+
     this._measureBundle = measureBundle;
     this._periodStart = periodStart;
     this._periodEnd = periodEnd;
@@ -76,7 +80,7 @@ class ScaledCalculation {
       });
     });
     // Enter all jobs into the queue
-    execQueue.saveAll(jobs);
+    await execQueue.saveAll(jobs);
 
     // Wait for all jobs to finish
     await Promise.all(jobPromises);
