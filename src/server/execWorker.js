@@ -21,7 +21,7 @@ const execQueue = new Queue('exec', {
  */
 const MONGO_PATIENTS = true;
 
-// Hold measure bundles and dataRequirements for quick reuse indexed by id-MPstart-MPend with { timeLoaded, bundle, dataReq }
+// Hold measure bundles and dataRequirements for quick reuse indexed by id-MPstart-MPend with { lastUsed, bundle, dataReq }
 const measureBundleCache = {};
 
 // Gets a measure bundle from either mongo or cache
@@ -30,12 +30,13 @@ async function getMeasureBundle(measureId, periodStart, periodEnd) {
   // first check in cache if it has been more than 20seconds dump it.
   const cachedBundle = measureBundleCache[cacheLabel];
   if (cachedBundle != null) {
-    if (Date.now() - cachedBundle.timeLoaded > 20000) {
+    if (Date.now() - cachedBundle.lastUsed > 20000) {
       // Wipe out if older than 20 seconds and let the mongo load repopulate it
       delete measureBundleCache[cacheLabel];
       logger.info(`exec-worker-${process.pid}: Wiping ${cacheLabel} from cache.`);
     } else {
       logger.info(`exec-worker-${process.pid}: Using ${cacheLabel} from cache.`);
+      cachedBundle.lastUsed = Date.now();
       return cachedBundle;
     }
   }
@@ -45,7 +46,7 @@ async function getMeasureBundle(measureId, periodStart, periodEnd) {
   await mongoUtil.client.connect();
   const measureBundle = await getMeasureBundleFromId(measureId);
   measureBundleCache[cacheLabel] = {
-    timeLoaded: Date.now(),
+    lastUsed: Date.now(),
     bundle: measureBundle
   };
   if (MONGO_PATIENTS) {
