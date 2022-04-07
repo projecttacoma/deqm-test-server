@@ -26,6 +26,7 @@ const {
   addPendingBulkImportRequest,
   findOneResourceWithQuery,
   findResourcesWithQuery,
+  findResourceIdsWithQuery,
   findResourceById
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
@@ -248,11 +249,6 @@ const evaluateMeasure = async (args, { req }) => {
  */
 const evaluateMeasureForPopulation = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
-  // Only do this for calculations done here instead of in workers
-  const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
-    measurementPeriodStart: req.query.periodStart,
-    measurementPeriodEnd: req.query.periodEnd
-  });
   // Collect patientId instead of bundles
   let patientIds = [];
   if (req.query.subject) {
@@ -279,19 +275,17 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
       });
     }
   } else {
-    let patients;
     if (req.query.practitioner) {
-      patients = await findResourcesWithQuery(
+      patientIds = await findResourceIdsWithQuery(
         getResourceReference('generalPractitioner', req.query.practitioner),
         'Patient'
       );
-      if (patients.length === 0) {
+      if (patientIds.length === 0) {
         throw new BadRequestError(`No Patient resources reference the given practitioner, ${req.query.practitioner}`);
       }
     } else {
-      patients = await findResourcesWithQuery({}, 'Patient');
+      patientIds = await findResourceIdsWithQuery({}, 'Patient');
     }
-    patientIds = patients.map(p => p.id);
   }
 
   // count number of patientIds, if over threshold, then do them with workers, otherwise do it here
@@ -301,6 +295,10 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     return await calc.execute();
   } else {
     logger.info(`Starting regular calculation run with ${patientIds.length} patients`);
+    const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
+      measurementPeriodStart: req.query.periodStart,
+      measurementPeriodEnd: req.query.periodEnd
+    });
     let patientBundles = patientIds.map(async id => {
       return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
     });

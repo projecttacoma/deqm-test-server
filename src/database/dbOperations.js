@@ -53,6 +53,18 @@ const findResourcesWithQuery = async (query, resourceType) => {
 };
 
 /**
+ * searches the database for all resources based on the mongo query and returns just the list of ids
+ * @param {Object} query the mongo query to use
+ * @param {string} resourceType type of desired resource, signifies collection resource is stored in
+ * @returns {Promise<Array<string>>} an array of found resource ids which match the input query
+ */
+const findResourceIdsWithQuery = async (query, resourceType) => {
+  const collection = db.collection(resourceType);
+  logger.debug(`Searching database for all ${resourceType}s which match query: ${JSON.stringify(query)}`);
+  return (await collection.find(query, { projection: { id: 1 } })).map(r => r.id).toArray();
+};
+
+/**
  * searches for a document and updates it if found, creates it if not
  * @param {string} id id of resource to be updated
  * @param {Object} data the updated data to add to/edit in the document
@@ -285,6 +297,7 @@ module.exports = {
   findResourceById,
   findResourcesWithAggregation,
   findResourcesWithQuery,
+  findResourceIdsWithQuery,
   getBulkImportStatus,
   getCurrentSuccessfulImportCount,
   initializeBulkFileCount,
