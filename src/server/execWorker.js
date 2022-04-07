@@ -82,3 +82,5 @@ execQueue.process(async job => {
   }
   return results;
 });
+
+module.exports = execQueue;
