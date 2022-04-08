@@ -48,6 +48,7 @@ describe('bundle.service', () => {
     test('error thrown if resource type is not Bundle', async () => {
       try {
         await uploadTransactionBundle(NON_BUNDLE_REQ, {});
+        expect.fail("uploadTransactionBundle failed to throw error when resourceType was not 'Bundle'");
       } catch (e) {
         expect(e.statusCode).toEqual(400);
         expect(e.issue[0].details.text).toEqual(
@@ -59,6 +60,7 @@ describe('bundle.service', () => {
     test('error thrown if type is not transaction', async () => {
       try {
         await uploadTransactionBundle(NON_TXN_REQ, {});
+        expect.fail("uploadTransactionBundle failed to throw error when type was not 'transaction'");
       } catch (e) {
         expect(e.statusCode).toEqual(400);
         expect(e.issue[0].details.text).toEqual(`Expected 'type: transaction'. Received 'type: invalidType'.`);
@@ -74,13 +76,12 @@ describe('bundle.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
-          // Check the response
+        .then(response => {
           expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
         });
     });
 
-    test('error thrown if method type is not PUT or POST', async () => {
+    test('bundle returned with error info if method type is not PUT or POST', async () => {
       await supertest(server.app)
         .post('/4_0_1/')
         .send(INVALID_METHOD_REQ)
@@ -88,7 +89,7 @@ describe('bundle.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.entry[0].response.status).toEqual('400 BadRequest');
           expect(response.body.entry[0].response.outcome.issue[0].details.text).toEqual(
@@ -106,8 +107,7 @@ describe('bundle.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
-          // Check the response
+        .then(response => {
           expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
         });
       // Check for AuditEvent with resources
@@ -115,12 +115,13 @@ describe('bundle.service', () => {
         .get('/4_0_1/AuditEvent')
         .set('Accept', 'application/json+fhir')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('searchset');
           expect(response.body.total).toEqual(1);
           expect(response.body.entry[0].resource.resourceType).toEqual('AuditEvent');
           const entities = response.body.entry[0].resource.entity;
+          // Check a MeasureReport and Encounter were added to the what property in no particular order
           expect(entities.some(ent => ent.what.reference.startsWith('MeasureReport'))).toBe(true);
           expect(entities.some(ent => ent.what.reference.startsWith('Encounter'))).toBe(true);
         });

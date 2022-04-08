@@ -11,7 +11,7 @@ const {
   findResourcesWithAggregation
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { checkSupportedResource } = require('../util/baseUtils');
+const { checkSupportedResource, checkContentTypeHeader } = require('../util/baseUtils');
 const logger = require('../server/logger.js');
 
 /**
@@ -236,21 +236,6 @@ const baseRemove = async (args, resourceType) => {
 };
 
 /**
- * Checks if the content-type header is incorrect and throws and error with guidance if so
- * @param {Object} requestHeaders the headers from the request body
- */
-const checkContentTypeHeader = requestHeaders => {
-  if (
-    requestHeaders['content-type'] !== 'application/json+fhir' &&
-    requestHeaders['content-type'] !== 'application/fhir+json'
-  ) {
-    throw new BadRequestError(
-      'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
-    );
-  }
-};
-
-/**
  * Build a basic service module for a given resource type. Supports basic CRUD operations.
  *
  * @param {string} resourceType Name of the resource to make a basic resource for.
@@ -272,6 +257,5 @@ module.exports = {
   baseUpdate,
   baseRemove,
   buildServiceModule,
-  baseSearch,
-  checkContentTypeHeader
+  baseSearch
 };

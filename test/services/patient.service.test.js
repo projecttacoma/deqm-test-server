@@ -21,7 +21,7 @@ describe('patient.service', () => {
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
-    test('test create with correct headers', async () => {
+    test('test create with correct headers returns 200', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
@@ -34,13 +34,13 @@ describe('patient.service', () => {
         });
     });
 
-    test('test searchById with correctHeaders and the id should be in database', async () => {
+    test('test searchById with correctHeaders and the id is in database returns 200', async () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/testPatient')
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.id).toEqual(testPatient.id);
         });
     });
@@ -53,8 +53,7 @@ describe('patient.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
-          // Check the response
+        .then(response => {
           expect(response.headers.location).toBeDefined();
         });
     });

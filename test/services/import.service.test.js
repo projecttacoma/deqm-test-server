@@ -37,7 +37,11 @@ describe('Testing $import with no specified measure bundle', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(400);
+      .expect(400)
+      .then(response => {
+        expect(response.body.resourceType).toEqual('OperationOutcome');
+        expect(response.body.issue[0].details.text).toEqual('No exportUrl parameter was found.');
+      });
   });
   test('FHIR Parameters object has two export URLs', async () => {
     await supertest(server.app)
@@ -46,7 +50,11 @@ describe('Testing $import with no specified measure bundle', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('prefer', 'respond-async')
-      .expect(400);
+      .expect(400)
+      .then(response => {
+        expect(response.body.resourceType).toEqual('OperationOutcome');
+        expect(response.body.issue[0].details.text).toEqual('Expected exactly one export URL. Received: 2');
+      });
   });
 
   test('FHIR Parameters object is missing valueUrl for export URL', async () => {
@@ -56,7 +64,13 @@ describe('Testing $import with no specified measure bundle', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('prefer', 'respond-async')
-      .expect(400);
+      .expect(400)
+      .then(response => {
+        expect(response.body.resourceType).toEqual('OperationOutcome');
+        expect(response.body.issue[0].details.text).toEqual(
+          'Expected a valueUrl for the exportUrl, but none was found'
+        );
+      });
   });
   afterAll(cleanUpTest);
 });

@@ -30,8 +30,6 @@ describe('bulkstatus.service', () => {
         .expect(200);
     });
     test('check single OperationOutcome response for completed request', async () => {
-      // call for status twice
-      await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
       const operationResponse = await supertest(server.app)
         .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, ''))
@@ -88,13 +86,10 @@ describe('bulkstatus.service', () => {
       const response = await supertest(server.app).get(
         '/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_COUNT/OperationOutcome.ndjson'
       );
-      response.text
-        .trim()
-        .split(/\n/)
-        .map(async resourceStr => {
-          //  TODO: improve this assertion when the duplicate OperationOutcome bug is resolved
-          expect(resourceStr.includes('successfully imported 200'));
-        });
+      const data = JSON.parse(response.text);
+      expect(data.issue[0].details.text).toEqual(
+        'Bulk import successfully completed, successfully imported 200 resources'
+      );
     });
   });
 
