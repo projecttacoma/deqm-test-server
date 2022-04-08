@@ -16,7 +16,7 @@ const testParamInvalidResourceType = require('../fixtures/fhir-resources/paramet
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
-const { testSetup, cleanUpTest, createTestResource } = require('../populateTestData');
+const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -38,7 +38,9 @@ describe('measure.service', () => {
       testLibrary,
       testGroup,
       testOrganization,
-      testOrganization2
+      testOrganization2,
+      testParam,
+      testParamInvalidResourceType
     ];
 
     await testSetup(dataToImport);

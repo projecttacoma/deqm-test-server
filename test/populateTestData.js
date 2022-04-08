@@ -22,21 +22,13 @@ async function cleanUpTest() {
   await queue.close();
 }
 
-/**DOD: testSetup() function takes an array of FHIR resources and creates an
- * entry in mongo for each of them. All calls to testSetup() are updated. */
-
-const testSetup = async (testfixtureList) => {
+const testSetup = async testfixtureList => {
   await client.connect();
 
-  /*for (const x of testfixtureList) {
-    await createTestResource(x, toString(x.resourceType));
-  }*/
-
-  let result = testfixtureList.map(async (x)=>{
-    let test = createTestResource(x, x.resourceType);
-  return test;
+  let result = testfixtureList.map(async x => {
+    return await createTestResource(x, x.resourceType);
   });
-  await Promise.all(result)
+  await Promise.all(result);
 };
 const bulkStatusSetup = async () => {
   await client.connect();

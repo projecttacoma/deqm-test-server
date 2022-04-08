@@ -18,7 +18,7 @@ describe('base.service', () => {
     server = initialize(config);
   });
   beforeEach(async () => {
-    const dataToImport= [ testMeasure, testLibrary,testPatient]
+    const dataToImport = [testMeasure, testLibrary, testPatient];
     await testSetup(dataToImport);
   });
   describe('searchById', () => {

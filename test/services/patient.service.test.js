@@ -1,6 +1,6 @@
 require('../../src/config/envConfig');
 const supertest = require('supertest');
-const { testSetup, createTestResource, cleanUpTest } = require('../populateTestData');
+const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -17,7 +17,7 @@ describe('patient.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    const dataToImport = [testMeasure,testLibrary,testPatient, testPatient2,deletePatient]
+    const dataToImport = [testMeasure, testLibrary, testPatient, testPatient2, deletePatient];
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
