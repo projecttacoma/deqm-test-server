@@ -15,6 +15,7 @@ const testParamInvalidResourceType = require('../fixtures/fhir-resources/paramet
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
+const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
 const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
@@ -38,8 +39,7 @@ describe('measure.service', () => {
       testGroup,
       testOrganization,
       testOrganization2,
-      testParam,
-      testParamInvalidResourceType
+      deleteMeasure
     ];
 
     await testSetup(dataToImport);
