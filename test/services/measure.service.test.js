@@ -2,7 +2,6 @@ require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
-const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
@@ -16,7 +15,8 @@ const testParamInvalidResourceType = require('../fixtures/fhir-resources/paramet
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
-const { testSetup, cleanUpTest, createTestResource } = require('../populateTestData');
+const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
+const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -30,13 +30,19 @@ describe('measure.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    await testSetup(testMeasure, testPatient, testLibrary);
-    await createTestResource(testPatient2, 'Patient');
-    await createTestResource(testGroup, 'Group');
-    await createTestResource(testMeasure2, 'Measure');
-    await createTestResource(deleteMeasure, 'Measure');
-    await createTestResource(testOrganization, 'Organization');
-    await createTestResource(testOrganization2, 'Organization');
+    const dataToImport = [
+      testMeasure,
+      testMeasure2,
+      testPatient,
+      testPatient2,
+      testLibrary,
+      testGroup,
+      testOrganization,
+      testOrganization2,
+      deleteMeasure
+    ];
+
+    await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
     test('test create with correct headers', async () => {

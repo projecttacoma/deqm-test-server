@@ -22,13 +22,14 @@ async function cleanUpTest() {
   await queue.close();
 }
 
-const testSetup = async (testMeasure, testPatient, testLibrary) => {
+const testSetup = async testfixtureList => {
   await client.connect();
-  await createTestResource(testMeasure, 'Measure');
-  await createTestResource(testPatient, 'Patient');
-  await createTestResource(testLibrary, 'Library');
-};
 
+  const result = testfixtureList.map(async x => {
+    return await createTestResource(x, x.resourceType);
+  });
+  await Promise.all(result);
+};
 const bulkStatusSetup = async () => {
   await client.connect();
   const promises = testStatuses.map(async status => {
