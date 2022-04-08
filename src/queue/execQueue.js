@@ -18,7 +18,18 @@ execQueue.on('error', err => {
   logger.error('exec-queue error: ', err);
 });
 
+/**
+ * Interface for running a scaled calculation.
+ */
 class ScaledCalculation {
+  /**
+   * Constructs a scaled calculation instance and prepares job data.
+   *
+   * @param {fhir4.Bundle} measureBundle Measure bundle resource
+   * @param {string[]}} patientIds Patient ids list.
+   * @param {string} periodStart Start of measurement period
+   * @param {string} periodEnd End of measurement period
+   */
   constructor(measureBundle, patientIds, periodStart, periodEnd) {
     if (!(process.env.EXEC_WORKERS > 0)) {
       throw new Error('Scalable Calculation is disabled. To enable set EXEC_WORKERS to a value greater than 0.');
@@ -28,13 +39,7 @@ class ScaledCalculation {
     this._periodStart = periodStart;
     this._periodEnd = periodEnd;
 
-    // See if count/worker count is less than max job size. if it is use that as jobSize other wise use max job size
-    let jobSize = Math.ceil(patientIds.length / parseInt(process.env.EXEC_WORKERS));
-    if (jobSize > parseInt(process.env.SCALED_EXEC_MAX_JOBSIZE)) {
-      jobSize = parseInt(process.env.SCALED_EXEC_MAX_JOBSIZE);
-    }
-
-    // Prepare measure report builder
+    // Prepare the fqm-execution measure report builder
     try {
       this._mrBuilder = new MeasureReportBuilder(this._measureBundle, {
         measurementPeriodStart: this._periodStart,
@@ -45,6 +50,12 @@ class ScaledCalculation {
     } catch (e) {
       logger.error(e);
       throw new Error('Could not prepare report builder. Measure bundle may not have measure.', e);
+    }
+
+    // Pick jobSize. If patient count/worker count is less than max job size then use that otherwise use max jobsize.
+    let jobSize = Math.ceil(patientIds.length / parseInt(process.env.EXEC_WORKERS));
+    if (jobSize > parseInt(process.env.SCALED_EXEC_MAX_JOBSIZE)) {
+      jobSize = parseInt(process.env.SCALED_EXEC_MAX_JOBSIZE);
     }
 
     // Prepare job data to be sent to workers.
@@ -65,6 +76,10 @@ class ScaledCalculation {
     );
   }
 
+  /**
+   * Executes the scaled calculation and returns the measure report when complete.
+   * @returns {Promise<fhir4.MeasureReport}
+   */
   async execute() {
     this._count = 0;
     const _this = this;
@@ -90,8 +105,10 @@ class ScaledCalculation {
   }
 
   /**
+   * Take the calculation results from a completed job and add them to the measure report builder.
    *
-   * @param {import('fqm-execution/build/types/Calculator').CalculationOutput} jobResult
+   * @param {import('fqm-execution/build/types/Calculator').CalculationOutput} jobResult The non-verbose calculation
+   *   result from the fqm-execution `calculate` call.
    */
   async tabulateResults(jobResult) {
     this._count += jobResult.results.length;
