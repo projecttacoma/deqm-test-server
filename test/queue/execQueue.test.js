@@ -88,8 +88,22 @@ describe('execQueue', () => {
 
     test('Fails to set up calculation if measure bundle is bad', () => {
       expect(() => {
-        new ScaledCalculation({}, ['pat1'], '2019-01-01', '2019-12-31');
-      }).toThrow('Could not prepare report builder. Measure bundle may not have measure.');
+        new ScaledCalculation(
+          { resourceType: 'Bundle', entry: [{ resource: { resourceType: 'Observation' } }] },
+          ['pat1'],
+          '2019-01-01',
+          '2019-12-31'
+        );
+      }).toThrow('Could not prepare report builder:');
+    });
+
+    test('Throws an error if scaled calculation is disabled', () => {
+      const workers = process.env.EXEC_WORKERS;
+      process.env.EXEC_WORKERS = 0;
+      expect(() => {
+        new ScaledCalculation(testBundle, ['pat1'], '2019-01-01', '2019-12-31');
+      }).toThrow('Scalable Calculation is disabled. To enable set EXEC_WORKERS to a value greater than 0.');
+      process.env.EXEC_WORKERS = workers;
     });
   });
 

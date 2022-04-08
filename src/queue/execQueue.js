@@ -49,7 +49,7 @@ class ScaledCalculation {
       logger.info(`exec-queue: Created MRBuilder for ${this._mrBuilder.measure.id}`);
     } catch (e) {
       logger.error(e);
-      throw new Error('Could not prepare report builder. Measure bundle may not have measure.', e);
+      throw new Error(`Could not prepare report builder: ${e.message}`);
     }
 
     // Pick jobSize. If patient count/worker count is less than max job size then use that otherwise use max jobsize.
