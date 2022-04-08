@@ -25,7 +25,7 @@ async function cleanUpTest() {
 const testSetup = async testfixtureList => {
   await client.connect();
 
-  let result = testfixtureList.map(async x => {
+  const result = testfixtureList.map(async x => {
     return await createTestResource(x, x.resourceType);
   });
   await Promise.all(result);

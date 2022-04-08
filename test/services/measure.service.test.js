@@ -2,7 +2,6 @@ require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
-const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
