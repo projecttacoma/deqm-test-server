@@ -18,7 +18,8 @@ describe('base.service', () => {
     server = initialize(config);
   });
   beforeEach(async () => {
-    await testSetup(testMeasure, testPatient, testLibrary);
+    const dataToImport= [ testMeasure, testLibrary,testPatient]
+    await testSetup(dataToImport);
   });
   describe('searchById', () => {
     test('test searchById with correctHeaders and the id should be in database', async () => {

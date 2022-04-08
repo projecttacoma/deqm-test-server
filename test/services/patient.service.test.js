@@ -17,9 +17,8 @@ describe('patient.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    await testSetup(testMeasure, testPatient, testLibrary);
-    await createTestResource(testPatient2, 'Patient');
-    await createTestResource(deletePatient, 'Patient');
+    const dataToImport = [testMeasure,testLibrary,testPatient, testPatient2,deletePatient]
+    await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
     test('test create with correct headers', async () => {

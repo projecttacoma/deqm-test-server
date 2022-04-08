@@ -30,13 +30,18 @@ describe('measure.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    await testSetup(testMeasure, testPatient, testLibrary);
-    await createTestResource(testPatient2, 'Patient');
-    await createTestResource(testGroup, 'Group');
-    await createTestResource(testMeasure2, 'Measure');
-    await createTestResource(deleteMeasure, 'Measure');
-    await createTestResource(testOrganization, 'Organization');
-    await createTestResource(testOrganization2, 'Organization');
+    const dataToImport = [
+      testMeasure,
+      testMeasure2,
+      testPatient,
+      testPatient2,
+      testLibrary,
+      testGroup,
+      testOrganization,
+      testOrganization2
+    ];
+
+    await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
     test('test create with correct headers', async () => {
