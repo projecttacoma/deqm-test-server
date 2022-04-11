@@ -2,14 +2,26 @@ const { checkSupportedResource, checkContentTypeHeader } = require('../../src/ut
 const queue = require('../../src/queue/importQueue');
 
 describe('Testing checkSupportedResource', () => {
-  test('returns true for supported resource', () => {
+  test('Does not throw error for supported resource', () => {
     expect(checkSupportedResource('Patient')).toBeUndefined();
   });
   test('Throws error for unsupported resource', () => {
-    expect(() => checkSupportedResource('INVALID')).toThrow();
+    try {
+      checkSupportedResource('INVALID');
+      expect.fail('checkSupportedResource failed to throw error when passed invalid resource type');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual('resourceType: INVALID is not a supported resourceType');
+    }
   });
   test('Throws error for undefined resource', () => {
-    expect(() => checkSupportedResource(undefined)).toThrow();
+    try {
+      checkSupportedResource(undefined);
+      expect.fail('checkSupportedResource failed to throw error when passed invalid resource type');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual('resourceType: undefined is not a supported resourceType');
+    }
   });
   afterAll(async () => {
     await queue.close();
