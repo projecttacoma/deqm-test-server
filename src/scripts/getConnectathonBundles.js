@@ -24,14 +24,37 @@ const bundleFiles = [];
  * @param {string} directory - directory path to start at
  * @returns {Array} array of string paths that represent the bundle files of interest
  */
-const getBundleFiles = directory => {
+const getConnectathonBundleFiles = directory => {
   const fileNameRegExp = new RegExp(/(^EXM.*.json$)/);
   const filesInDirectory = fs.readdirSync(directory);
   filesInDirectory.forEach(file => {
     const absolute = path.join(directory, file);
     if (fs.statSync(absolute).isDirectory()) {
-      getBundleFiles(absolute);
+      getConnectathonBundleFiles(absolute);
     } else if (fileNameRegExp.test(file) && !IGNORED_BUNDLES.includes(file)) {
+      bundleFiles.push(absolute);
+    }
+  });
+};
+
+/**
+ * Retrieves EXM bundle files from arbitrary folder using a regular expression.
+ * Uses recursion to parse through all available subdirectories.
+ * @param {string} directory - directory path to start at
+ * @returns {Array} array of string paths that represent the bundle files of interest
+ */
+const getBundleFiles = directory => {
+  const fileNameRegExp = new RegExp(/.json$/);
+  const filesInDirectory = fs.readdirSync(directory);
+  filesInDirectory.forEach(file => {
+    const absolute = path.join(directory, file);
+    if (fs.statSync(absolute).isDirectory()) {
+      getBundleFiles(absolute);
+    } else if (
+      fileNameRegExp.test(file) &&
+      !file.endsWith('MeasureReport.json') &&
+      !file.endsWith('measure-report.json')
+    ) {
       bundleFiles.push(absolute);
     }
   });
@@ -48,12 +71,26 @@ async function main() {
   await mongoUtil.client.connect();
   console.log('Connected successfully to server');
 
-  try {
-    getBundleFiles(connectathonPath);
-  } catch (e) {
-    throw new Error(
-      'Connectathon directory not found. Git clone the connectathon repo into the root directory and run script again'
-    );
+  // if a path is provided
+  if (process.argv[2]) {
+    const bundlePath = path.resolve(process.argv[2]);
+    try {
+      console.log(`Finding bundles in ${bundlePath}.`);
+      getBundleFiles(bundlePath);
+    } catch (e) {
+      throw new Error('Provided directory not found.');
+    }
+
+    // otherwise load from connectathon
+  } else {
+    try {
+      console.log(`Finding bundles in connectathon repo at ${connectathonPath}.`);
+      getConnectathonBundleFiles(connectathonPath);
+    } catch (e) {
+      throw new Error(
+        'Connectathon directory not found. Git clone the connectathon repo into the root directory and run script again'
+      );
+    }
   }
 
   const bundlePromises = bundleFiles.map(async filePath => {
@@ -76,7 +113,7 @@ async function main() {
     }
   });
   await Promise.all(bundlePromises);
-  return 'Connectathon bundle entries uploaded.';
+  return `${bundlePromises.length} Bundle entries uploaded.`;
 }
 
 main()

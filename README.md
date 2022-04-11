@@ -141,6 +141,14 @@ Currently, `measure` and `lastReceivedOn` parameters are not supported by the te
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
+This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 patients to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
+
+| ENV Variable              | Description                                                           | Default Value |
+| ------------------------- | --------------------------------------------------------------------- | ------------- |
+| `EXEC_WORKERS`            | Number of worker processes. 0 will disable multi-process calculation. | 5             |
+| `SCALED_EXEC_THRESHOLD`   | Patient count threshold to execute in worker processes.               | 100           |
+| `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                           | 15            |
+
 Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more information.
 
 #### `$care-gaps`

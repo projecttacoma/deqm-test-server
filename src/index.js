@@ -15,7 +15,8 @@ app.use(express.json({ limit: '50mb', type: 'application/fhir+json' }));
 const config = buildConfig();
 const server = initialize(config, app);
 
-const workerTotal = parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS);
+const workerTotal =
+  parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS) + parseInt(process.env.EXEC_WORKERS);
 
 if (workerTotal > os.cpus().length) {
   logger.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
@@ -23,6 +24,10 @@ if (workerTotal > os.cpus().length) {
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
   childProcess.fork('./src/server/importWorker.js');
+}
+
+for (let i = 0; i < process.env.EXEC_WORKERS; i++) {
+  childProcess.fork('./src/server/execWorker.js');
 }
 
 for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {

@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "patientId": "pat-x",
+      "detailedResults": [
+        {
+          "groupId": "group-1",
+          "populationResults": [
+            {
+              "populationType": "initial-population",
+              "result": true
+            },
+            {
+              "populationType": "numerator",
+              "result": true
+            },
+            {
+              "populationType": "denominator",
+              "result": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "patientId": "pat-x2",
+      "detailedResults": [
+        {
+          "groupId": "group-1",
+          "populationResults": [
+            {
+              "populationType": "initial-population",
+              "result": true
+            },
+            {
+              "populationType": "numerator",
+              "result": true
+            },
+            {
+              "populationType": "denominator",
+              "result": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "debugOutput": {}
+}
