@@ -46,4 +46,4 @@ const checkExportUrlArray = exportUrlArray => {
   }
 };
 
-module.exports = { retrieveExportUrl };
+module.exports = { retrieveExportUrl, checkExportUrlArray };

@@ -45,7 +45,7 @@ describe('measure.service', () => {
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
-    test('test create with correct headers', async () => {
+    test('test create with correct headers returns 200', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure')
         .send(testMeasure)
@@ -58,18 +58,18 @@ describe('measure.service', () => {
         });
     });
 
-    test('test searchById with correctHeaders and the id should be in database', async () => {
+    test('test searchById with correctHeaders and the id should be in database returns 200', async () => {
       await supertest(server.app)
         .get('/4_0_1/Measure/testMeasure')
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.id).toEqual(testMeasure.id);
         });
     });
 
-    test('test update with correctHeaders and the id is in database', async () => {
+    test('test update with correctHeaders and the id is in database returns 200', async () => {
       await supertest(server.app)
         .put('/4_0_1/Measure/testMeasure')
         .send(updateMeasure)
@@ -77,26 +77,33 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
-          // Check the response
+        .then(response => {
           expect(response.headers.location).toBeDefined();
         });
     });
 
-    test('removing the measure from the database when the measure is indeed present', async () => {
+    test('removing the measure from the database when the measure is indeed present returns 204', async () => {
       await supertest(server.app).delete('/4_0_1/Measure/deleteMeasure').expect(204);
+    });
+
+    test('removing the measure from the database when the measure is not present returns 204', async () => {
+      await supertest(server.app).delete('/4_0_1/Measure/INVALID').expect(204);
     });
   });
 
-  describe('bulkImport with exportUrl', () => {
-    test('FHIR Parameters object is missing export URL', async () => {
+  describe('bulk $submit-data', () => {
+    test('FHIR Parameters object is missing export URL returns 400', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
         .send(testParam)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
-        .expect(400);
+        .expect(400)
+        .then(response => {
+          expect(response.body.resourceType).toEqual('OperationOutcome');
+          expect(response.body.issue[0].details.text).toEqual('No exportUrl parameter was found.');
+        });
     });
 
     test('FHIR Parameters object has two export URLs', async () => {
@@ -106,7 +113,11 @@ describe('measure.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
-        .expect(400);
+        .expect(400)
+        .then(response => {
+          expect(response.body.resourceType).toEqual('OperationOutcome');
+          expect(response.body.issue[0].details.text).toEqual('Expected exactly one export URL. Received: 2');
+        });
     });
 
     test('FHIR Parameters object is missing valueUrl for export URL', async () => {
@@ -116,7 +127,13 @@ describe('measure.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
-        .expect(400);
+        .expect(400)
+        .then(response => {
+          expect(response.body.resourceType).toEqual('OperationOutcome');
+          expect(response.body.issue[0].details.text).toEqual(
+            'Expected a valueUrl for the exportUrl, but none was found'
+          );
+        });
     });
   });
 
@@ -128,7 +145,7 @@ describe('measure.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `Expected 'resourceType: Parameters'. Received 'type: InvalidType'.`
@@ -143,7 +160,7 @@ describe('measure.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `Unreadable or empty entity for attribute 'parameter'. Received: undefined`
@@ -158,7 +175,7 @@ describe('measure.service', () => {
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
@@ -174,7 +191,7 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.entry[0].response.status).toEqual('201 Created');
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('transaction-response');
@@ -189,7 +206,7 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.entry[0].response.status).toEqual('201 Created');
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('transaction-response');
@@ -471,7 +488,7 @@ describe('measure.service', () => {
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `The given subject, testPatient, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
@@ -490,7 +507,7 @@ describe('measure.service', () => {
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `The given subject, Group/testGroup, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
@@ -508,7 +525,7 @@ describe('measure.service', () => {
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `No Patient resources reference the given practitioner, Practitioner/BAD_REFERENCE`
@@ -524,7 +541,13 @@ describe('measure.service', () => {
         .query({
           periodEnd: '01-01-2021'
         })
-        .expect(400);
+        .expect(400)
+        .then(response => {
+          expect(response.body.resourceType).toEqual('OperationOutcome');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Missing required parameters for $data-requirements: periodStart.`
+          );
+        });
     });
     test('$data-requirements returns 200 with valid params', async () => {
       const { Calculator } = require('fqm-execution');
@@ -769,7 +792,7 @@ describe('measure.service', () => {
           status: 'open-gap'
         })
         .expect(404)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('ResourceNotFound');
           expect(response.body.issue[0].details.text).toEqual(
             'No resource found in collection: Organization, with id: BAD_REFERENCE.'
@@ -788,7 +811,7 @@ describe('measure.service', () => {
           status: 'open-gap'
         })
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.resourceType).toEqual('Parameters');
           expect(response.body.parameter.length).toEqual(0);
         });
@@ -963,7 +986,7 @@ describe('measure.service', () => {
           status: 'open-gap'
         })
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.resourceType).toEqual('Parameters');
           expect(response.body.parameter.length).toEqual(0);
         });
@@ -977,7 +1000,7 @@ describe('measure.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
         .expect(404)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('ResourceNotFound');
           expect(response.body.issue[0].details.text).toEqual(
             'Measure with id invalid-id does not exist in the server'

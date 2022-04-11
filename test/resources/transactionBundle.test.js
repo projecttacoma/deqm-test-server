@@ -32,7 +32,7 @@ describe('Test functionality for adding resource entry to the bundle', () => {
   test('Invalid request type received', () => {
     try {
       tb.addEntryFromResource(testPatient, 'INVALID');
-      throw new Error('addEntryFromResource failed to throw error');
+      expect.fail('addEntryFromResource failed to throw error for invalid request type');
     } catch (e) {
       expect(e.statusCode).toEqual(422);
       expect(e.issue[0].details.text).toEqual(

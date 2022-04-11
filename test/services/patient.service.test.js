@@ -21,7 +21,7 @@ describe('patient.service', () => {
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
-    test('test create with correct headers', async () => {
+    test('test create with correct headers returns 200', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
@@ -34,18 +34,18 @@ describe('patient.service', () => {
         });
     });
 
-    test('test searchById with correctHeaders and the id should be in database', async () => {
+    test('test searchById with correctHeaders and the id is in database returns 200', async () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/testPatient')
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body.id).toEqual(testPatient.id);
         });
     });
 
-    test('test update with correctHeaders and the id is in database', async () => {
+    test('test update with correctHeaders and the id is in database returns 200', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
         .send(updatePatient)
@@ -53,14 +53,17 @@ describe('patient.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
-          // Check the response
+        .then(response => {
           expect(response.headers.location).toBeDefined();
         });
     });
 
-    test('removing the patient from the database when the patient is indeed present', async () => {
+    test('removing the patient from the database when the patient is present returns 204', async () => {
       await supertest(server.app).delete('/4_0_1/Measure/deletePatient').expect(204);
+    });
+
+    test('removing the patient from the database when the patient is not present returns 204', async () => {
+      await supertest(server.app).delete('/4_0_1/Measure/INVALID').expect(204);
     });
   });
 
@@ -69,7 +72,7 @@ describe('patient.service', () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/$everything?start=STARTDATE')
         .expect(501)
-        .then(async response => {
+        .then(response => {
           expect(response.body.issue[0].code).toEqual('NotImplemented');
           expect(response.body.issue[0].details.text).toEqual(
             '$everything functionality has not yet been implemented for requests with parameters: start'
@@ -80,7 +83,7 @@ describe('patient.service', () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/testPatient/$everything')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body).toBeDefined();
           expect(response.body.type).toEqual('searchset');
         });
@@ -90,7 +93,7 @@ describe('patient.service', () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/$everything')
         .expect(200)
-        .then(async response => {
+        .then(response => {
           expect(response.body).toBeDefined();
         });
     });

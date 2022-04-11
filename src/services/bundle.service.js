@@ -6,8 +6,7 @@ const { replaceReferences } = require('../util/bundleUtils');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
 const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
-const { checkContentTypeHeader } = require('./base.service');
-const { checkSupportedResource } = require('../util/baseUtils');
+const { checkSupportedResource, checkContentTypeHeader } = require('../util/baseUtils');
 const logger = require('../server/logger');
 
 /**

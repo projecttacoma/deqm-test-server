@@ -12,4 +12,19 @@ function checkSupportedResource(resourceType) {
   }
 }
 
-module.exports = { checkSupportedResource };
+/**
+ * Checks if the content-type header is incorrect and throws an error with guidance if so
+ * @param {Object} requestHeaders the headers from the request body
+ */
+const checkContentTypeHeader = requestHeaders => {
+  if (
+    requestHeaders['content-type'] !== 'application/json+fhir' &&
+    requestHeaders['content-type'] !== 'application/fhir+json'
+  ) {
+    throw new BadRequestError(
+      'Ensure Content-Type is set to application/json+fhir or to application/fhir+json in headers'
+    );
+  }
+};
+
+module.exports = { checkSupportedResource, checkContentTypeHeader };
