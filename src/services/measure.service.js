@@ -212,7 +212,7 @@ const dataRequirements = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(id);
 
   const { periodStart, periodEnd } = req.query;
-  const { results } = Calculator.calculateDataRequirements(measureBundle, {
+  const { results } = await Calculator.calculateDataRequirements(measureBundle, {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd
   });
@@ -323,7 +323,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
  */
 const evaluateMeasureForIndividual = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
-  const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+  const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
     measurementPeriodStart: req.query.periodStart,
     measurementPeriodEnd: req.query.periodEnd
   });
@@ -447,7 +447,7 @@ const careGaps = async (args, { req }) => {
     const measureBundle = await assembleCollectionBundleFromMeasure(measure);
 
     logger.info(`Calculating data requirements for measure ${measure.id}`);
-    const dataReq = Calculator.calculateDataRequirements(measureBundle, {
+    const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd
     });
