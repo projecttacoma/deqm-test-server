@@ -19,6 +19,8 @@ async function validateFhir(req, res, next) {
     const qicoreProfile = `http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-${profiles[
       profiles.length - 1
     ].toLowerCase()}`;
+    //Change profile pulled from URL to include the StructureDefinition URL
+    profiles[profiles.length - 1] = `http://hl7.org/fhir/StructureDefinition/${profiles[profiles.length - 1]}`;
     logger.debug(`Validating request body against profiles: ${profiles.join(',')}, ${qicoreProfile}`);
     const qicoreValidationInfo = await getValidationInfo([qicoreProfile], req.body, req.base_version);
     const validationInfo = await getValidationInfo(profiles, req.body, req.params.base_version);
