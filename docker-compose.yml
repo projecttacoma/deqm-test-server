@@ -19,7 +19,7 @@ services:
       NDJSON_WORKERS: 2
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      VALIDATE: false
+      VALIDATE: "false"
       VALIDATOR_HOST: validator
       VALIDATOR_PORT: 4567
     ports:
@@ -47,15 +47,16 @@ services:
     ports:
       - '4567:4567'
 
-  keycloak:
-    environment:
-      DB_VENDOR: h2
-      KEYCLOAK_USER: user
-      KEYCLOAK_PASSWORD: password
-    image: jboss/keycloak:${KEYCLOAK_VERSION}
-    ports:
-      - '28080:8080'
-    restart: unless-stopped
+  # TODO: Revisit keycloak setup when using an OAuth-enabled test server
+  # keycloak:
+  #   environment:
+  #     DB_VENDOR: h2
+  #     KEYCLOAK_USER: user
+  #     KEYCLOAK_PASSWORD: password
+  #   image: jboss/keycloak:${KEYCLOAK_VERSION}
+  #   ports:
+  #     - '28080:8080'
+  #   restart: unless-stopped
 
 volumes:
   mongo_data:
