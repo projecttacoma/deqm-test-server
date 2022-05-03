@@ -22,10 +22,31 @@ const retrieveExportUrl = parameters => {
     })
     .toString();
 
+  const typeFilterString = parameters
+    .filter(param => param.name === '_typeFilter')
+    .map(function (typeFilter) {
+      logger.debug(`Adding typeFilter ${typeFilter} to exportUrl typeFilter parameter`);
+      return typeFilter.valueString;
+    })
+    .toString();
+
   if (typesString) {
-    exportUrl = `${exportUrl}?_type=${typesString}`;
+    if (exportUrl.includes(`_type=`)) {
+      console.warn('_type parameter already supplied in exportUrl. Omitting entries from parameter array');
+    } else {
+      // add types from parameters to exportUrl
+      exportUrl += `${exportUrl.includes('_typeFilter=') ? '&' : '?'}_type=${typesString}`;
+    }
   }
 
+  if (typeFilterString) {
+    if (exportUrl.includes(`_typeFilter=`)) {
+      console.warn('_typeFilter parameter already supplied in exportUrl. Omitting entries from parameter array');
+    } else {
+      // add type filters from parameters to exportUrl
+      exportUrl += `${exportUrl.includes('_type=') ? '&' : '?'}_typeFilter=${typeFilterString}`;
+    }
+  }
   return exportUrl;
 };
 
