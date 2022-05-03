@@ -181,10 +181,19 @@ const bulkImportFromRequirements = async (args, { req }) => {
 
   // retrieve data requirements
   const exportURL = retrieveExportUrl(parameters);
+
+  // retrieve useTypeFilters boolean
+  const useTypeFiltersArray = parameters.filter(param => param.name === 'useTypeFilters');
+  let useTypeFilters;
+  if (useTypeFiltersArray.length > 0) {
+    useTypeFilters = useTypeFiltersArray[0].valueBoolean;
+  }
+
   const jobData = {
     clientEntry,
     exportURL,
-    measureBundle
+    measureBundle,
+    useTypeFilters
   };
   await importQueue.createJob(jobData).save();
   res.status(202);
