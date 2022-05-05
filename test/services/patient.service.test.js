@@ -21,7 +21,7 @@ describe('patient.service', () => {
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {
-    test('test create with correct headers returns 200', async () => {
+    test('test create with correct headers returns 201', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
