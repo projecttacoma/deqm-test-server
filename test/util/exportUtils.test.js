@@ -2,6 +2,9 @@ const { retrieveExportUrl, checkExportUrlArray } = require('../../src/util/expor
 const exportWithTypeParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypes.json');
 const exportWithTypeAndFilterParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypesAndFilters.json');
 const exportWithTypeFilterParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypeFilter.json');
+const exportWithMultipleTypeDeclarations = require('../fixtures/fhir-resources/parameters/paramExportUrlMultipleTypeDeclarations.json');
+const exportWithMultipleTypeFilterDeclarations = require('../fixtures/fhir-resources/parameters/paramExportUrlMultipleTypeFilterDeclarations.json')
+
 
 const ASSEMBLED_EXPORT_URL = 'http://example.com/$export?_type=Patient,Encounter,Condition';
 const ASSEMBLED_EXPORT_URL_WITH_FILTER_MULTIPLE_TYPES =
@@ -22,6 +25,22 @@ describe('Test export Url configuration with type and typeFileter parameters', (
   test('retrieveExportUrl successfully includes typeFilter param when type param already included in export url', () => {
     expect(retrieveExportUrl(exportWithTypeFilterParams.parameter)).toEqual(ASSEMBLED_EXPORT_URL_WITH_FILTER);
   });
+
+  test('console.warn thrown and _type parameter (from param array) not added when _type is already appended to exportUrl', () => {
+    const warningSpy = jest.spyOn(global.console, 'warn');
+    expect(retrieveExportUrl(exportWithMultipleTypeDeclarations.parameter)).toEqual(ASSEMBLED_EXPORT_URL)
+    expect(warningSpy).toHaveBeenCalled();
+  });
+
+  test('console.warn thrown and _typeFilter parameter (from param array) not added when _typeFilter is already appended to exportUrl', () => {
+    const warningSpy = jest.spyOn(global.console, 'warn');
+    expect(retrieveExportUrl(exportWithMultipleTypeFilterDeclarations.parameter)).toEqual(ASSEMBLED_EXPORT_URL_WITH_FILTER)
+    expect(warningSpy).toHaveBeenCalled();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  })
 });
 
 describe('Test checkExportUrlArray', () => {
