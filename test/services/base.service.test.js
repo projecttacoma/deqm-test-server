@@ -72,8 +72,11 @@ describe('base.service', () => {
     });
   });
 
-  describe('create', () => {
-    test('test create with correct headers', async () => {
+  describe.only('create', () => {
+    test.only('test create with correct headers', async () => {
+      jest
+        .useFakeTimers()
+        .setSystemTime(new Date('2020-01-01')); 
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
