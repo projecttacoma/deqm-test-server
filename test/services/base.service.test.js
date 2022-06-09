@@ -3,12 +3,16 @@ const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
+const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
 const { testSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
+const { db } = require('../../src/database/connection');
 
 const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
+
+const UPDATE_PATIENT_2 = { resourceType: 'Patient', id: 'testPatient2', name: 'anUpdate' };
 let server;
 
 describe('base.service', () => {
@@ -17,7 +21,7 @@ describe('base.service', () => {
     server = initialize(config);
   });
   beforeEach(async () => {
-    const dataToImport = [testMeasure, testLibrary, testPatient];
+    const dataToImport = [testMeasure, testLibrary, testPatient, testPatient2];
     await testSetup(dataToImport);
   });
   describe('searchById', () => {
@@ -72,11 +76,8 @@ describe('base.service', () => {
     });
   });
 
-  describe.only('create', () => {
-    test.only('test create with correct headers', async () => {
-      jest
-        .useFakeTimers()
-        .setSystemTime(new Date('2020-01-01')); 
+  describe('create', () => {
+    test('test create with correct headers', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
@@ -87,6 +88,22 @@ describe('base.service', () => {
         .then(response => {
           expect(response.headers.location).toBeDefined();
           expect(JSON.parse(response.headers['x-provenance']).target).toBeDefined();
+        });
+    });
+
+    test('test for meta.lastUpdated inclusion', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Patient')
+        .send(testPatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(201)
+        .then(async response => {
+          const id = response.headers.location.split('/')[2];
+          const patientCollection = db.collection('Patient');
+          const retrievedPatient = await patientCollection.findOne({ id: id });
+          expect(retrievedPatient.meta.lastUpdated).toBeDefined();
         });
     });
 
@@ -150,6 +167,23 @@ describe('base.service', () => {
           );
         });
     });
+
+    test('test for meta.lastUpdated inclusion', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/testPatient2')
+        .send(UPDATE_PATIENT_2)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(async response => {
+          const patientCollection = db.collection('Patient');
+          const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_2.id });
+          expect(retrievedPatient.meta.lastUpdated).toBeDefined();
+          expect(new Date(retrievedPatient.meta.lastUpdated) > new Date(testPatient2.meta.lastUpdated));
+        });
+    });
+
     test('test update without provenance header returns 200 with location header', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
