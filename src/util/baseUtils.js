@@ -33,7 +33,7 @@ const checkContentTypeHeader = requestHeaders => {
  */
 const getCurrentInstant = () => {
   const event = new Date();
-  return event.toISOString(); 
-}
+  return event.toISOString();
+};
 
-module.exports = { checkSupportedResource, checkContentTypeHeader, getCurrentInstant};
+module.exports = { checkSupportedResource, checkContentTypeHeader, getCurrentInstant };

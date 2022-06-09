@@ -58,7 +58,7 @@ describe('base.service', () => {
         .then(response => {
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('searchset');
-          expect(response.body.total).toEqual(1);
+          expect(response.body.total).toEqual(2);
           expect(response.body.entry[0].resource.id).toEqual(testPatient.id);
           expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
         });
@@ -176,7 +176,7 @@ describe('base.service', () => {
         .set('content-type', 'application/json+fhir')
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
-        .then(async response => {
+        .then(async () => {
           const patientCollection = db.collection('Patient');
           const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_2.id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
