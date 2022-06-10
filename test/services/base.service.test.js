@@ -13,6 +13,13 @@ const { db } = require('../../src/database/connection');
 const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
 
 const UPDATE_PATIENT_2 = { resourceType: 'Patient', id: 'testPatient2', name: 'anUpdate' };
+const UPDATE_PATIENT_3 = {
+  resourceType: 'Patient',
+  id: 'testPatient3',
+  meta: { lastUpdated: '1900-01-01T00:00:00Z' },
+  name: 'anUpdate'
+};
+
 let server;
 
 describe('base.service', () => {
@@ -91,7 +98,7 @@ describe('base.service', () => {
         });
     });
 
-    test('test for meta.lastUpdated inclusion', async () => {
+    test('test for meta.lastUpdated inclusion when not included in create request', async () => {
       await supertest(server.app)
         .post('/4_0_1/Patient')
         .send(testPatient)
@@ -168,7 +175,7 @@ describe('base.service', () => {
         });
     });
 
-    test('test for meta.lastUpdated inclusion', async () => {
+    test('test for meta.lastUpdated inclusion when not included in update request', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient2')
         .send(UPDATE_PATIENT_2)
@@ -181,6 +188,22 @@ describe('base.service', () => {
           const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_2.id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
           expect(new Date(retrievedPatient.meta.lastUpdated) > new Date(testPatient2.meta.lastUpdated)).toBe(true);
+        });
+    });
+
+    test('test that meta.lastUpdated is overwritten when included in update request', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Patient/testPatient3')
+        .send(UPDATE_PATIENT_3)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(201)
+        .then(async () => {
+          const patientCollection = db.collection('Patient');
+          const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_3.id });
+          expect(retrievedPatient.meta.lastUpdated).toBeDefined();
+          expect(new Date(retrievedPatient.meta.lastUpdated)).not.toEqual('1900-01-01T00:00:00Z');
         });
     });
 
