@@ -180,7 +180,7 @@ describe('base.service', () => {
           const patientCollection = db.collection('Patient');
           const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_2.id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
-          expect(new Date(retrievedPatient.meta.lastUpdated) > new Date(testPatient2.meta.lastUpdated));
+          expect(new Date(retrievedPatient.meta.lastUpdated) > new Date(testPatient2.meta.lastUpdated)).toBe(true);
         });
     });
 
