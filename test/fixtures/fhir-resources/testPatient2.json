@@ -1,4 +1,7 @@
 {
   "resourceType": "Patient",
-  "id": "testPatient2"
+  "id": "testPatient2",
+  "meta": {
+    "lastUpdated": "2022-01-01T00:00:00Z"
+  }
 }

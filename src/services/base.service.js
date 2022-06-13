@@ -11,7 +11,7 @@ const {
   findResourcesWithAggregation
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { checkSupportedResource, checkContentTypeHeader } = require('../util/baseUtils');
+const { checkSupportedResource, checkContentTypeHeader, getCurrentInstant } = require('../util/baseUtils');
 const logger = require('../server/logger.js');
 
 /**
@@ -91,6 +91,8 @@ const baseCreate = async ({ req }, resourceType) => {
   checkSupportedResource(data.resourceType);
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
+  //lastUpdated should be second because it should overwrite a meta.lastUpdated tag in the request body
+  data['meta'] = { ...data['meta'], lastUpdated: getCurrentInstant() };
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;
@@ -215,6 +217,8 @@ const baseUpdate = async (args, { req }, resourceType) => {
   if (data.id !== args.id) {
     throw new BadRequestError('Argument id must match request body id for PUT request');
   }
+  //lastUpdated should be second because it should overwrite a meta.lastUpdated tag in the request body
+  data['meta'] = { ...data['meta'], lastUpdated: getCurrentInstant() };
   if (req.headers['x-provenance']) {
     checkProvenanceHeader(req.headers);
     const res = req.res;

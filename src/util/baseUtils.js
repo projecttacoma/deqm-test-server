@@ -27,4 +27,13 @@ const checkContentTypeHeader = requestHeaders => {
   }
 };
 
-module.exports = { checkSupportedResource, checkContentTypeHeader };
+/**
+ * Gets the current time as a FHIR instant to populate meta.lastUpdated for resource creation and updating
+ * @returns {string} current time in GMT as a FHIR instant
+ */
+const getCurrentInstant = () => {
+  const event = new Date();
+  return event.toISOString();
+};
+
+module.exports = { checkSupportedResource, checkContentTypeHeader, getCurrentInstant };
