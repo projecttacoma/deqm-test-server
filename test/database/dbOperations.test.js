@@ -1,10 +1,12 @@
-const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
+const { bulkStatusSetup, cleanUpTest, createTestResource } = require('../populateTestData');
+const { client } = require('../../src/database/connection');
 const {
   initializeBulkFileCount,
   decrementBulkFileCount,
   failBulkImportRequest,
   findResourceById,
-  pushBulkFailedOutcomes
+  pushBulkFailedOutcomes,
+  getCountOfCollection
 } = require('../../src/database/dbOperations');
 
 describe('check bulk file count logic', () => {
@@ -80,6 +82,23 @@ describe('check bulk import status logic', () => {
     await pushBulkFailedOutcomes(CLIENT_ID, exampleOutcomes);
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
     expect(result.failedOutcomes).toEqual(['test1', 'test2']);
+  });
+
+  afterAll(cleanUpTest);
+});
+
+describe('check collection counts', () => {
+  beforeAll(async () => {
+    await client.connect();
+    await createTestResource({ resourceType: 'Patient', id: 'patient1' }, 'Patient');
+  });
+  test('get count of specified resource', async () => {
+    const result = await getCountOfCollection('Measure');
+    expect(result).toEqual(0);
+  });
+  test('get count of specified resource', async () => {
+    const result = await getCountOfCollection('Patient');
+    expect(result).toEqual(1);
   });
 
   afterAll(cleanUpTest);
