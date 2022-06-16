@@ -1,8 +1,10 @@
 const { Server } = require('@projecttacoma/node-fhir-server-core');
+const cors = require('cors');
 const configBulkImport = require('../controllers/import.controller');
 const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
+const configResourceCount = require('../controllers/resourcecount.controller');
 const { validateFhir } = require('../util/resourceValidationUtils');
 const logger = require('./logger.js');
 class DEQMServer extends Server {
@@ -28,6 +30,15 @@ class DEQMServer extends Server {
     this.app.post('/:base_version*', validateFhir);
     return this;
   }
+  enableResourceCountRoute() {
+    this.app.get('/:base_version/resourceCount/', configResourceCount.resourceCount);
+    return this;
+  }
+
+  enableCors() {
+    this.app.use(cors());
+    return this;
+  }
 }
 
 function initialize(config, app) {
@@ -38,6 +49,7 @@ function initialize(config, app) {
     server = server.enableValidationMiddleWare();
   }
   server = server
+    .enableCors()
     .configureMiddleware()
     .configureSession()
     .configureHelmet()
@@ -47,6 +59,7 @@ function initialize(config, app) {
     .enableBulkStatusRoute()
     .enableImportRoute()
     .enableClientFileRoute()
+    .enableResourceCountRoute()
     .setProfileRoutes()
     .setErrorRoutes();
 

@@ -286,6 +286,18 @@ const getCurrentSuccessfulImportCount = async clientId => {
   return bulkStatus.successCount;
 };
 
+/**
+ * gets the number of documents in a specified collection
+ * @param {string} resourceType specifies the name of the collection to be counted
+ * @returns number that is the count of documents in the specified collection
+ */
+const getCountOfCollection = async resourceType => {
+  const collection = db.collection(resourceType);
+  logger.debug('Retrieving count for specified collection');
+  const count = await collection.countDocuments();
+  return count;
+};
+
 module.exports = {
   addPendingBulkImportRequest,
   completeBulkImportRequest,
@@ -304,5 +316,6 @@ module.exports = {
   pushToResource,
   removeResource,
   updateResource,
-  updateSuccessfulImportCount
+  updateSuccessfulImportCount,
+  getCountOfCollection
 };
