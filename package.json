@@ -31,6 +31,7 @@
     "axios": "^0.21.4",
     "bee-queue": "^1.4.0",
     "bulk-data-utilities": "git+https://github.com/projecttacoma/bulk-data-utilities.git",
+    "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "fqm-execution": "^1.0.0-beta.2",
