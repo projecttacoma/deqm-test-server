@@ -92,11 +92,11 @@ describe('check collection counts', () => {
     await client.connect();
     await createTestResource({ resourceType: 'Patient', id: 'patient1' }, 'Patient');
   });
-  test('get count of specified resource', async () => {
+  test('get count of 0 for empty collection', async () => {
     const result = await getCountOfCollection('Measure');
     expect(result).toEqual(0);
   });
-  test('get count of specified resource', async () => {
+  test('get count of 1 for collection with 1 document', async () => {
     const result = await getCountOfCollection('Patient');
     expect(result).toEqual(1);
   });

@@ -12,16 +12,14 @@ const supportedResources = require('../../src/server/supportedResources');
 
 let server;
 
-describe('resource count', () => {
-  beforeAll(() => {
+describe('populated collections counts', () => {
+  beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-  });
-  beforeEach(async () => {
     const dataToImport = [testMeasure, testLibrary, testPatient, testPatient2];
     await testSetup(dataToImport);
   });
-  test('test for meta.lastUpdated inclusion when not included in update request', async () => {
+  test('test that populated collections return expected counts', async () => {
     await supertest(server.app)
       .get('/4_0_1/resourceCount')
       .set('Accept', 'application/json+fhir')
@@ -35,13 +33,13 @@ describe('resource count', () => {
   afterAll(cleanUpTest);
 });
 
-describe('test that all empty collections return count 0', () => {
+describe('empty collections count', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
     await client.connect();
   });
-  test('test for meta.lastUpdated inclusion when not included in update request', async () => {
+  test('test that all empty collections return count of 0', async () => {
     await supertest(server.app)
       .get('/4_0_1/resourceCount')
       .set('Accept', 'application/json+fhir')

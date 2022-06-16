@@ -288,7 +288,7 @@ const getCurrentSuccessfulImportCount = async clientId => {
 
 /**
  * gets the number of documents in a specified collection
- * @param {*} resourceType specifies the name of the collection to be counted
+ * @param {string} resourceType specifies the name of the collection to be counted
  * @returns number that is the count of documents in the specified collection
  */
 const getCountOfCollection = async resourceType => {
