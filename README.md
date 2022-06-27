@@ -143,11 +143,12 @@ To use, first POST a measure bundle into your database, then send a GET request 
 
 This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 patients to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
-| ENV Variable              | Description                                                           | Default Value |
-| ------------------------- | --------------------------------------------------------------------- | ------------- |
-| `EXEC_WORKERS`            | Number of worker processes. 0 will disable multi-process calculation. | 5             |
-| `SCALED_EXEC_THRESHOLD`   | Patient count threshold to execute in worker processes.               | 100           |
-| `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                           | 15            |
+| ENV Variable              | Description                                                                 | Default Value |
+| ------------------------- | --------------------------------------------------------------------------- | ------------- |
+| `EXEC_WORKERS`            | Number of worker processes. 0 will disable multi-process calculation.       | 5             |
+| `SCALED_EXEC_THRESHOLD`   | Patient count threshold to execute in worker processes.                     | 100           |
+| `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
+| `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
 Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more information.
 

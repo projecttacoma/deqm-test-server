@@ -4,6 +4,7 @@ const logger = require('./logger');
 const mongoUtil = require('../database/connection');
 const { getMeasureBundleFromId } = require('../util/bundleUtils');
 const { getPatientDataCollectionBundle } = require('../util/patientUtils');
+const { PatientSource: MongoPatientSource } = require('cql-exec-fhir-mongo');
 
 logger.info(`exec-worker-${process.pid}: Execution Worker Started!`);
 const execQueue = new Queue('exec', {
@@ -61,22 +62,54 @@ async function getMeasureBundle(measureId, periodStart, periodEnd) {
   return measureBundleCache[cacheLabel];
 }
 
+/**
+ * Maps array of patient IDs from execution jobs into patient data passed in to fqm-execution.
+ * Either constructs and returns a patient source, or bundles of patient data to be passed in directly
+ *
+ * @param {string[]} patientIds list of patient IDs to resolve
+ * @param {Bundle} measureBundle Bundle of measure data used for calculation
+ * @return {MongoPatientSource | Bundle[]}
+ */
+async function resolvePatients(patientIds, measureBundle) {
+  if (process.env.SCALED_EXEC_STRATEGY === 'mongo') {
+    logger.info('Using MongoDB-based PatientSource for scaled calculation');
+    const patientSource = MongoPatientSource.FHIRv401(mongoUtil.db);
+    patientSource.loadPatientIds(patientIds);
+    return patientSource;
+  } else {
+    logger.info('Using collection Bundles for scaled calculation');
+    const patientBundlePromises = patientIds.map(async id => {
+      return getPatientDataCollectionBundle(id, measureBundle.dataReq.results.dataRequirement);
+    });
+    return Promise.all(patientBundlePromises);
+  }
+}
+
 execQueue.process(async job => {
   logger.info(`exec-worker-${process.pid}: Execution Job Received!`);
   const measureBundle = await getMeasureBundle(job.data.measureId, job.data.periodStart, job.data.periodEnd);
+  const patients = await resolvePatients(job.data.patientIds, measureBundle);
 
-  // Grab all patient bundles
-  let patientBundles = job.data.patientIds.map(async id => {
-    return getPatientDataCollectionBundle(id, measureBundle.dataReq.results.dataRequirement);
-  });
-  patientBundles = await Promise.all(patientBundles);
-
-  // Execute and return simple calculation results
-  return await Calculator.calculate(measureBundle.bundle, patientBundles, {
+  let res;
+  const options = {
     verboseCalculationResults: false,
     measurementPeriodStart: job.data.periodStart,
     measurementPeriodEnd: job.data.periodEnd
-  });
+  };
+
+  // Resolution came back as raw patient bundles
+  if (Array.isArray(patients)) {
+    // Execute and return simple calculation results
+    res = await Calculator.calculate(measureBundle.bundle, patients, options);
+  } else {
+    // Results came back as PatientSource instance
+    res = await Calculator.calculate(measureBundle.bundle, [], {
+      ...options,
+      patientSource: patients
+    });
+  }
+
+  return res;
 });
 
 module.exports = execQueue;
