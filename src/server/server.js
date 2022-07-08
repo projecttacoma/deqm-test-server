@@ -36,7 +36,7 @@ class DEQMServer extends Server {
   }
 
   enableCors() {
-    this.app.use(cors());
+    this.app.use(cors({ exposedHeaders: 'Location' }));
     return this;
   }
 }
