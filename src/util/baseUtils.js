@@ -13,6 +13,18 @@ function checkSupportedResource(resourceType) {
 }
 
 /**
+ * Determines whether the passed in resourceType is one matches a given type.
+ * Throws an error if not.
+ * @param {string} resourceType A string representing a FHIR resource type
+ * @param {string} expectedResourceType A string representing a FHIR resource type
+ */
+function checkExpectedResource(resourceType, expectedResourceType) {
+  if (resourceType !== expectedResourceType) {
+    throw new BadRequestError(`Expected resourceType '${expectedResourceType}' in body. Received '${resourceType}'.`);
+  }
+}
+
+/**
  * Checks if the content-type header is incorrect and throws an error with guidance if so
  * @param {Object} requestHeaders the headers from the request body
  */
@@ -36,4 +48,4 @@ const getCurrentInstant = () => {
   return event.toISOString();
 };
 
-module.exports = { checkSupportedResource, checkContentTypeHeader, getCurrentInstant };
+module.exports = { checkSupportedResource, checkExpectedResource, checkContentTypeHeader, getCurrentInstant };

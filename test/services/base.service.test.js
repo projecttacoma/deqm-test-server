@@ -157,6 +157,21 @@ describe('base.service', () => {
           );
         });
     });
+
+    test('test create with incorrect resourceType in provided resource', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Library')
+        .send(testPatient)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            `Expected resourceType 'Library' in body. Received 'Patient'.`
+          );
+        });
+    });
   });
   describe('update', () => {
     test('test update with populated provenance target throws error', async () => {
@@ -245,6 +260,21 @@ describe('base.service', () => {
         .then(response => {
           expect(response.headers.location).toBeDefined();
           expect(JSON.parse(response.headers['x-provenance']).target).toEqual([{ reference: 'Patient/testPatient' }]);
+        });
+    });
+
+    test('test update with invalid resourceType, throws 400 error', async () => {
+      await supertest(server.app)
+        .put('/4_0_1/Library/testLibrary')
+        .send({ resourceType: 'Patient', id: 'testLibrary' })
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            "Expected resourceType 'Library' in body. Received 'Patient'."
+          );
         });
     });
 
