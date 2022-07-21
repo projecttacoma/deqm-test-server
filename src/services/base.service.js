@@ -234,6 +234,7 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
       }
 
       // last page
+      searchParams.set('page', numberOfPages);
       links.push({
         relation: 'last',
         url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
