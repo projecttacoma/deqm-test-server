@@ -11,7 +11,12 @@ const {
   findResourcesWithAggregation
 } = require('../database/dbOperations');
 const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/provenanceUtils');
-const { checkSupportedResource, checkContentTypeHeader, getCurrentInstant } = require('../util/baseUtils');
+const {
+  checkSupportedResource,
+  checkContentTypeHeader,
+  getCurrentInstant,
+  checkExpectedResource
+} = require('../util/baseUtils');
 const logger = require('../server/logger.js');
 
 /**
@@ -89,6 +94,7 @@ const baseCreate = async ({ req }, resourceType) => {
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
+  checkExpectedResource(data.resourceType, resourceType);
   //Create a new id regardless of whether one is passed
   data['id'] = uuidv4();
   //lastUpdated should be second because it should overwrite a meta.lastUpdated tag in the request body
@@ -212,6 +218,7 @@ const baseUpdate = async (args, { req }, resourceType) => {
   checkContentTypeHeader(req.headers);
   const data = req.body;
   checkSupportedResource(data.resourceType);
+  checkExpectedResource(data.resourceType, resourceType);
   //The user passes in an id in the request body and it doesn't match the id arg in the url
   //or user doesn't pass in body
   if (data.id !== args.id) {
