@@ -171,7 +171,6 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   // build the aggregation query
   logger.debug('Building search query');
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
-
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
     logger.debug(`Executing aggregation search over ${resourceType}s using query: ${JSON.stringify(filter.query)}`);
@@ -192,6 +191,54 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
       });
 
       searchBundle.total = results.metadata[0].total;
+
+      // create search set bundle links
+      const { numberOfPages, page } = results.metadata[0];
+      const searchParams = new url.URLSearchParams(req.query);
+      const links = [];
+
+      // create self link, including query params only if there were any
+      if (searchParams.toString() !== '') {
+        links.push({
+          relation: 'self',
+          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
+        });
+      } else {
+        links.push({
+          relation: 'self',
+          url: new url.URL(`${resourceType}`, `http://${req.headers.host}/${args.base_version}/`)
+        });
+      }
+
+      // first page
+      searchParams.set('page', 1);
+      links.push({
+        relation: 'first',
+        url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
+      });
+
+      // only add previous and next if appropriate
+      if (page > 1) {
+        searchParams.set('page', page - 1);
+        links.push({
+          relation: 'previous',
+          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
+        });
+      }
+      if (page < numberOfPages) {
+        searchParams.set('page', page + 1);
+        links.push({
+          relation: 'next',
+          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
+        });
+      }
+
+      // last page
+      links.push({
+        relation: 'last',
+        url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
+      });
+      searchBundle.link = links;
       searchBundle.entry = resultEntries;
     }
   } else {
