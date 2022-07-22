@@ -66,9 +66,135 @@ describe('base.service', () => {
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('searchset');
           expect(response.body.total).toEqual(2);
+          expect(response.body.link).toEqual([
+            {
+              relation: 'self',
+              url: expect.stringMatching(/\/4_0_1\/Patient$/)
+            },
+            {
+              relation: 'first',
+              url: expect.stringMatching(/\/4_0_1\/Patient\?page=1$/)
+            },
+            {
+              relation: 'last',
+              url: expect.stringMatching(/\/4_0_1\/Patient\?page=1$/)
+            }
+          ]);
           expect(response.body.entry[0].resource.id).toEqual(testPatient.id);
           expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
         });
+    });
+
+    describe('with pagination', () => {
+      beforeEach(async () => {
+        // create a bunch of observations for testing pagination
+        const extraObservations = [];
+        for (let i = 0; i < 25; i++) {
+          extraObservations.push({
+            resourceType: 'Observation',
+            id: `observation${i}`,
+            status: 'final'
+          });
+        }
+        await testSetup(extraObservations);
+      }, 10000); // give extra time for this to happen because it takes ~5 sec
+
+      test('test search with enough data for pagination', async () => {
+        await supertest(server.app)
+          .get('/4_0_1/Observation')
+          .set('Accept', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(response.body.resourceType).toEqual('Bundle');
+            expect(response.body.type).toEqual('searchset');
+            expect(response.body.total).toEqual(25);
+            expect(response.body.link).toEqual([
+              {
+                relation: 'self',
+                url: expect.stringMatching(/\/4_0_1\/Observation$/)
+              },
+              {
+                relation: 'first',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=1$/)
+              },
+              {
+                relation: 'next',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=2$/)
+              },
+              {
+                relation: 'last',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=3$/)
+              }
+            ]);
+            expect(response.body.entry.length).toEqual(10);
+          });
+      });
+
+      test('test search with enough data for pagination on second page', async () => {
+        await supertest(server.app)
+          .get('/4_0_1/Observation?page=2')
+          .set('Accept', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(response.body.resourceType).toEqual('Bundle');
+            expect(response.body.type).toEqual('searchset');
+            expect(response.body.total).toEqual(25);
+            expect(response.body.link).toEqual([
+              {
+                relation: 'self',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=2$/)
+              },
+              {
+                relation: 'first',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=1$/)
+              },
+              {
+                relation: 'previous',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=1$/)
+              },
+              {
+                relation: 'next',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=3$/)
+              },
+              {
+                relation: 'last',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=3$/)
+              }
+            ]);
+            expect(response.body.entry.length).toEqual(10);
+          });
+      });
+
+      test('test search with enough data for pagination on last page', async () => {
+        await supertest(server.app)
+          .get('/4_0_1/Observation?page=3')
+          .set('Accept', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(response.body.resourceType).toEqual('Bundle');
+            expect(response.body.type).toEqual('searchset');
+            expect(response.body.total).toEqual(25);
+            expect(response.body.link).toEqual([
+              {
+                relation: 'self',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=3$/)
+              },
+              {
+                relation: 'first',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=1$/)
+              },
+              {
+                relation: 'previous',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=2$/)
+              },
+              {
+                relation: 'last',
+                url: expect.stringMatching(/\/4_0_1\/Observation\?page=3$/)
+              }
+            ]);
+            expect(response.body.entry.length).toEqual(5);
+          });
+      });
     });
 
     test('test search with unsupported parameter', async () => {
