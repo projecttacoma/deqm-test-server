@@ -97,7 +97,7 @@ describe('base.service', () => {
           });
         }
         await testSetup(extraObservations);
-      });
+      }, 10000); // give extra time for this to happen because it takes ~5 sec
 
       test('test search with enough data for pagination', async () => {
         await supertest(server.app)
