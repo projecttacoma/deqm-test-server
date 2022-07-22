@@ -66,6 +66,20 @@ describe('base.service', () => {
           expect(response.body.resourceType).toEqual('Bundle');
           expect(response.body.type).toEqual('searchset');
           expect(response.body.total).toEqual(2);
+          expect(response.body.link).toEqual([
+            {
+              relation: 'self',
+              url: expect.stringMatching(/\/4_0_1\/Patient$/)
+            },
+            {
+              relation: 'first',
+              url: expect.stringMatching(/\/4_0_1\/Patient\?page=1$/)
+            },
+            {
+              relation: 'last',
+              url: expect.stringMatching(/\/4_0_1\/Patient\?page=1$/)
+            }
+          ]);
           expect(response.body.entry[0].resource.id).toEqual(testPatient.id);
           expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
         });
