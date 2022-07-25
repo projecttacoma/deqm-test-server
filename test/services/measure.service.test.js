@@ -361,7 +361,7 @@ describe('measure.service', () => {
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          reportType: 'individual',
+          reportType: 'subject',
           subject: 'testPatient',
           practitioner: 'Practitioner/testPractitioner'
         })
@@ -466,7 +466,7 @@ describe('measure.service', () => {
       await supertest(server.app)
         .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
         .query({
-          reportType: 'individual',
+          reportType: 'subject',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           subject: 'testPatient',

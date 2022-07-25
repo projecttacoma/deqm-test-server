@@ -18,7 +18,7 @@ function validateEvalMeasureParams(query) {
   }
 
   // returns unsupported report type that is included in the http request
-  if (!['individual', 'population', 'subject-list', undefined].includes(query.reportType)) {
+  if (!['subject', 'population', 'subject-list', undefined].includes(query.reportType)) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate-measure`);
   }
 
@@ -37,11 +37,11 @@ function validateEvalMeasureParams(query) {
     }
   }
 
-  if (query.reportType === 'individual') {
+  if (query.reportType === 'subject') {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
       throw new BadRequestError(
-        `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+        `For report type 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
     }
   }

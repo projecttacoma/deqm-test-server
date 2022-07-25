@@ -337,7 +337,7 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
     measurementPeriodEnd: req.query.periodEnd
   });
 
-  const { periodStart, periodEnd, reportType = 'individual', subject, practitioner } = req.query;
+  const { periodStart, periodEnd, subject, practitioner } = req.query;
   let patientBundle;
   if (practitioner) {
     let patientId = subject;
@@ -366,7 +366,7 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd,
-    reportType: reportType
+    reportType: 'individual'
   });
   return results[0];
 };
