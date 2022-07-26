@@ -15,7 +15,8 @@ const {
   checkSupportedResource,
   checkContentTypeHeader,
   getCurrentInstant,
-  checkExpectedResource
+  checkExpectedResource,
+  createPaginationLinks
 } = require('../util/baseUtils');
 const logger = require('../server/logger.js');
 
@@ -192,54 +193,14 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
 
       searchBundle.total = results.metadata[0].total;
 
-      // create search set bundle links
-      const { numberOfPages, page } = results.metadata[0];
-      const searchParams = new url.URLSearchParams(req.query);
-      const links = [];
+      // create search set bundle pagination links
+      searchBundle.link = createPaginationLinks(
+        `http://${req.headers.host}/${args.base_version}/`,
+        resourceType,
+        new url.URLSearchParams(req.query),
+        results.metadata[0]
+      );
 
-      // create self link, including query params only if there were any
-      if (searchParams.toString() !== '') {
-        links.push({
-          relation: 'self',
-          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
-        });
-      } else {
-        links.push({
-          relation: 'self',
-          url: new url.URL(`${resourceType}`, `http://${req.headers.host}/${args.base_version}/`)
-        });
-      }
-
-      // first page
-      searchParams.set('page', 1);
-      links.push({
-        relation: 'first',
-        url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
-      });
-
-      // only add previous and next if appropriate
-      if (page > 1) {
-        searchParams.set('page', page - 1);
-        links.push({
-          relation: 'previous',
-          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
-        });
-      }
-      if (page < numberOfPages) {
-        searchParams.set('page', page + 1);
-        links.push({
-          relation: 'next',
-          url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
-        });
-      }
-
-      // last page
-      searchParams.set('page', numberOfPages);
-      links.push({
-        relation: 'last',
-        url: new url.URL(`${resourceType}?${searchParams}`, `http://${req.headers.host}/${args.base_version}/`)
-      });
-      searchBundle.link = links;
       searchBundle.entry = resultEntries;
     }
   } else {
