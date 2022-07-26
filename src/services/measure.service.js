@@ -245,9 +245,17 @@ const evaluateMeasure = async (args, { req }) => {
   // or using unsupported report type
   validateEvalMeasureParams(req.query);
 
-  return req.query.reportType === 'population'
-    ? evaluateMeasureForPopulation(args, { req })
-    : evaluateMeasureForIndividual(args, { req });
+  const { reportType, subject } = req.query;
+
+  // If reportType is not specified, default to 'subject', but
+  // only if the 'subject' parameter is also specificed
+  if (reportType === 'subject' || (reportType == null && subject != null)) {
+    logger.debug('Evaluating measure for individual');
+    return evaluateMeasureForIndividual(args, { req });
+  }
+
+  logger.debug('Evaluating measure for population');
+  return evaluateMeasureForPopulation(args, { req });
 };
 
 /**
@@ -337,7 +345,7 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
     measurementPeriodEnd: req.query.periodEnd
   });
 
-  const { periodStart, periodEnd, reportType = 'individual', subject, practitioner } = req.query;
+  const { periodStart, periodEnd, subject, practitioner } = req.query;
   let patientBundle;
   if (practitioner) {
     let patientId = subject;
@@ -366,7 +374,7 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
   const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd,
-    reportType: reportType
+    reportType: 'individual'
   });
   return results[0];
 };

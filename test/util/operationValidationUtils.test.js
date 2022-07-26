@@ -152,7 +152,7 @@ describe('validateEvalMeasureParams', () => {
 
   test('error thrown for missing subject for $evaluate-measure', () => {
     const MISSING_SUBJECT_REQ = {
-      query: { reportType: 'individual', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: { reportType: 'subject', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
     try {
       validateEvalMeasureParams(MISSING_SUBJECT_REQ.query);
@@ -160,7 +160,7 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Must specify subject for all $evaluate-measure requests with reportType: individual`
+        `Must specify subject for all $evaluate-measure requests with reportType parameter: subject`
       );
     }
   });
@@ -180,15 +180,15 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+        `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
       );
     }
   });
 
-  test('error thrown for individual $evaluate-measure with non-Patient reference subject', () => {
+  test('error thrown for subject $evaluate-measure with non-Patient reference subject', () => {
     const INDIVIDUAL_REQ = {
       query: {
-        reportType: 'individual',
+        reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Group/testGroup'
@@ -196,11 +196,13 @@ describe('validateEvalMeasureParams', () => {
     };
     try {
       validateEvalMeasureParams(INDIVIDUAL_REQ.query);
-      expect.fail('validateEvalMeasureParams failed to throw error for individual report with non-Patient subject');
+      expect.fail(
+        'validateEvalMeasureParams failed to throw error for subject report type parameter with non-Patient subject'
+      );
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `For report type 'individual', subject reference may only be a Patient resource of format "Patient/{id}".`
+        `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
     }
   });
@@ -208,7 +210,7 @@ describe('validateEvalMeasureParams', () => {
   test('should throw error for invalid Practitioner reference', () => {
     try {
       validateEvalMeasureParams({
-        reportType: 'individual',
+        reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Patient/testPatient',
