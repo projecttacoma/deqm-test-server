@@ -160,7 +160,7 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Must specify subject for all $evaluate-measure requests with reportType: subject`
+        `Must specify subject for all $evaluate-measure requests with reportType parameter: subject`
       );
     }
   });
@@ -180,7 +180,7 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+        `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
       );
     }
   });
@@ -196,11 +196,13 @@ describe('validateEvalMeasureParams', () => {
     };
     try {
       validateEvalMeasureParams(INDIVIDUAL_REQ.query);
-      expect.fail('validateEvalMeasureParams failed to throw error for subject report with non-Patient subject');
+      expect.fail(
+        'validateEvalMeasureParams failed to throw error for subject report type parameter with non-Patient subject'
+      );
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `For report type 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
+        `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
     }
   });

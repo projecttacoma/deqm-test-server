@@ -24,7 +24,7 @@ function validateEvalMeasureParams(query) {
 
   if (!query.subject && query.reportType !== 'population') {
     throw new BadRequestError(
-      `Must specify subject for all $evaluate-measure requests with reportType: ${query.reportType}`
+      `Must specify subject for all $evaluate-measure requests with reportType parameter: ${query.reportType}`
     );
   }
 
@@ -32,7 +32,7 @@ function validateEvalMeasureParams(query) {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
       throw new BadRequestError(
-        `For report type 'population', subject may only be a Group resource of format "Group/{id}".`
+        `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
       );
     }
   }
@@ -41,7 +41,7 @@ function validateEvalMeasureParams(query) {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
       throw new BadRequestError(
-        `For report type 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
+        `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
     }
   }
