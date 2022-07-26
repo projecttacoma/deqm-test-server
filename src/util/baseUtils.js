@@ -1,5 +1,6 @@
 const { BadRequestError } = require('./errorUtils');
 const supportedResources = require('../server/supportedResources');
+const url = require('url');
 
 /**
  * Determines whether the passed in resourceType is one supported by our server.
@@ -48,4 +49,69 @@ const getCurrentInstant = () => {
   return event.toISOString();
 };
 
-module.exports = { checkSupportedResource, checkExpectedResource, checkContentTypeHeader, getCurrentInstant };
+/**
+ * Creates pagination links for the search results bundle.
+ *
+ * @param {string} baseUrl Base URL of the server and FHIR base path. Should be pulled from request.
+ * @param {string} resourceType The resource type these results are for.
+ * @param {url.URLSearchParams} searchParams The search parameter object used for the initial query pulled from the request.
+ * @param {{numberOfPages: number, page: number}} resultsMetadata The results metadata object from the mongo results.
+ * @returns {fhir4.BundleLink[]} The links that should be added to the search st results bundle.
+ */
+function createPaginationLinks(baseUrl, resourceType, searchParams, resultsMetadata) {
+  const { numberOfPages, page } = resultsMetadata;
+  const links = [];
+
+  // create self link, including query params only if there were any
+  if (searchParams.toString() !== '') {
+    links.push({
+      relation: 'self',
+      url: new url.URL(`${resourceType}?${searchParams}`, baseUrl)
+    });
+  } else {
+    links.push({
+      relation: 'self',
+      url: new url.URL(`${resourceType}`, baseUrl)
+    });
+  }
+
+  // first page
+  searchParams.set('page', 1);
+  links.push({
+    relation: 'first',
+    url: new url.URL(`${resourceType}?${searchParams}`, baseUrl)
+  });
+
+  // only add previous and next if appropriate
+  if (page > 1) {
+    searchParams.set('page', page - 1);
+    links.push({
+      relation: 'previous',
+      url: new url.URL(`${resourceType}?${searchParams}`, baseUrl)
+    });
+  }
+  if (page < numberOfPages) {
+    searchParams.set('page', page + 1);
+    links.push({
+      relation: 'next',
+      url: new url.URL(`${resourceType}?${searchParams}`, baseUrl)
+    });
+  }
+
+  // last page
+  searchParams.set('page', numberOfPages);
+  links.push({
+    relation: 'last',
+    url: new url.URL(`${resourceType}?${searchParams}`, baseUrl)
+  });
+
+  return links;
+}
+
+module.exports = {
+  checkSupportedResource,
+  checkExpectedResource,
+  checkContentTypeHeader,
+  getCurrentInstant,
+  createPaginationLinks
+};

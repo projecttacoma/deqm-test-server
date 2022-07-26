@@ -15,7 +15,8 @@ const {
   checkSupportedResource,
   checkContentTypeHeader,
   getCurrentInstant,
-  checkExpectedResource
+  checkExpectedResource,
+  createPaginationLinks
 } = require('../util/baseUtils');
 const logger = require('../server/logger.js');
 
@@ -171,7 +172,6 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   // build the aggregation query
   logger.debug('Building search query');
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
-
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
     logger.debug(`Executing aggregation search over ${resourceType}s using query: ${JSON.stringify(filter.query)}`);
@@ -192,6 +192,15 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
       });
 
       searchBundle.total = results.metadata[0].total;
+
+      // create search set bundle pagination links
+      searchBundle.link = createPaginationLinks(
+        `http://${req.headers.host}/${args.base_version}/`,
+        resourceType,
+        new url.URLSearchParams(req.query),
+        results.metadata[0]
+      );
+
       searchBundle.entry = resultEntries;
     }
   } else {
