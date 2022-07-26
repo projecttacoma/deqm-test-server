@@ -69,19 +69,6 @@ describe('measure.service', () => {
         });
     });
 
-    test('test update with correctHeaders and the id is in database returns 200', async () => {
-      await supertest(server.app)
-        .put('/4_0_1/Measure/testMeasure')
-        .send(updateMeasure)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-        .expect(200)
-        .then(response => {
-          expect(response.headers.location).toBeDefined();
-        });
-    });
-
     test('removing the measure from the database when the measure is indeed present returns 204', async () => {
       await supertest(server.app).delete('/4_0_1/Measure/deleteMeasure').expect(204);
     });
