@@ -137,7 +137,8 @@ Optional parameters include:
 
 - `practitioner`: practitioner for which the measure will be calculated
 
-Currently, `measure` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time.
+Currently, `measure` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
+which will generate `individual` and `summary` `MeasureReport`s respectively.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
 
