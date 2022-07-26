@@ -74,17 +74,18 @@ const findResourceIdsWithQuery = async (query, resourceType) => {
 const updateResource = async (id, data, resourceType) => {
   const collection = db.collection(resourceType);
   logger.debug(`Finding and updating ${resourceType}/${data.id} in database`);
-  const results = await collection.findOneAndUpdate({ id: id }, { $set: data }, { upsert: true });
+
+  const results = await collection.replaceOne({ id }, data, { upsert: true });
 
   // If the document cannot be created with the passed id, Mongo will throw an error
   // before here, so should be ok to just return the passed id
-  if (results.value === null) {
-    // null value indicates a newly created document
-    return { id: id, created: true };
+  // upsertedCount indicates that we have created a brand new document
+  if (results.upsertedCount === 1) {
+    return { id, created: true };
   }
 
   // value being present indicates an update, so set created flag to false
-  return { id: results.value.id, created: false };
+  return { id, created: false };
 };
 
 /**

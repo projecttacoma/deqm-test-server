@@ -22,8 +22,6 @@ const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 
-const updateMeasure = { resourceType: 'Measure', id: 'testMeasure', name: 'anUpdate' };
-
 let server;
 
 describe('measure.service', () => {
@@ -66,19 +64,6 @@ describe('measure.service', () => {
         .expect(200)
         .then(response => {
           expect(response.body.id).toEqual(testMeasure.id);
-        });
-    });
-
-    test('test update with correctHeaders and the id is in database returns 200', async () => {
-      await supertest(server.app)
-        .put('/4_0_1/Measure/testMeasure')
-        .send(updateMeasure)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-        .expect(200)
-        .then(response => {
-          expect(response.headers.location).toBeDefined();
         });
     });
 

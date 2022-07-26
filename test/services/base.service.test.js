@@ -4,7 +4,7 @@ const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
-const { testSetup, cleanUpTest } = require('../populateTestData');
+const { testSetup, cleanUpTest, createTestResource } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -415,6 +415,28 @@ describe('base.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual('Argument id must match request body id for PUT request');
+        });
+    });
+
+    test('test update for removing property from resource', async () => {
+      await createTestResource({ resourceType: 'Patient', id: 'update-patient-0', birthDate: '1996-07-19' }, 'Patient');
+      await supertest(server.app)
+        .put('/4_0_1/Patient/update-patient-0')
+        .set('content-type', 'application/json+fhir')
+        .send({
+          resourceType: 'Patient',
+          id: 'update-patient-0'
+        })
+        .expect(200);
+
+      await supertest(server.app)
+        .get('/4_0_1/Patient/update-patient-0')
+        .expect(200)
+        .then(response => {
+          expect(response.body).toBeDefined();
+          expect(response.body.resourceType).toEqual('Patient');
+          expect(response.body.id).toEqual('update-patient-0');
+          expect(response.body.birthDate).not.toBeDefined();
         });
     });
   });
