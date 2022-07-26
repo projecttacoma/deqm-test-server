@@ -22,8 +22,6 @@ const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 
-const updateMeasure = { resourceType: 'Measure', id: 'testMeasure', name: 'anUpdate' };
-
 let server;
 
 describe('measure.service', () => {
