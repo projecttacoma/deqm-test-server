@@ -245,9 +245,17 @@ const evaluateMeasure = async (args, { req }) => {
   // or using unsupported report type
   validateEvalMeasureParams(req.query);
 
-  return req.query.reportType === 'population'
-    ? evaluateMeasureForPopulation(args, { req })
-    : evaluateMeasureForIndividual(args, { req });
+  const { reportType, subject } = req.query;
+
+  // If reportType is not specified, default to 'subject', but
+  // only if the 'subject' parameter is also specificed
+  if (reportType === 'subject' || (reportType == null && subject != null)) {
+    logger.debug('Evaluating measure for individual');
+    return evaluateMeasureForIndividual(args, { req });
+  }
+
+  logger.debug('Evaluating measure for population');
+  return evaluateMeasureForPopulation(args, { req });
 };
 
 /**

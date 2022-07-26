@@ -285,7 +285,52 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 200 when reportType is not set', async () => {
+    test('$evaluate-measure should default to reportType population when not set and no subject provided', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'summary'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+
+      await supertest(server.app)
+        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .query({
+          periodStart: '01-01-2020',
+          periodEnd: '01-01-2021'
+        })
+        .expect(200);
+
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+        measurementPeriodStart: '01-01-2020',
+        measurementPeriodEnd: '01-01-2021',
+        reportType: 'summary'
+      });
+    });
+
+    test('$evaluate-measure should default to reportType subject when not set and subject is provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -301,6 +346,7 @@ describe('measure.service', () => {
           debugOutput: {}
         };
       });
+
       jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
         return {
           results: {
@@ -313,6 +359,7 @@ describe('measure.service', () => {
           }
         };
       });
+
       await supertest(server.app)
         .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
         .query({
@@ -321,6 +368,7 @@ describe('measure.service', () => {
           subject: 'testPatient'
         })
         .expect(200);
+
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         measurementPeriodStart: '01-01-2020',
         measurementPeriodEnd: '01-01-2021',

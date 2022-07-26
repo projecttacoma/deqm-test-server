@@ -22,9 +22,9 @@ function validateEvalMeasureParams(query) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate-measure`);
   }
 
-  if (!query.subject && query.reportType !== 'population') {
+  if (!query.subject && query.reportType === 'subject') {
     throw new BadRequestError(
-      `Must specify subject for all $evaluate-measure requests with reportType parameter: ${query.reportType}`
+      `Must specify subject for all $evaluate-measure requests with reportType parameter: subject`
     );
   }
 
