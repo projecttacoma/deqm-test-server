@@ -16,7 +16,7 @@
     "db:delete": "node src/scripts/deleteCollections.js",
     "db:reset": "npm run db:delete && npm run db:setup",
     "parse-references": "node src/scripts/parseCompartmentDefinition.js",
-    "connectathon-upload": "node src/scripts/getConnectathonBundles.js",
+    "upload-bundles": "node src/scripts/uploadPremadeBundles.js",
     "test": "jest --runInBand",
     "test:coverage": "jest --collectCoverage --runInBand",
     "test:watch": "jest --watchAll --runInBand",

@@ -3,53 +3,46 @@ const path = require('path');
 const mongoUtil = require('../database/connection');
 const { createResource } = require('../database/dbOperations');
 
-const connectathonPath = path.resolve(path.join(__dirname, '../../connectathon/fhir401/bundles/measure/'));
+const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
 // bundles that are not the latest available version or contain errors that prevent valid gaps calculation
-const IGNORED_BUNDLES = [
-  'EXM347-3.2.000-bundle.json',
-  'EXM347-4.3.000-bundle.json',
-  'EXM529-1.0.000-bundle.json',
-  'EXM349-2.10.000-bundle.json',
-  'EXM111-9.1.000-bundle.json',
-  'EXM149-9.2.000-bundle.json',
-  'EXM124-8.2.000-bundle.json'
-];
 
-// files containing EXM bundles of interest from connectathon repo
+// files containing EXM bundles of interest from specified directory
 const bundleFiles = [];
 
 /**
- * Retrieves EXM bundle files from the connectathon repo using a regular expression.
+ * Retrieves all measure bundle files from the passed in directory that match the passed in regex
  * Uses recursion to parse through all available subdirectories.
  * @param {string} directory - directory path to start at
+ * @param {string} searchPattern - regex to match potential measure bundle files against
  * @returns {Array} array of string paths that represent the bundle files of interest
  */
-const getConnectathonBundleFiles = directory => {
-  const fileNameRegExp = new RegExp(/(^EXM.*.json$)/);
+const getEcqmBundleFiles = (directory, searchPattern) => {
+  const fileNameRegExp = new RegExp(searchPattern);
   const filesInDirectory = fs.readdirSync(directory);
   filesInDirectory.forEach(file => {
     const absolute = path.join(directory, file);
     if (fs.statSync(absolute).isDirectory()) {
-      getConnectathonBundleFiles(absolute);
-    } else if (fileNameRegExp.test(file) && !IGNORED_BUNDLES.includes(file)) {
+      getEcqmBundleFiles(absolute, searchPattern);
+    } else if (fileNameRegExp.test(file)) {
       bundleFiles.push(absolute);
     }
   });
 };
 
 /**
- * Retrieves EXM bundle files from arbitrary folder using a regular expression.
+ * Retrieves bundle files from arbitrary folder using a regular expression.
  * Uses recursion to parse through all available subdirectories.
- * @param {string} directory - directory path to start at
+ * @param {string} directory - directory path to start a
+ * @param {string} searchPattern - regex to match potential measure bundle files against
  * @returns {Array} array of string paths that represent the bundle files of interest
  */
-const getBundleFiles = directory => {
-  const fileNameRegExp = new RegExp(/.json$/);
+const getBundleFiles = (directory, searchPattern) => {
+  const fileNameRegExp = new RegExp(searchPattern);
   const filesInDirectory = fs.readdirSync(directory);
   filesInDirectory.forEach(file => {
     const absolute = path.join(directory, file);
     if (fs.statSync(absolute).isDirectory()) {
-      getBundleFiles(absolute);
+      getBundleFiles(absolute, searchPattern);
     } else if (
       fileNameRegExp.test(file) &&
       !file.endsWith('MeasureReport.json') &&
@@ -61,34 +54,44 @@ const getBundleFiles = directory => {
 };
 
 /**
- * Uploads all the resources from the connectathon measure bundles into the
+ * Uploads all the resources from the specified directory into the
  * database.
  *
- * TODO: Currently configured for fhir401 connectathon measure bundles,
+ * TODO: Currently configured for ecqm-content-r4-2021 measure bundles,
  * but may want to expand to other measure bundle providers in the future.
  */
 async function main() {
   await mongoUtil.client.connect();
   console.log('Connected successfully to server');
-
-  // if a path is provided
+  // default searchPattern to retrieve all filenames that begin with a capital letter and end with -bundle.json
+  let searchPattern;
+  if (process.argv[3]) {
+    searchPattern = process.argv[3];
+  }
   if (process.argv[2]) {
+    // if a path is provided
     const bundlePath = path.resolve(process.argv[2]);
     try {
+      if (!searchPattern) {
+        searchPattern = /.json$/;
+      }
       console.log(`Finding bundles in ${bundlePath}.`);
-      getBundleFiles(bundlePath);
+      getBundleFiles(bundlePath, searchPattern);
     } catch (e) {
       throw new Error('Provided directory not found.');
     }
 
-    // otherwise load from connectathon
+    // otherwise load from ecqm-content-r4-2021
   } else {
     try {
-      console.log(`Finding bundles in connectathon repo at ${connectathonPath}.`);
-      getConnectathonBundleFiles(connectathonPath);
+      if (!searchPattern) {
+        searchPattern = /^[A-Z].*-bundle.json$/;
+      }
+      console.log(`Finding bundles in ecqm-content-r4-2021 repo at ${ecqmContentR4Path}.`);
+      getEcqmBundleFiles(ecqmContentR4Path, searchPattern);
     } catch (e) {
       throw new Error(
-        'Connectathon directory not found. Git clone the connectathon repo into the root directory and run script again'
+        'ecqm-content-r4-2021 directory not found. Git clone the ecqm-content-r4-2021 repo into the root directory and run script again'
       );
     }
   }
