@@ -4,7 +4,6 @@ const mongoUtil = require('../database/connection');
 const { createResource } = require('../database/dbOperations');
 
 const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
-// bundles that are not the latest available version or contain errors that prevent valid gaps calculation
 
 // files containing EXM bundles of interest from specified directory
 const bundleFiles = [];
