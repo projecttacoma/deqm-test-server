@@ -1,6 +1,7 @@
 node_modules
 .vscode/
 connectathon
+ecqm-content-r4-2021
 coverage
 docker_ssl_setup.sh
 tmp
