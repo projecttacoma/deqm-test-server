@@ -94,16 +94,19 @@ async function main() {
       );
     }
   }
-
-  const bundlePromises = bundleFiles.map(async filePath => {
+  let filesUploaded = 0;
+  let resourcesUploaded = 0;
+  for (const filePath of bundleFiles) {
     // read each EXM bundle file
     const data = fs.readFileSync(filePath, 'utf8');
     if (data) {
+      console.log(`Uploading ${filePath.split('/').slice(-1)}...`);
       const bundle = JSON.parse(data);
       // retrieve each resource and insert into database
       const uploads = bundle.entry.map(async res => {
         try {
           await createResource(res.resource, res.resource.resourceType);
+          resourcesUploaded += 1;
         } catch (e) {
           // ignore duplicate key errors for Libraries, ValueSets
           if (e.code !== 11000 || res.resource.resourceType === 'Measure') {
@@ -112,10 +115,10 @@ async function main() {
         }
       });
       await Promise.all(uploads);
+      filesUploaded += 1;
     }
-  });
-  await Promise.all(bundlePromises);
-  return `${bundlePromises.length} Bundle entries uploaded.`;
+  }
+  return `${resourcesUploaded} resources uploaded from ${filesUploaded} Bundle files.`;
 }
 
 main()
