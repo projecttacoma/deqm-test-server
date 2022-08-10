@@ -171,6 +171,21 @@ const baseSearch = async (args, { req }, resourceType, paramDefs) => {
   });
   // build the aggregation query
   logger.debug('Building search query');
+
+  /*
+  Asymmetrik appears to process the _count parameter incorrectly. When _count is included as a parameter it limits to total number of
+  resources returned, not just the resultsPerPage. This workaround sets the resultsPerPage parameter using the _count value provided
+  and then deletes the _count parameter
+  TODO: A hard limit might want to be set if a client asks for a count that is really large
+  */
+  if (req.query['_count']) {
+    qb.resultsPerPage = parseInt(req.query['_count'])
+    delete req.query['_count']
+  } else {
+    // if no _count is provided set to default
+    qb.resultsPerPage = 10
+  }
+
   const filter = qb.buildSearchQuery({ req: req, includeArchived: true, parameterDefinitions: searchParams });
   // if the query builder was able to build a query actually execute it.
   if (filter.query) {
