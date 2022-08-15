@@ -32,7 +32,7 @@ async function parse(compartmentJson) {
       });
     }
   });
-  return {attrResults, paramResults};
+  return { attrResults, paramResults };
 }
 
 parse(jsonStr)
