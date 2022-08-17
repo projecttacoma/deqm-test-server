@@ -4,8 +4,8 @@ const path = require('path');
 const compartmentDefPath = path.resolve(
   path.join(__dirname, '../compartment-definition/compartmentdefinition-patient.json')
 );
-const attrOutputPath = path.resolve(path.join(__dirname, '../compartment-definition/patient-references.json'));
-const paramOutputPath = path.resolve(path.join(__dirname, '../compartment-definition/patient-parameters.json'));
+const attrOutputPath = path.resolve(path.join(__dirname, '../compartment-definition/patient-attribute-paths.json'));
+const paramOutputPath = path.resolve(path.join(__dirname, '../compartment-definition/patient-search-parameters.json'));
 const jsonStr = fs.readFileSync(compartmentDefPath, 'utf8');
 const { getSearchParameters } = require('@projecttacoma/node-fhir-server-core');
 
