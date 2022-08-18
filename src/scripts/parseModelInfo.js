@@ -3,7 +3,7 @@ const path = require('path');
 const xml2js = require('xml2js');
 
 const modelInfoPath = path.resolve(path.join(__dirname, '../model-info/fhir-modelinfo-4.0.1.xml'));
-const outputPath = path.resolve(path.join(__dirname, '../model-info/patient-references.json'));
+const outputPath = path.resolve(path.join(__dirname, '../model-info/patient-attribute-paths.json'));
 const xmlStr = fs.readFileSync(modelInfoPath, 'utf8');
 
 // Certain cases won't be handled by our lookup

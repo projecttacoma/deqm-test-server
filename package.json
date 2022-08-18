@@ -15,7 +15,7 @@
     "db:setup": "node src/scripts/createCollections.js",
     "db:delete": "node src/scripts/deleteCollections.js",
     "db:reset": "npm run db:delete && npm run db:setup",
-    "parse-references": "node src/scripts/parseCompartmentDefinition.js",
+    "parse-compartment-definition": "node src/scripts/parseCompartmentDefinition.js",
     "upload-bundles": "node src/scripts/uploadPremadeBundles.js",
     "test": "jest --runInBand",
     "test:coverage": "jest --collectCoverage --runInBand",
@@ -46,7 +46,7 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "jest": "^27.2.4",
-    "nodemon": "^2.0.12",
+    "nodemon": "^2.0.19",
     "prettier": "^2.4.1",
     "supertest": "^6.1.6"
   },

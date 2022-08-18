@@ -2,7 +2,7 @@ const { ResourceNotFoundError } = require('./errorUtils');
 const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
 // lookup from patient compartment-definition
-const patientRefs = require('../compartment-definition/patient-references');
+const patientRefs = require('../compartment-definition/patient-attribute-paths');
 const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 const { getResourceReference } = require('./referenceUtils');
