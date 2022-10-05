@@ -181,6 +181,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
 
   // retrieve data requirements
   const exportURL = retrieveExportUrl(parameters);
+  const exportType = retrieveExportType(parameters);
 
   // retrieve useTypeFilters boolean
   const useTypeFiltersArray = parameters.filter(param => param.name === 'useTypeFilters');

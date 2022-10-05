@@ -40,13 +40,22 @@ importQueue.process(async job => {
  * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
  * @param {string} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
  * @param {string} exportUrl The url of the bulk export fhir server
+ * @param {string} exportType The code of the exportType
  * @param {Object} measureBundle The measure bundle for which to retrieve data requirements
  * @param {boolean} useTypeFilters optional boolean for whether to use type filters for bulk submit data
  */
-const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, useTypeFilters) => {
+const executePingAndPull = async (clientEntryId, exportUrl, exportType, measureBundle, useTypeFilters) => {
   try {
     // Default to not use typeFilters for measure specific import
-    const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle, useTypeFilters || false);
+    // make sure exportType makes it way to bulk data utilities
+    // once that is done, deqm-test-server is done (besides deleting check exportType)
+    const output = await BulkImportWrappers.executeBulkImport(
+      exportUrl,
+      exportType,
+      measureBundle,
+      useTypeFilters || false
+    );
+    // don't change anything beyond here
     if (output.length === 0) {
       throw new Error('Export server failed to export any resources');
     }

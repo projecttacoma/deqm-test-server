@@ -67,4 +67,21 @@ const checkExportUrlArray = exportUrlArray => {
   }
 };
 
-module.exports = { retrieveExportUrl, checkExportUrlArray };
+/**
+ * Uses request body parameter to search for the export server type if there is one.
+ * If there is none, defaults to dynamic.
+ */
+const retrieveExportType = parameters => {
+  logger.debug(`Retrieving export type from parameters: ${JSON.stringify(parameters)}`);
+  const exportType = parameters.find(param => param.name === 'exportType');
+
+  console.log(exportType.valueCode);
+
+  if (!exportType.valueCode) {
+    return 'dynamic';
+  } else {
+    return exportType.valueCode;
+  }
+};
+
+module.exports = { retrieveExportUrl, checkExportUrlArray, retrieveExportType };

@@ -182,16 +182,16 @@ const gatherParams = (query, body) => {
  * If so, checks that exportType is not static
  * @param {Array} parameters - parameters array from request body
  */
-const checkExportType = parameters => {
-  const exportTypes = parameters
-    .filter(param => param.name === 'exportType')
-    .map(entry => {
-      return entry.valueString;
-    });
-  if (exportTypes.includes('static')) {
-    throw new NotImplementedError('static exportType is not supported on this server');
-  }
-};
+// const checkExportType = parameters => {
+//   const exportTypes = parameters
+//     .filter(param => param.name === 'exportType')
+//     .map(entry => {
+//       return entry.valueCode;
+//     });
+//   if (exportTypes.includes('static')) {
+//     throw new NotImplementedError('static exportType is not supported on this server');
+//   }
+// };
 
 module.exports = {
   validateEvalMeasureParams,
