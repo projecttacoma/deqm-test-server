@@ -19,13 +19,13 @@ const importQueue = new Queue('import', {
 // This handler pulls down the jobs on Redis to handle
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
-  const { clientEntry, exportURL, measureBundle, useTypeFilters } = job.data;
+  const { clientEntry, exportURL, exportType, measureBundle, useTypeFilters } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
   logger.info(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
-  const result = await executePingAndPull(clientEntry, exportURL, measureBundle, useTypeFilters);
+  const result = await executePingAndPull(clientEntry, exportURL, exportType, measureBundle, useTypeFilters);
   if (result) {
     logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -55,7 +55,7 @@ const executePingAndPull = async (clientEntryId, exportUrl, exportType, measureB
       measureBundle,
       useTypeFilters || false
     );
-    // don't change anything beyond here
+
     if (output.length === 0) {
       throw new Error('Export server failed to export any resources');
     }
