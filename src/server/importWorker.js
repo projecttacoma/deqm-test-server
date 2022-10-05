@@ -47,8 +47,6 @@ importQueue.process(async job => {
 const executePingAndPull = async (clientEntryId, exportUrl, exportType, measureBundle, useTypeFilters) => {
   try {
     // Default to not use typeFilters for measure specific import
-    // make sure exportType makes it way to bulk data utilities
-    // once that is done, deqm-test-server is done (besides deleting check exportType)
     const output = await BulkImportWrappers.executeBulkImport(
       exportUrl,
       exportType,
