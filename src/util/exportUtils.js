@@ -75,7 +75,7 @@ const retrieveExportType = parameters => {
   logger.debug(`Retrieving export type from parameters: ${JSON.stringify(parameters)}`);
   const exportType = parameters.find(param => param.name === 'exportType');
 
-  if (!exportType.valueCode) {
+  if (!exportType) {
     return 'dynamic';
   } else {
     return exportType.valueCode;

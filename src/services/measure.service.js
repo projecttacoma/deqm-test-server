@@ -5,7 +5,7 @@ const { createTransactionBundleClass } = require('../resources/transactionBundle
 const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
 const importQueue = require('../queue/importQueue');
-const { retrieveExportUrl } = require('../util/exportUtils');
+const { retrieveExportType, retrieveExportUrl } = require('../util/exportUtils');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
@@ -193,6 +193,7 @@ const bulkImportFromRequirements = async (args, { req }) => {
   const jobData = {
     clientEntry,
     exportURL,
+    exportType,
     measureBundle,
     useTypeFilters
   };
