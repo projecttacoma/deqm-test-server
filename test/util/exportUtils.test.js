@@ -122,7 +122,7 @@ describe('Test retrieveExportType', () => {
   test('returns dynamic if the exportType is dynamic', () => {
     expect(retrieveExportType(DYNAMIC_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
   });
-  test('returns dynamic if there is no exportTYpe', () => {
+  test('returns dynamic if there is no exportType', () => {
     expect(retrieveExportType(NO_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
   });
   test('returns static if the exportType is static', () => {
