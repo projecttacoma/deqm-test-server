@@ -19,13 +19,13 @@ const importQueue = new Queue('import', {
 // This handler pulls down the jobs on Redis to handle
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
-  const { clientEntry, exportURL, measureBundle, useTypeFilters } = job.data;
+  const { clientEntry, exportURL, exportType, measureBundle, useTypeFilters } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
   await mongoUtil.client.connect();
   // Call the existing export ndjson function that writes the files
   logger.info(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
-  const result = await executePingAndPull(clientEntry, exportURL, measureBundle, useTypeFilters);
+  const result = await executePingAndPull(clientEntry, exportURL, exportType, measureBundle, useTypeFilters);
   if (result) {
     logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -40,13 +40,20 @@ importQueue.process(async job => {
  * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
  * @param {string} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
  * @param {string} exportUrl The url of the bulk export fhir server
+ * @param {string} exportType The code of the exportType
  * @param {Object} measureBundle The measure bundle for which to retrieve data requirements
  * @param {boolean} useTypeFilters optional boolean for whether to use type filters for bulk submit data
  */
-const executePingAndPull = async (clientEntryId, exportUrl, measureBundle, useTypeFilters) => {
+const executePingAndPull = async (clientEntryId, exportUrl, exportType, measureBundle, useTypeFilters) => {
   try {
     // Default to not use typeFilters for measure specific import
-    const output = await BulkImportWrappers.executeBulkImport(exportUrl, measureBundle, useTypeFilters || false);
+    const output = await BulkImportWrappers.executeBulkImport(
+      exportUrl,
+      exportType,
+      measureBundle,
+      useTypeFilters || false
+    );
+
     if (output.length === 0) {
       throw new Error('Export server failed to export any resources');
     }

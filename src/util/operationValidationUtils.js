@@ -177,27 +177,10 @@ const gatherParams = (query, body) => {
   return params;
 };
 
-/**
- * Uses request body parameter to search for the optional exportType parameter if present.
- * If so, checks that exportType is not static
- * @param {Array} parameters - parameters array from request body
- */
-const checkExportType = parameters => {
-  const exportTypes = parameters
-    .filter(param => param.name === 'exportType')
-    .map(entry => {
-      return entry.valueString;
-    });
-  if (exportTypes.includes('static')) {
-    throw new NotImplementedError('static exportType is not supported on this server');
-  }
-};
-
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
   checkRequiredParams,
-  gatherParams,
-  checkExportType
+  gatherParams
 };

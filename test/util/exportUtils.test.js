@@ -1,4 +1,4 @@
-const { retrieveExportUrl, checkExportUrlArray } = require('../../src/util/exportUtils');
+const { retrieveExportType, retrieveExportUrl, checkExportUrlArray } = require('../../src/util/exportUtils');
 const exportWithTypeParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypes.json');
 const exportWithTypeAndFilterParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypesAndFilters.json');
 const exportWithTypeFilterParams = require('../fixtures/fhir-resources/parameters/paramExportUrlWithTypeFilter.json');
@@ -10,7 +10,43 @@ const ASSEMBLED_EXPORT_URL_WITH_FILTER_MULTIPLE_TYPES =
   'http://example.com/$export?_type=Patient,Encounter,Condition&_typeFilter=Encounter%3Fcode%3Ain=TEST_VALUE_SET';
 const ASSEMBLED_EXPORT_URL_WITH_FILTER =
   'http://example.com/$export?_type=Encounter&_typeFilter=Encounter%3Fcode%3Ain=TEST_VALUE_SET';
-describe('Test export Url configuration with type and typeFileter parameters', () => {
+const DYNAMIC_EXPORT_TYPE_PARAMETERS = {
+  resourceType: 'Parameters',
+  parameter: [
+    {
+      name: 'exportUrl',
+      valueUrl: 'http://localhost:3001/$export'
+    },
+    {
+      name: 'exportType',
+      valueCode: 'dynamic'
+    }
+  ]
+};
+const NO_EXPORT_TYPE_PARAMETERS = {
+  resourceType: 'Parameters',
+  parameter: [
+    {
+      name: 'exportUrl',
+      valueUrl: 'http://localhost:3001/$export'
+    }
+  ]
+};
+const STATIC_EXPORT_TYPE_PARAMETERS = {
+  resourceType: 'Parameters',
+  parameter: [
+    {
+      name: 'exportUrl',
+      valueUrl: 'http://localhost:3001/$export'
+    },
+    {
+      name: 'exportType',
+      valueCode: 'static'
+    }
+  ]
+};
+
+describe('Test export Url configuration with type and typeFilter parameters', () => {
   test('retrieveExportUrl successfully includes type params as comma-delimited string', () => {
     expect(retrieveExportUrl(exportWithTypeParams.parameter)).toEqual(ASSEMBLED_EXPORT_URL);
   });
@@ -79,5 +115,17 @@ describe('Test checkExportUrlArray', () => {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual('Expected a valueUrl for the exportUrl, but none was found');
     }
+  });
+});
+
+describe('Test retrieveExportType', () => {
+  test('returns dynamic if the exportType is dynamic', () => {
+    expect(retrieveExportType(DYNAMIC_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
+  });
+  test('returns dynamic if there is no exportType', () => {
+    expect(retrieveExportType(NO_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
+  });
+  test('returns static if the exportType is static', () => {
+    expect(retrieveExportType(STATIC_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('static');
   });
 });

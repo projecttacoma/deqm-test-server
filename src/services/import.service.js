@@ -1,6 +1,5 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
-const { retrieveExportUrl } = require('../util/exportUtils');
-const { checkExportType } = require('../util/operationValidationUtils');
+const { retrieveExportUrl, retrieveExportType } = require('../util/exportUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
 
@@ -18,12 +17,13 @@ async function bulkImport(req, res) {
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest();
 
-  checkExportType(req.body.parameter);
   const exportURL = retrieveExportUrl(req.body.parameter);
+  const exportType = retrieveExportType(req.body.parameter);
 
   const jobData = {
     clientEntry,
-    exportURL
+    exportURL,
+    exportType
   };
   await importQueue.createJob(jobData).save();
   res.status(202);
