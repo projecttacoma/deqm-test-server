@@ -7,6 +7,9 @@ const configClientFile = require('../controllers/clientfile.controller');
 const configResourceCount = require('../controllers/resourcecount.controller');
 const { validateFhir } = require('../util/resourceValidationUtils');
 const logger = require('./logger.js');
+/**
+ * Server used for deqm routes
+ */
 class DEQMServer extends Server {
   enableTransactionRoute() {
     this.app.post('/:base_version/', configTransaction.transaction);
@@ -40,7 +43,12 @@ class DEQMServer extends Server {
     return this;
   }
 }
-
+/**
+ * Initializes server with defaults and configures with routes/middleware
+ * @param {Object} config - FHIR Server configuration object
+ * @param {Object} app - Express instance to use on server
+ * @return {Server} - can be used to listen for requests
+ */
 function initialize(config, app) {
   let server = new DEQMServer(config, app);
 

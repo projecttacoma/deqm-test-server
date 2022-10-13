@@ -13,6 +13,7 @@ const logger = require('../server/logger');
  * Creates transaction-response Bundle
  * @param {Array} results - an array of request result objects
  * @param {Object} res - an object containing the response
+ * @param {string} baseVersion - base version of FHIR
  * @param {string} type - bundle type
  * @param {boolean} xprovenanceIncluded - X-Provenance header was included and
  * should be accounted for
@@ -146,7 +147,7 @@ async function uploadTransactionBundle(req, res) {
 /**
  * Supports Bundle upload to the server using transaction
  * @param {Object} entries - an object containing the list of entries in the bundle to process
- * @param {string} base_version base version from args passed in through client request
+ * @param {string} baseVersion base version from args passed in through client request
  * @returns {Object} an array of results that containing the results of the mongo insertions
  */
 async function uploadResourcesFromBundle(entries, baseVersion) {

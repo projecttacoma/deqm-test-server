@@ -143,6 +143,12 @@ async function checkBulkStatus(req, res) {
   }
 }
 
+/**
+ * Write object to ndjson file in tmp directory
+ * @param {Object} doc representing the object that needs to be written
+ * @param {string} type resource type of the object (expect OperationOutcome)
+ * @param {string} clientId client id used to create identifiable file name
+ */
 const writeToFile = function (doc, type, clientId) {
   // Do not write if file already has contents
   if (checkForFile(type, clientId)) return;
@@ -161,7 +167,12 @@ const writeToFile = function (doc, type, clientId) {
   } else return;
 };
 
-// true if file for type and client id exists with content
+/**
+ * Uses type and clientId to check if a file already exists in tmp for those values
+ * @param {string} type resource type
+ * @param {*} clientId client id used to identify the file
+ * @returns {boolean} true if file for type and client id exists with content
+ */
 const checkForFile = function (type, clientId) {
   const dirpath = './tmp/' + clientId;
   const filename = path.join(dirpath, `${type}.ndjson`);

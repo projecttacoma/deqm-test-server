@@ -16,10 +16,15 @@ const ndjsonWorker = new Queue('ndjson', {
   removeOnSuccess: true
 });
 
+/**
+ * Simple get and json handling of returned object
+ * @param {string} url location of data
+ * @returns {string} data retrieved
+ */
 const retrieveNDJSONFromLocation = async url => {
   const data = (await axios.get(url)).data;
   // If there is only one resource here, it comes out an object, not a string,
-  // so I force it to string here
+  // so force it to string here
   if (typeof data === 'object') {
     return JSON.stringify(data);
   }

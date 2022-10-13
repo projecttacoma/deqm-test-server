@@ -1,11 +1,8 @@
 const service = require('../services/resourcecount.service');
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @param {*} next
- * @returns service
+ * @name exports
+ * @summary resource count controller
  */
 module.exports.resourceCount = (req, res, next) => {
   return service

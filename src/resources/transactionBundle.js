@@ -6,6 +6,11 @@
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { UnprocessableEntityError } = require('../util/errorUtils');
 
+/**
+ * Create base transaction bundle class and instantiate a new transaction bundle
+ * @param {string} baseVersion string representing version of FHIR to use
+ * @return {Object} newly created transaction bundle
+ */
 const createTransactionBundleClass = baseVersion => {
   const Bundle = resolveSchema(baseVersion, 'bundle');
 
@@ -15,7 +20,11 @@ const createTransactionBundleClass = baseVersion => {
       this.type = 'transaction';
       this.entry = [];
     }
-
+    /**
+     * Adds a resource as an entry (including the request) to the bundle entry list
+     * @param {Object} resource the fhir resource that should be added
+     * @param {string} requestType the http request type that should be used for the transaction entry
+     */
     addEntryFromResource(resource, requestType) {
       const request = { method: requestType };
 
