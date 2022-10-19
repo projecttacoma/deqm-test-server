@@ -6,7 +6,6 @@
   "scripts": {
     "lint": "eslint \"**/*.js\"",
     "lint:fix": "eslint \"**/*.js\" --fix",
-    "preinstall": "npx npm-force-resolutions",
     "prettier": "prettier --check \"**/*.js\"",
     "prettier:fix": "prettier --write \"**/*.js\"",
     "check": "npm run test && npm run lint && npm run prettier",
@@ -49,12 +48,6 @@
     "nodemon": "^2.0.19",
     "prettier": "^2.4.1",
     "supertest": "^6.1.6"
-  },
-  "resolutions": {
-    "sanitize-html": "^2.3.2",
-    "mathjs": "^7.5.1",
-    "redis": "^3.1.1",
-    "validator": "^13.7.0"
   },
   "jest": {
     "setupFiles": [
