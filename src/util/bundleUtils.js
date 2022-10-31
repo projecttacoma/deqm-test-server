@@ -177,8 +177,12 @@ async function getAllDependentLibraries(lib) {
   // This filter checks for the 'Library' keyword on all related artifacts
   // TODO: This filter can probably be improved, but will work in our cases for now
   const depLibUrls = lib.relatedArtifact
-    .filter(ra => ra.type === 'depends-on' && ra.resource.includes('Library') && 
-    ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1') // exclude modelinfo dependency
+    .filter(
+      ra =>
+        ra.type === 'depends-on' &&
+        ra.resource.includes('Library') &&
+        ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'
+    ) // exclude modelinfo dependency
     .map(ra => ra.resource);
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
