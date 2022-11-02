@@ -20,8 +20,10 @@ async function cleanUpTest() {
   if (!!client.topology && client.topology.isConnected()) await cleanUpDb();
   if (fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
-  if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT')) fs.rmSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT', { recursive: true });
-  if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')) fs.rmSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS', { recursive: true });
+  if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT'))
+    fs.rmSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT', { recursive: true });
+  if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS'))
+    fs.rmSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS', { recursive: true });
   if (fs.existsSync('./tmp/INVALID_ID')) fs.rmSync('./tmp/INVALID_ID', { recursive: true });
   if (fs.existsSync('./tmp/KNOWN_ERROR_REQUEST')) fs.rmSync('./tmp/KNOWN_ERROR_REQUEST', { recursive: true });
   if (fs.existsSync('./tmp/UNKNOWN_ERROR_REQUEST')) fs.rmSync('./tmp/UNKNOWN_ERROR_REQUEST', { recursive: true });
