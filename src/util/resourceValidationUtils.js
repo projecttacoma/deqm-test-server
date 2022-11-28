@@ -71,6 +71,7 @@ function retrieveProfiles(originalUrl, body) {
   if (metaProfiles) {
     profiles.push(...metaProfiles);
   }
+  // TODO: change this to also apply to bulk submit data?
   if (params[params.length - 1] === '$submit-data') {
     profiles.push('Parameters');
   }

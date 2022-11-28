@@ -10,7 +10,8 @@ const {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
-  gatherParams
+  gatherParams,
+  checkSubmitDataBody
 } = require('../util/operationValidationUtils');
 const {
   getMeasureBundleFromId,
@@ -98,7 +99,6 @@ const search = async (args, { req }) => {
  * Takes a measureReport and a set of required data as part of the request. Calculates the measure and
  * creates new documents for the measureReport and required data in the appropriate collections.
  *
- * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  * @returns {Object} a transaction-response bundle
@@ -109,27 +109,18 @@ const submitData = async (args, { req }) => {
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
-  if (req.body.resourceType !== 'Parameters') {
-    throw new BadRequestError(`Expected 'resourceType: Parameters'. Received 'type: ${req.body.resourceType}'.`);
-  }
-  if (!req.body.parameter) {
-    throw new BadRequestError(`Unreadable or empty entity for attribute 'parameter'. Received: ${req.body.parameter}`);
-  }
+  checkSubmitDataBody(req.body);
   const parameters = req.body.parameter;
-  // Ensure exactly 1 measureReport is in parameters
-  const numMeasureReportsInput = parameters.filter(
-    param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
-  ).length;
-  if (numMeasureReportsInput !== 1) {
-    throw new BadRequestError(
-      `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
-    );
-  }
+
+  // TODO: move this? or have bulk submit data call this?
+  // then normal submit-data just does these checks 
+  // and bulk submit data also does these checks plus checks headers and returns bulk import
+  // and i guess throw an error if for some reason the header is not present?
 
   // check if we want to do a bulk import
-  if (req.headers['prefer'] === 'respond-async') {
-    return await bulkImportFromRequirements(args, { req });
-  }
+  // if (req.headers['prefer'] === 'respond-async') {
+  //   return await bulkImportFromRequirements(args, { req });
+  // }
 
   const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);
@@ -152,9 +143,12 @@ const submitData = async (args, { req }) => {
  * @param {Object} req the request object passed in by the user
  */
 const bulkImportFromRequirements = async (args, { req }) => {
-  logger.info('Measure >>> $bulk-import');
+  // TODO: should we just use this for bulk submit data maybe?
+  logger.info('Measure >>> $bulk-submit-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
+  checkSubmitDataBody(req.body);
 
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
@@ -583,6 +577,7 @@ module.exports = {
   update,
   search,
   submitData,
+  bulkImportFromRequirements,
   dataRequirements,
   evaluateMeasure,
   careGaps,

@@ -66,6 +66,18 @@ const buildConfig = () => {
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
             {
+              name: 'bulkImportFromRequirements',
+              route: '/$bulk-submit-data',
+              method: 'POST',
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
+            },
+            {
+              name: 'bulkImportFromRequirements',
+              route: '/:id/$bulk-submit-data',
+              method: 'POST',
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
+            },
+            {
               name: 'dataRequirements',
               route: '/:id/$data-requirements',
               method: 'GET',

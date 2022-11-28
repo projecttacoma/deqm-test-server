@@ -76,10 +76,10 @@ describe('measure.service', () => {
     });
   });
 
-  describe('bulk $submit-data', () => {
+  describe('$bulk-submit-data', () => {
     test('FHIR Parameters object is missing export URL returns 400', async () => {
       await supertest(server.app)
-        .post('/4_0_1/Measure/$submit-data')
+        .post('/4_0_1/Measure/$bulk-submit-data')
         .send(testParam)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
@@ -93,7 +93,7 @@ describe('measure.service', () => {
 
     test('FHIR Parameters object has two export URLs', async () => {
       await supertest(server.app)
-        .post('/4_0_1/Measure/$submit-data')
+        .post('/4_0_1/Measure/$bulk-submit-data')
         .send(testParamTwoExports)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
@@ -107,7 +107,7 @@ describe('measure.service', () => {
 
     test('FHIR Parameters object is missing valueUrl for export URL', async () => {
       await supertest(server.app)
-        .post('/4_0_1/Measure/$submit-data')
+        .post('/4_0_1/Measure/$bulk-submit-data')
         .send(testParamNoValString)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
@@ -1027,7 +1027,7 @@ describe('measure.service', () => {
 
     test('bulk import fails if measure bundle cannot be found', async () => {
       await supertest(server.app)
-        .post('/4_0_1/Measure/invalid-id/$submit-data')
+        .post('/4_0_1/Measure/invalid-id/$bulk-submit-data')
         .send(testParam)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
