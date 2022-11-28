@@ -111,6 +111,13 @@ const submitData = async (args, { req }) => {
 
   checkSubmitDataBody(req.body);
   const parameters = req.body.parameter;
+  // Ensure no bulk submit data parameters are included
+  const invalidParameters = parameters.filter(param => !param.resource);
+  if (invalidParameters.length > 0) {
+    throw new BadRequestError(
+      'Unexpected parameter included in request. All parameters for the $submit-data operation must be FHIR resources.'
+    );
+  }
 
   const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);

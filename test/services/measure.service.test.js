@@ -9,6 +9,7 @@ const testGroup = require('../fixtures/fhir-resources/testGroup.json');
 const testOrganization = require('../fixtures/fhir-resources/testOrganization.json');
 const testOrganization2 = require('../fixtures/fhir-resources/testOrganization2.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
+const testParamWithExport = require('../fixtures/fhir-resources/parameters/paramWithExport.json');
 const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
 const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
 const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
@@ -164,6 +165,21 @@ describe('measure.service', () => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
             `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
+          );
+        });
+    });
+
+    test('$submit-data returns 400 for invalid parameter included in request', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testParamWithExport)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(
+            'Unexpected parameter included in request. All parameters for the $submit-data operation must be FHIR resources.'
           );
         });
     });

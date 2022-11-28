@@ -2,7 +2,8 @@ const {
   checkRequiredParams,
   validateEvalMeasureParams,
   validateCareGapsParams,
-  gatherParams
+  gatherParams,
+  checkSubmitDataBody
 } = require('../../src/util/operationValidationUtils');
 const queue = require('../../src/queue/importQueue');
 
@@ -432,4 +433,59 @@ describe('validateCareGapsParams', () => {
   });
 
   afterAll(async () => await queue.close());
+});
+
+describe('checkSubmitDataBody', () => {
+  test('throws error for non-Parameters resourceType in body', () => {
+    const INVALID_RESOURCE_TYPE_BODY = { resourceType: 'Encounter', parameter: [] };
+    try {
+      checkSubmitDataBody(INVALID_RESOURCE_TYPE_BODY);
+      expect.fail('checkSubmitDataBody failed to throw an error when provided non-Parameters resourceType');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(`Expected 'resourceType: Parameters'. Received 'type: Encounter'.`);
+    }
+  });
+
+  test('throws error for missing parameter attribute', () => {
+    const MISSING_PARAMETER_BODY = { resourceType: 'Parameters' };
+    try {
+      checkSubmitDataBody(MISSING_PARAMETER_BODY);
+      expect.fail('checkSubmitDataBody failed to throw an error when provided body with missing parameter attribute');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `Unreadable or empty entity for attribute 'parameter'. Received: undefined`
+      );
+    }
+  });
+
+  test('throws error for incorrect number of measure reports in body', () => {
+    const MULTIPLE_MR_BODY = {
+      resourceType: 'Parameters',
+      parameter: [
+        {
+          name: 'measureReport',
+          resource: {
+            resourceType: 'MeasureReport'
+          }
+        },
+        {
+          name: 'measureReport2',
+          resource: {
+            resourceType: 'MeasureReport'
+          }
+        }
+      ]
+    };
+    try {
+      checkSubmitDataBody(MULTIPLE_MR_BODY);
+      expect.fail('checkSubmitDataBody failed to throw an error when provided multiple MeasureReports');
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
+      );
+    }
+  });
 });
