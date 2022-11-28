@@ -112,16 +112,6 @@ const submitData = async (args, { req }) => {
   checkSubmitDataBody(req.body);
   const parameters = req.body.parameter;
 
-  // TODO: move this? or have bulk submit data call this?
-  // then normal submit-data just does these checks 
-  // and bulk submit data also does these checks plus checks headers and returns bulk import
-  // and i guess throw an error if for some reason the header is not present?
-
-  // check if we want to do a bulk import
-  // if (req.headers['prefer'] === 'respond-async') {
-  //   return await bulkImportFromRequirements(args, { req });
-  // }
-
   const { base_version: baseVersion } = req.params;
   const tb = createTransactionBundleClass(baseVersion);
   parameters.forEach(param => {
@@ -143,7 +133,6 @@ const submitData = async (args, { req }) => {
  * @param {Object} req the request object passed in by the user
  */
 const bulkImportFromRequirements = async (args, { req }) => {
-  // TODO: should we just use this for bulk submit data maybe?
   logger.info('Measure >>> $bulk-submit-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
