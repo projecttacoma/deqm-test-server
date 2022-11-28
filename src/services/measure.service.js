@@ -132,7 +132,7 @@ const submitData = async (args, { req }) => {
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  */
-const bulkImportFromRequirements = async (args, { req }) => {
+const bulkSubmitData = async (args, { req }) => {
   logger.info('Measure >>> $bulk-submit-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
@@ -147,12 +147,12 @@ const bulkImportFromRequirements = async (args, { req }) => {
   let measureId;
   let measureBundle;
   const parameters = req.body.parameter;
-  // case 1: request is in Measure/<id>/$submit-data format
+  // case 1: request is in Measure/<id>/$bulk-submit-data format
   if (req.params.id) {
     measureId = req.params.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
-  // case 2: request is in Measure/$submit-data format
+  // case 2: request is in Measure/$bulk-submit-data format
   else {
     const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
     // get measure resource from db that matches measure param since no id is present in request
@@ -566,7 +566,7 @@ module.exports = {
   update,
   search,
   submitData,
-  bulkImportFromRequirements,
+  bulkSubmitData,
   dataRequirements,
   evaluateMeasure,
   careGaps,

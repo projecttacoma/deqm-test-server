@@ -71,8 +71,7 @@ function retrieveProfiles(originalUrl, body) {
   if (metaProfiles) {
     profiles.push(...metaProfiles);
   }
-  // TODO: change this to also apply to bulk submit data?
-  if (params[params.length - 1] === '$submit-data') {
+  if (params[params.length - 1] === '$submit-data' || params[params.length - 1] === '$bulk-submit-data') {
     profiles.push('Parameters');
   }
   // We don't need to validate posted Parameters bodies for dollar-sign operations since these aren't stored in the db

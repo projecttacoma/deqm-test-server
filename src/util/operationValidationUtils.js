@@ -181,7 +181,6 @@ const gatherParams = (query, body) => {
  * Checks that $submit-data/$bulk-submit-data request body contains
  * a Parameters resource and the appropriate parameters.
  * @param {Object} body HTTP request body
- * @returns void but throws a detailed error if necessary
  */
 const checkSubmitDataBody = body => {
   if (body.resourceType !== 'Parameters') {
