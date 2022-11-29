@@ -177,10 +177,35 @@ const gatherParams = (query, body) => {
   return params;
 };
 
+/**
+ * Checks that $submit-data/$bulk-submit-data request body contains
+ * a Parameters resource and the appropriate parameters.
+ * @param {Object} body HTTP request body
+ */
+const checkSubmitDataBody = body => {
+  if (body.resourceType !== 'Parameters') {
+    throw new BadRequestError(`Expected 'resourceType: Parameters'. Received 'type: ${body.resourceType}'.`);
+  }
+  if (!body.parameter) {
+    throw new BadRequestError(`Unreadable or empty entity for attribute 'parameter'. Received: ${body.parameter}`);
+  }
+  const parameters = body.parameter;
+  // Ensure exactly 1 measureReport is in parameters
+  const numMeasureReportsInput = parameters.filter(
+    param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
+  ).length;
+  if (numMeasureReportsInput !== 1) {
+    throw new BadRequestError(
+      `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
+    );
+  }
+};
+
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
   checkRequiredParams,
-  gatherParams
+  gatherParams,
+  checkSubmitDataBody
 };

@@ -10,7 +10,8 @@ const {
   validateEvalMeasureParams,
   validateCareGapsParams,
   validateDataRequirementsParams,
-  gatherParams
+  gatherParams,
+  checkSubmitDataBody
 } = require('../util/operationValidationUtils');
 const {
   getMeasureBundleFromId,
@@ -98,7 +99,6 @@ const search = async (args, { req }) => {
  * Takes a measureReport and a set of required data as part of the request. Calculates the measure and
  * creates new documents for the measureReport and required data in the appropriate collections.
  *
- * If 'prefer': 'respond-async' header is present, calls bulkImportFromRequirements.
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  * @returns {Object} a transaction-response bundle
@@ -109,26 +109,14 @@ const submitData = async (args, { req }) => {
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
-  if (req.body.resourceType !== 'Parameters') {
-    throw new BadRequestError(`Expected 'resourceType: Parameters'. Received 'type: ${req.body.resourceType}'.`);
-  }
-  if (!req.body.parameter) {
-    throw new BadRequestError(`Unreadable or empty entity for attribute 'parameter'. Received: ${req.body.parameter}`);
-  }
+  checkSubmitDataBody(req.body);
   const parameters = req.body.parameter;
-  // Ensure exactly 1 measureReport is in parameters
-  const numMeasureReportsInput = parameters.filter(
-    param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
-  ).length;
-  if (numMeasureReportsInput !== 1) {
+  // Ensure no bulk submit data parameters are included
+  const invalidParameters = parameters.filter(param => !param.resource);
+  if (invalidParameters.length > 0) {
     throw new BadRequestError(
-      `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
+      'Unexpected parameter included in request. All parameters for the $submit-data operation must be FHIR resources.'
     );
-  }
-
-  // check if we want to do a bulk import
-  if (req.headers['prefer'] === 'respond-async') {
-    return await bulkImportFromRequirements(args, { req });
   }
 
   const { base_version: baseVersion } = req.params;
@@ -151,10 +139,12 @@ const submitData = async (args, { req }) => {
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  */
-const bulkImportFromRequirements = async (args, { req }) => {
-  logger.info('Measure >>> $bulk-import');
+const bulkSubmitData = async (args, { req }) => {
+  logger.info('Measure >>> $bulk-submit-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
+  checkSubmitDataBody(req.body);
 
   // id of inserted client
   const clientEntry = await addPendingBulkImportRequest();
@@ -164,12 +154,12 @@ const bulkImportFromRequirements = async (args, { req }) => {
   let measureId;
   let measureBundle;
   const parameters = req.body.parameter;
-  // case 1: request is in Measure/<id>/$submit-data format
+  // case 1: request is in Measure/<id>/$bulk-submit-data format
   if (req.params.id) {
     measureId = req.params.id;
     measureBundle = await getMeasureBundleFromId(measureId);
   }
-  // case 2: request is in Measure/$submit-data format
+  // case 2: request is in Measure/$bulk-submit-data format
   else {
     const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
     // get measure resource from db that matches measure param since no id is present in request
@@ -583,6 +573,7 @@ module.exports = {
   update,
   search,
   submitData,
+  bulkSubmitData,
   dataRequirements,
   evaluateMeasure,
   careGaps,
