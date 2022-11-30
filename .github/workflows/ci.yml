@@ -67,6 +67,9 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
 
+      - name: Setup Dependencies
+        run: npm ci
+
       - name: Run Jest Coverage Report
         uses: artiomtr/jest-coverage-report-action@v2.0-rc.4
         with:
