@@ -1,9 +1,8 @@
 const supertest = require('supertest');
-const { client } = require('../../src/database/connection');
 const { getPatientDataCollectionBundle } = require('../../src/util/patientUtils');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
-const { cleanUpTest } = require('../populateTestData');
+const { cleanUpTest, testSetup } = require('../populateTestData');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const testNestedBundle = require('../fixtures/fhir-resources/testNestedBundle.json');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -13,14 +12,11 @@ let server;
 
 describe('Testing dynamic querying for patient references using compartment definition', () => {
   beforeAll(async () => {
-    await client.connect();
     const config = buildConfig();
-    server = await initialize(config);
+    server = initialize(config);
+    await testSetup([]);
   });
 
-  afterAll(async () => {
-    await cleanUpTest();
-  });
   test('Check that patient reference can be found at one level', async () => {
     await supertest(server.app)
       .post('/4_0_1/')
@@ -76,4 +72,5 @@ describe('Testing dynamic querying for patient references using compartment defi
     const reference = procedure.resource.performer.actor;
     expect(reference).toEqual({ reference: 'Patient/test-patient' });
   });
+  afterAll(cleanUpTest);
 });

@@ -1,4 +1,3 @@
-require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testLibrary = require('../fixtures/fhir-resources/testLibrary.json');
@@ -8,7 +7,7 @@ const { testSetup, cleanUpTest, createTestResource } = require('../populateTestD
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
-const { db } = require('../../src/database/connection');
+const { Connection } = require('../../src/database/connection');
 
 const updatePatient = { resourceType: 'Patient', id: 'testPatient', name: 'anUpdate' };
 
@@ -23,14 +22,13 @@ const UPDATE_PATIENT_3 = {
 let server;
 
 describe('base.service', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-  });
-  beforeEach(async () => {
     const dataToImport = [testMeasure, testLibrary, testPatient, testPatient2];
     await testSetup(dataToImport);
   });
+
   describe('searchById', () => {
     test('test searchById with correctHeaders and the id should be in database', async () => {
       await supertest(server.app)
@@ -55,7 +53,6 @@ describe('base.service', () => {
         });
     });
   });
-
   describe('search', () => {
     test('test search with correct args and headers', async () => {
       await supertest(server.app)
@@ -84,9 +81,8 @@ describe('base.service', () => {
           expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
         });
     });
-
     describe('with pagination', () => {
-      beforeEach(async () => {
+      beforeAll(async () => {
         // create a bunch of observations for testing pagination
         const extraObservations = [];
         for (let i = 0; i < 25; i++) {
@@ -208,7 +204,6 @@ describe('base.service', () => {
         });
     });
   });
-
   describe('create', () => {
     test('test create with correct headers', async () => {
       await supertest(server.app)
@@ -234,7 +229,7 @@ describe('base.service', () => {
         .expect(201)
         .then(async response => {
           const id = response.headers.location.split('/')[2];
-          const patientCollection = db.collection('Patient');
+          const patientCollection = Connection.db.collection('Patient');
           const retrievedPatient = await patientCollection.findOne({ id: id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
         });
@@ -325,7 +320,7 @@ describe('base.service', () => {
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
         .then(async () => {
-          const patientCollection = db.collection('Patient');
+          const patientCollection = Connection.db.collection('Patient');
           const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_2.id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
           expect(new Date(retrievedPatient.meta.lastUpdated) > new Date(testPatient2.meta.lastUpdated)).toBe(true);
@@ -341,7 +336,7 @@ describe('base.service', () => {
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(201)
         .then(async () => {
-          const patientCollection = db.collection('Patient');
+          const patientCollection = Connection.db.collection('Patient');
           const retrievedPatient = await patientCollection.findOne({ id: UPDATE_PATIENT_3.id });
           expect(retrievedPatient.meta.lastUpdated).toBeDefined();
           expect(new Date(retrievedPatient.meta.lastUpdated)).not.toEqual('1900-01-01T00:00:00Z');
@@ -375,6 +370,7 @@ describe('base.service', () => {
           );
         });
     });
+
     test('test update with correctHeaders and the id is in database returns 200 with correct headers', async () => {
       await supertest(server.app)
         .put('/4_0_1/Patient/testPatient')
@@ -448,6 +444,7 @@ describe('base.service', () => {
         .set('content-type', 'application/json+fhir')
         .expect(204);
     });
+
     test('removing the data from the database when the id is not in the database returns 204', async () => {
       await supertest(server.app)
         .delete('/4_0_1/Patient/INVALID')
@@ -456,5 +453,5 @@ describe('base.service', () => {
         .expect(204);
     });
   });
-  afterEach(cleanUpTest);
+  afterAll(cleanUpTest);
 });

@@ -367,6 +367,7 @@ describe('validateCareGapsParams', () => {
   test('validateCareGapsParams does not throw error with practitioner and organization instead of subject', () => {
     expect(validateCareGapsParams(VALID_PRACTITIONER_QUERY)).toBeUndefined();
   });
+
   test('validateCareGapsParams throws error with both practitioner and subject', () => {
     try {
       validateCareGapsParams(SUBJECT_AND_PRACTITIONER_QUERY);
@@ -376,6 +377,7 @@ describe('validateCareGapsParams', () => {
       expect(e.issue[0].details.text).toEqual('Cannot provide both a subject and practitioner');
     }
   });
+
   test('validateCareGapsParams throws error with a practitioner but no organization', () => {
     try {
       validateCareGapsParams(PRACTITIONER_AND_NO_ORG);
@@ -387,6 +389,7 @@ describe('validateCareGapsParams', () => {
       expect(e.issue[0].details.text).toEqual('$care-gaps requests must identify either a subject or an organization.');
     }
   });
+
   test('validateCareGapsParams throws error with invalid practitioner format', () => {
     try {
       validateCareGapsParams(INVALID_PRACTITIONER_QUERY);
@@ -431,7 +434,6 @@ describe('validateCareGapsParams', () => {
     };
     expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(VALID_SUBJECT_QUERY);
   });
-
   afterAll(async () => await queue.close());
 });
 

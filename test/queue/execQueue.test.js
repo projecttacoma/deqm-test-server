@@ -1,9 +1,13 @@
 require('../../src/config/envConfig');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const { ScaledCalculation } = require('../../src/queue/execQueue');
-const { cleanUpTest } = require('../populateTestData');
+const { cleanUpTest, testSetup } = require('../populateTestData');
 
 describe('execQueue', () => {
+  beforeAll(async () => {
+    await testSetup([]);
+  });
+
   describe('ScaledCalculation', () => {
     test('Prepares even number of jobs less than max job size even', () => {
       const calc = new ScaledCalculation(
@@ -106,6 +110,5 @@ describe('execQueue', () => {
       process.env.EXEC_WORKERS = workers;
     });
   });
-
   afterAll(cleanUpTest);
 });

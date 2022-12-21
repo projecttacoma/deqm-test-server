@@ -1,23 +1,27 @@
-const { db, client } = require('../src/database/connection');
+const { Connection } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
 const importQueue = require('../src/queue/importQueue');
 const { execQueue } = require('../src/queue/execQueue');
 const fs = require('fs');
 
-const createTestResource = async (data, resourceType) => {
-  const collection = db.collection(resourceType);
-  await collection.insertOne(data);
-  return { id: data.id };
-};
+async function createTestResource(data, resourceType) {
+  const collection = Connection.db.collection(resourceType);
+  await collection.insertOne({ ...data });
+}
+
+async function createEmptyCollection(resourceType) {
+  await Connection.db.createCollection(resourceType);
+}
+
 //clean up db after test
 async function cleanUpDb() {
-  await db.dropDatabase();
-  await client.close();
+  await Connection.db.dropDatabase();
+  await Connection.connection?.close();
 }
 
 async function cleanUpTest() {
-  if (!!client.topology && client.topology.isConnected()) await cleanUpDb();
+  if (!!Connection.connection.topology && Connection.connection.topology.isConnected()) await cleanUpDb();
   if (fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT'))
@@ -31,20 +35,24 @@ async function cleanUpTest() {
   await execQueue.close();
 }
 
-const testSetup = async testfixtureList => {
-  await client.connect();
+async function testSetup(testfixtureList) {
+  await Connection.connect(global.__MONGO_URI__);
 
-  const result = testfixtureList.map(async x => {
-    return await createTestResource(x, x.resourceType);
-  });
-  await Promise.all(result);
-};
+  for (const resource of testfixtureList) {
+    await createTestResource(resource, resource.resourceType);
+  }
+}
+
+async function resourceTestSetup(resourceType) {
+  await Connection.connect(global.__MONGO_URI__);
+  await createEmptyCollection(resourceType);
+}
+
 const bulkStatusSetup = async () => {
-  await client.connect();
-  const promises = testStatuses.map(async status => {
+  await Connection.connect(global.__MONGO_URI__);
+  for (const status of testStatuses) {
     await createTestResource(status, 'bulkImportStatuses');
-  });
-  await Promise.all(promises);
+  }
 };
 
 const clientFileSetup = async () => {
@@ -55,4 +63,12 @@ const clientFileSetup = async () => {
     console.error(err);
   }
 };
-module.exports = { testSetup, cleanUpTest, bulkStatusSetup, createTestResource, clientFileSetup };
+module.exports = {
+  testSetup,
+  cleanUpTest,
+  cleanUpDb,
+  bulkStatusSetup,
+  createTestResource,
+  clientFileSetup,
+  resourceTestSetup
+};

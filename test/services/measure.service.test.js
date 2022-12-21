@@ -1,4 +1,3 @@
-require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');
 const testMeasure2 = require('../fixtures/fhir-resources/testMeasure2.json');
@@ -40,7 +39,6 @@ describe('measure.service', () => {
       testOrganization2,
       deleteMeasure
     ];
-
     await testSetup(dataToImport);
   });
   describe('CRUD operations', () => {

@@ -84,6 +84,7 @@ describe('Test checkExportUrlArray', () => {
   test('does not throw error for valid input', () => {
     expect(checkExportUrlArray([{ name: 'exportUrl', valueUrl: 'http://www.example.com' }])).toBeUndefined();
   });
+
   test('throws BadRequest error for missing export url parameter', () => {
     try {
       expect(checkExportUrlArray([]));
@@ -93,6 +94,7 @@ describe('Test checkExportUrlArray', () => {
       expect(e.issue[0].details.text).toEqual('No exportUrl parameter was found.');
     }
   });
+
   test('throws BadRequest error for multiple export urls', () => {
     try {
       expect(
@@ -107,6 +109,7 @@ describe('Test checkExportUrlArray', () => {
       expect(e.issue[0].details.text).toEqual('Expected exactly one export URL. Received: 2');
     }
   });
+
   test('throws BadRequest error for parameter with no valueUrl', () => {
     try {
       expect(checkExportUrlArray([{ name: 'exportUrl' }]));
@@ -122,9 +125,11 @@ describe('Test retrieveExportType', () => {
   test('returns dynamic if the exportType is dynamic', () => {
     expect(retrieveExportType(DYNAMIC_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
   });
+
   test('returns dynamic if there is no exportType', () => {
     expect(retrieveExportType(NO_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('dynamic');
   });
+
   test('returns static if the exportType is static', () => {
     expect(retrieveExportType(STATIC_EXPORT_TYPE_PARAMETERS.parameter)).toEqual('static');
   });

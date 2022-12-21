@@ -1,5 +1,4 @@
-const { bulkStatusSetup, cleanUpTest, createTestResource } = require('../populateTestData');
-const { client } = require('../../src/database/connection');
+const { bulkStatusSetup, cleanUpTest, testSetup } = require('../populateTestData');
 const {
   initializeBulkFileCount,
   decrementBulkFileCount,
@@ -61,12 +60,9 @@ describe('check bulk file count logic', () => {
     expect(result.exportedFileCount).toEqual(0);
     expect(result.exportedResourceCount).toEqual(0);
   });
-
-  afterAll(cleanUpTest);
 });
 
 describe('check bulk import status logic', () => {
-  beforeAll(bulkStatusSetup);
   test('updated bulk status to failed', async () => {
     const CLIENT_ID = 'PENDING_REQUEST';
     const TEST_ERROR = { message: 'An error occurred' };
@@ -76,6 +72,7 @@ describe('check bulk import status logic', () => {
     expect(result.error.code).toEqual(500);
     expect(result.error.message).toEqual(TEST_ERROR.message);
   });
+
   test('push to failed outcomes adds correctly to failed outcome array', async () => {
     const CLIENT_ID = 'PENDING_REQUEST';
     const exampleOutcomes = ['test1', 'test2'];
@@ -83,14 +80,12 @@ describe('check bulk import status logic', () => {
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
     expect(result.failedOutcomes).toEqual(['test1', 'test2']);
   });
-
-  afterAll(cleanUpTest);
 });
 
 describe('check collection counts', () => {
   beforeAll(async () => {
-    await client.connect();
-    await createTestResource({ resourceType: 'Patient', id: 'patient1' }, 'Patient');
+    const dataToImport = [{ resourceType: 'Patient', id: 'patient1' }];
+    await testSetup(dataToImport);
   });
   test('get count of 0 for empty collection', async () => {
     const result = await getCountOfCollection('Measure');
@@ -100,6 +95,5 @@ describe('check collection counts', () => {
     const result = await getCountOfCollection('Patient');
     expect(result).toEqual(1);
   });
-
   afterAll(cleanUpTest);
 });

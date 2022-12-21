@@ -1,11 +1,14 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
+require('../config/envConfig');
 const Queue = require('bee-queue');
 const { BulkImportWrappers } = require('bulk-data-utilities');
 const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
 const logger = require('./logger');
+
+const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
 
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
@@ -22,7 +25,7 @@ importQueue.process(async job => {
   const { clientEntry, exportURL, exportType, measureBundle, useTypeFilters } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
-  await mongoUtil.client.connect();
+  await mongoUtil.Connection.connect(url);
   // Call the existing export ndjson function that writes the files
   logger.info(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
   const result = await executePingAndPull(clientEntry, exportURL, exportType, measureBundle, useTypeFilters);
@@ -31,7 +34,7 @@ importQueue.process(async job => {
   } else {
     logger.info(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
   }
-  await mongoUtil.client.close();
+  await mongoUtil.Connection.connection.close();
 });
 
 /**

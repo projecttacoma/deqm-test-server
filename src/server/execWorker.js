@@ -49,7 +49,7 @@ async function getMeasureBundle(measureId, periodStart, periodEnd) {
 
   // load from mongo
   logger.info(`exec-worker-${process.pid}: Loading ${cacheLabel} from mongo.`);
-  await mongoUtil.client.connect();
+  await mongoUtil.Connection.connect();
   const measureBundle = await getMeasureBundleFromId(measureId);
   measureBundleCache[cacheLabel] = {
     lastUsed: Date.now(),

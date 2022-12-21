@@ -1,9 +1,11 @@
+require('../config/envConfig');
 const fs = require('fs');
 const path = require('path');
 const mongoUtil = require('../database/connection');
 const { createResource } = require('../database/dbOperations');
 
 const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
+const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
 
 // files containing EXM bundles of interest from specified directory
 const bundleFiles = [];
@@ -60,7 +62,7 @@ const getBundleFiles = (directory, searchPattern) => {
  * but may want to expand to other measure bundle providers in the future.
  */
 async function main() {
-  await mongoUtil.client.connect();
+  await mongoUtil.Connection.connect(url);
   console.log('Connected successfully to server');
   // default searchPattern to retrieve all filenames that begin with a capital letter and end with -bundle.json
   let searchPattern;
@@ -124,4 +126,4 @@ async function main() {
 main()
   .then(console.log)
   .catch(console.error)
-  .finally(async () => await mongoUtil.client.close());
+  .finally(async () => await mongoUtil.Connection.connection.close());

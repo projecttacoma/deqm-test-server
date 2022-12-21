@@ -7,6 +7,7 @@ const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
 const os = require('os');
+require('./config/envConfig');
 
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
@@ -41,10 +42,11 @@ for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
 }
 
 const port = process.env.SERVER_PORT || 3000;
+const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
 
 server.listen(port, async () => {
   logger.info(`Starting the FHIR Server at localhost:${port}`);
-  await mongoUtil.client.connect();
+  await mongoUtil.Connection.connect(url);
   logger.info('Connected to database');
   if (process.env.VALIDATE === 'true') {
     await axios.put(`http://${process.env.VALIDATOR_HOST}:${process.env.VALIDATOR_PORT}/igs/hl7.fhir.us.qicore`);

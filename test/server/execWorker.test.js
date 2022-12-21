@@ -3,7 +3,7 @@ const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const testMeasureBundle = require('../fixtures/fhir-resources/testMeasureBundle.json');
 const testCalcResults = require('../fixtures/testCalcResults.json');
 const { ScaledCalculation } = require('../../src/queue/execQueue');
-const { cleanUpTest } = require('../populateTestData');
+const { cleanUpTest, testSetup } = require('../populateTestData');
 const execWorker = require('../../src/server/execWorker');
 const bundleUtils = require('../../src/util/bundleUtils');
 const patientUtils = require('../../src/util/patientUtils');
@@ -12,6 +12,10 @@ jest.mock('../../src/util/bundleUtils');
 jest.mock('../../src/util/patientUtils');
 
 describe('execWorker', () => {
+  beforeAll(async () => {
+    await testSetup([]);
+  });
+
   describe('process', () => {
     test('Executes measures', async () => {
       // Configure spy mocks for fqm-execution functions.

@@ -20,6 +20,7 @@ describe('patient.service', () => {
     const dataToImport = [testMeasure, testLibrary, testPatient, testPatient2, deletePatient];
     await testSetup(dataToImport);
   });
+
   describe('CRUD operations', () => {
     test('test create with correct headers returns 201', async () => {
       await supertest(server.app)
@@ -66,7 +67,6 @@ describe('patient.service', () => {
       await supertest(server.app).delete('/4_0_1/Measure/INVALID').expect(204);
     });
   });
-
   describe('testing custom measure operation', () => {
     test('$everything returns 500 for non-implemented params', async () => {
       await supertest(server.app)
@@ -79,6 +79,7 @@ describe('patient.service', () => {
           );
         });
     });
+
     test('$everything returns patient info for single patient', async () => {
       await supertest(server.app)
         .get('/4_0_1/Patient/testPatient/$everything')

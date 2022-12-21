@@ -17,6 +17,7 @@ const validationErrorResponse = {
     }
   ]
 };
+
 const validationSuccessResponse = {
   resourceType: 'OperationOutcome',
   issue: [
@@ -48,6 +49,7 @@ describe('resourceValidationInfo tests', () => {
     await validateFhir(req, res, next);
     expect(next).toHaveBeenCalledTimes(1);
   });
+
   test('validateFhir calls res.status and res.json on invalid FHIR', async () => {
     jest.spyOn(axios, 'post').mockImplementation(() => {
       return { data: validationErrorResponse };
@@ -62,22 +64,27 @@ describe('resourceValidationInfo tests', () => {
     expect(res.json).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith(validationErrorResponse);
   });
+
   test('retrieveProfiles returns empty array on dollar-sign operation', () => {
     const profile = retrieveProfiles('/4_0_1/Measure/$data-requirements', {});
     expect(profile).toEqual([]);
   });
+
   test('retrieveProfiles returns Bundle on transaction bundle upload URL', () => {
     const profile = retrieveProfiles('/4_0_1', {});
     expect(profile).toEqual(['Bundle']);
   });
+
   test('retrieveProfiles returns Patient with Patient URL', () => {
     const profile = retrieveProfiles('/4_0_1/Patient', {});
     expect(profile).toEqual(['Patient'], {});
   });
+
   test('retrieveProfiles returns Patient and meta.profile info with Patient URL and meta.profile in body', () => {
     const profile = retrieveProfiles('/4_0_1/Patient', { meta: { profile: ['testProfile', 'testProfile2'] } });
     expect(profile).toEqual(['testProfile', 'testProfile2', 'Patient'], {});
   });
+
   test('getValidationInfo returns correct object on valid FHIR response', async () => {
     jest.spyOn(axios, 'post').mockImplementationOnce(() => {
       return {
@@ -87,6 +94,7 @@ describe('resourceValidationInfo tests', () => {
     const outcome = await getValidationInfo(['TestProfile'], {});
     expect(outcome).toEqual({ isValid: true });
   });
+
   test('getValidationInfo returns correct object on invalid FHIR response', async () => {
     const validationReturn = {
       data: validationErrorResponse
@@ -97,6 +105,7 @@ describe('resourceValidationInfo tests', () => {
     const outcome = await getValidationInfo(['TestProfile'], {});
     expect(outcome).toEqual({ isValid: false, code: 400, data: validationReturn.data });
   });
+
   test('isValidFHIR returns true on object with no errors', () => {
     const response = {
       data: validationSuccessResponse

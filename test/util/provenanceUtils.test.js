@@ -25,6 +25,7 @@ describe('provenanceUtils tests', () => {
   beforeEach(() => {
     uuidv4.mockImplementationOnce(() => 'TEST_ID');
   });
+
   test('buildDelegator returns proper agent object', () => {
     const delegator = buildDelegator(DELEGATOR_WHO);
     expect(delegator).toEqual(EXPECTED_DELEGATOR);
@@ -37,6 +38,7 @@ describe('provenanceUtils tests', () => {
       expected.toJSON()
     );
   });
+
   test('createAuditEventFromProvenance works with single agent acting on behalf of another', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
     expected = new expected(ON_BEHALF_OF_AUDIT);
@@ -44,6 +46,7 @@ describe('provenanceUtils tests', () => {
       expected.toJSON()
     );
   });
+
   test('createAuditEventFromProvenance works with single agent updating a resource', () => {
     let expected = resolveSchema('4_0_1', 'auditevent');
     expected = new expected(AMENDING_AUDIT);
@@ -51,6 +54,5 @@ describe('provenanceUtils tests', () => {
       expected.toJSON()
     );
   });
-
   afterAll(async () => await queue.close());
 });

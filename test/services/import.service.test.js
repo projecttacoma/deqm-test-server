@@ -6,8 +6,7 @@ const paramNoExport = require('../fixtures/fhir-resources/parameters/paramNoExpo
 const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
 const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
-const { client } = require('../../src/database/connection');
-const { cleanUpTest } = require('../populateTestData');
+const { cleanUpTest, testSetup } = require('../populateTestData');
 
 let server;
 
@@ -15,7 +14,7 @@ describe('Testing $import with no specified measure bundle', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    await client.connect();
+    await testSetup([]);
   });
 
   test('Returns 202 on Valid Request', async () => {
@@ -30,6 +29,7 @@ describe('Testing $import with no specified measure bundle', () => {
         expect(response.headers['content-location']).toBeDefined();
       });
   });
+
   test('Returns 400 on missing exportUrl', async () => {
     await supertest(server.app)
       .post('/4_0_1/$import')
@@ -43,6 +43,7 @@ describe('Testing $import with no specified measure bundle', () => {
         expect(response.body.issue[0].details.text).toEqual('No exportUrl parameter was found.');
       });
   });
+
   test('FHIR Parameters object has two export URLs', async () => {
     await supertest(server.app)
       .post('/4_0_1/$import')

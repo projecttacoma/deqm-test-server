@@ -1,8 +1,15 @@
 const { MongoClient } = require('mongodb');
-require('../config/envConfig');
+class Connection {
+  static async connect(url) {
+    if (this.connection != null) {
+      return this.connection;
+    }
 
-// Connection URL
-const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
-const client = new MongoClient(url);
+    this.connection = new MongoClient(url);
+    this.db = this.connection.db();
 
-module.exports = { client, db: client.db(process.env.DB_NAME) };
+    return this.connection;
+  }
+}
+
+module.exports = { Connection };

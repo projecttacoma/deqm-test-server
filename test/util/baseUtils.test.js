@@ -5,6 +5,7 @@ describe('Testing checkSupportedResource', () => {
   test('Does not throw error for supported resource', () => {
     expect(checkSupportedResource('Patient')).toBeUndefined();
   });
+
   test('Throws error for unsupported resource', () => {
     try {
       checkSupportedResource('INVALID');
@@ -14,6 +15,7 @@ describe('Testing checkSupportedResource', () => {
       expect(e.issue[0].details.text).toEqual('resourceType: INVALID is not a supported resourceType');
     }
   });
+
   test('Throws error for undefined resource', () => {
     try {
       checkSupportedResource(undefined);
@@ -41,6 +43,7 @@ describe('testing checkContentTypeHeader', () => {
       );
     }
   });
+
   test('returns undefined for valid ContentType header', () => {
     expect(checkContentTypeHeader({ 'content-type': 'application/json+fhir' })).toBeUndefined();
     expect(checkContentTypeHeader({ 'content-type': 'application/fhir+json' })).toBeUndefined();

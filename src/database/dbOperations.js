@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { db } = require('./connection.js');
+const { Connection } = require('./connection.js');
 
 const logger = require('../server/logger');
 
@@ -10,7 +10,7 @@ const logger = require('../server/logger');
  * @returns {Object} an object with the id of the created document
  */
 const createResource = async (data, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Inserting ${resourceType}/${data.id} into database`);
   await collection.insertOne(data);
   return { id: data.id };
@@ -23,7 +23,7 @@ const createResource = async (data, resourceType) => {
  * @returns {Object} the data of the found document
  */
 const findResourceById = async (id, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Searching database for ${resourceType}/${id}`);
   return collection.findOne({ id: id });
 };
@@ -35,7 +35,7 @@ const findResourceById = async (id, resourceType) => {
  * @returns {Object} the data of the found document
  */
 const findOneResourceWithQuery = async (query, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Searching database for one ${resourceType} which matches query: ${JSON.stringify(query)}`);
   return collection.findOne(query);
 };
@@ -47,7 +47,7 @@ const findOneResourceWithQuery = async (query, resourceType) => {
  * @returns {Promise<Array>} an array of found objects which match the input query
  */
 const findResourcesWithQuery = async (query, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Searching database for all ${resourceType}s which match query: ${JSON.stringify(query)}`);
   return (await collection.find(query)).toArray();
 };
@@ -59,7 +59,7 @@ const findResourcesWithQuery = async (query, resourceType) => {
  * @returns {Promise<Array<string>>} an array of found resource ids which match the input query
  */
 const findResourceIdsWithQuery = async (query, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Searching database for all ${resourceType}s which match query: ${JSON.stringify(query)}`);
   return (await collection.find(query, { projection: { id: 1 } })).map(r => r.id).toArray();
 };
@@ -72,7 +72,7 @@ const findResourceIdsWithQuery = async (query, resourceType) => {
  * @returns {string} the id of the updated/created document
  */
 const updateResource = async (id, data, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Finding and updating ${resourceType}/${data.id} in database`);
 
   const results = await collection.replaceOne({ id }, data, { upsert: true });
@@ -97,7 +97,7 @@ const updateResource = async (id, data, resourceType) => {
  * @returns {string} the id of the updated/created document
  */
 const pushToResource = async (id, data, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Pushing data to ${resourceType}/${id} in database`);
   await collection.findOneAndUpdate({ id: id }, { $push: data });
 };
@@ -109,7 +109,7 @@ const pushToResource = async (id, data, resourceType) => {
  * @returns {Object} an object containing deletedCount: the number of documents deleted
  */
 const removeResource = async (id, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Removing ${resourceType}/${id} from database`);
   return collection.deleteOne({ id: id });
 };
@@ -121,7 +121,7 @@ const removeResource = async (id, resourceType) => {
  * @returns {Array} Array promise of results.
  */
 const findResourcesWithAggregation = async (query, resourceType) => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug(`Running aggregation query on ${resourceType}s with query: ${JSON.stringify(query)}`);
   return (await collection.aggregate(query)).toArray();
 };
@@ -132,7 +132,7 @@ const findResourcesWithAggregation = async (query, resourceType) => {
  * @returns {string} the id of the inserted client
  */
 const addPendingBulkImportRequest = async () => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   const clientId = uuidv4();
   const bulkImportClient = {
     id: clientId,
@@ -158,7 +158,7 @@ const addPendingBulkImportRequest = async () => {
  * @param {string} clientId The ID for the bulkImportStatus entry
  */
 const completeBulkImportRequest = async clientId => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   const update = {
     status: 'Completed'
   };
@@ -171,7 +171,7 @@ const completeBulkImportRequest = async clientId => {
  * @param {string} clientId The ID for the bulkImportStatus entry
  */
 const failBulkImportRequest = async (clientId, error) => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   const update = {
     status: 'Failed',
     error: {
@@ -190,7 +190,7 @@ const failBulkImportRequest = async (clientId, error) => {
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
  */
 const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   logger.debug(`Pushing failed outcomes to bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $push: { failedOutcomes: { $each: failedOutcomes } } });
 };
@@ -212,7 +212,7 @@ const getBulkImportStatus = async clientId => {
  * @param {number} fileCount The number of output ndjson URLs returned by the export server
  */
 const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   logger.debug(`Initializing bulk file count for bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate(
     { id: clientId },
@@ -235,7 +235,7 @@ const initializeBulkFileCount = async (clientId, fileCount, resourceCount) => {
  * @param {number} resourceCount The number of resources to be subtracted from the exported resource count
  */
 const decrementBulkFileCount = async (clientId, resourceCount) => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   let value;
   if (resourceCount !== -1) {
     // Update both the exported file count and exported resource count
@@ -272,7 +272,7 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
  * @param {number} resourceCount The number of successfully imported resources
  */
 const updateSuccessfulImportCount = async (clientId, count) => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   logger.debug(`Incrementing successCount by ${count} for bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate(
     { id: clientId },
@@ -281,7 +281,7 @@ const updateSuccessfulImportCount = async (clientId, count) => {
   );
 };
 const getCurrentSuccessfulImportCount = async clientId => {
-  const collection = db.collection('bulkImportStatuses');
+  const collection = Connection.db.collection('bulkImportStatuses');
   logger.debug(`Retrieving successCount for bulkImportStatus with clientId: ${clientId}`);
   const bulkStatus = await collection.findOne({ id: clientId });
   return bulkStatus.successCount;
@@ -293,7 +293,7 @@ const getCurrentSuccessfulImportCount = async clientId => {
  * @returns number that is the count of documents in the specified collection
  */
 const getCountOfCollection = async resourceType => {
-  const collection = db.collection(resourceType);
+  const collection = Connection.db.collection(resourceType);
   logger.debug('Retrieving count for specified collection');
   const count = await collection.countDocuments();
   return count;

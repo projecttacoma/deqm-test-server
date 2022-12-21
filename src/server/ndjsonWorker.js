@@ -1,11 +1,14 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
+require('../config/envConfig');
 const Queue = require('bee-queue');
 const axios = require('axios');
 const { updateResource, pushBulkFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 const logger = require('./logger');
+
+const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
@@ -38,7 +41,7 @@ ndjsonWorker.process(async job => {
   const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
   logger.info(`ndjson-worker-${process.pid}: processing ${fileName}`);
 
-  await mongoUtil.client.connect();
+  await mongoUtil.Connection.connect(url);
   const ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
 
   const insertions = ndjsonResources
@@ -81,5 +84,5 @@ ndjsonWorker.process(async job => {
 
   process.send({ clientId, resourceCount, successCount });
 
-  await mongoUtil.client.close();
+  await mongoUtil.Connection.connection.close();
 });

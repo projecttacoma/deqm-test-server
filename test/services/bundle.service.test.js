@@ -1,7 +1,6 @@
 const supertest = require('supertest');
 const { uploadTransactionBundle } = require('../../src/services/bundle.service');
-const { client } = require('../../src/database/connection');
-const { cleanUpTest } = require('../populateTestData');
+const { cleanUpTest, testSetup } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
@@ -42,8 +41,9 @@ describe('bundle.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
-    await client.connect();
+    await testSetup([]);
   });
+
   describe('uploadTransactionBundle Server errors', () => {
     test('error thrown if resource type is not Bundle', async () => {
       try {

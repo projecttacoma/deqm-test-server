@@ -1,5 +1,5 @@
 const supertest = require('supertest');
-const { clientFileSetup, cleanUpTest } = require('../populateTestData');
+const { clientFileSetup, cleanUpTest, testSetup } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 
@@ -9,8 +9,10 @@ describe('check client file', () => {
   beforeAll(async () => {
     const config = buildConfig();
     server = initialize(config);
+    await testSetup([]);
     await clientFileSetup();
   });
+
   test('check 200 returned for successful file request', async () => {
     await supertest(server.app)
       .get('/4_0_1/file/testid/OperationOutcome.ndjson')
@@ -19,6 +21,7 @@ describe('check client file', () => {
         expect(response.text.includes('testid')).toBeTruthy();
       });
   });
+
   test('check 404 returned for file not found', async () => {
     await supertest(server.app)
       .get('/4_0_1/file/testid/invalid.ndjson')
