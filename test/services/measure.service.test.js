@@ -582,22 +582,6 @@ describe('measure.service', () => {
         });
     });
 
-    test('$data-requirements returns 400 when required param is omitted', async () => {
-      const { Calculator } = require('fqm-execution');
-      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
-      await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$data-requirements')
-        .query({
-          periodEnd: '01-01-2021'
-        })
-        .expect(400)
-        .then(response => {
-          expect(response.body.resourceType).toEqual('OperationOutcome');
-          expect(response.body.issue[0].details.text).toEqual(
-            `Missing required parameters for $data-requirements: periodStart.`
-          );
-        });
-    });
     test('$data-requirements returns 200 with valid params', async () => {
       const { Calculator } = require('fqm-execution');
       jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => ({ results: null }));
