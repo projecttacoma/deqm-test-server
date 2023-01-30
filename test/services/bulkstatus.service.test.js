@@ -1,5 +1,5 @@
 const supertest = require('supertest');
-const { bulkStatusSetup, cleanUpTest, clearTMP } = require('../populateTestData');
+const { bulkStatusSetup, clearTMP } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 
