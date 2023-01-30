@@ -22,6 +22,14 @@ async function cleanUpDb() {
 
 async function cleanUpTest() {
   if (!!Connection.connection.topology && Connection.connection.topology.isConnected()) await cleanUpDb();
+  await importQueue.close();
+  await execQueue.close();
+}
+
+async function clearTMP() {
+  if (!!Connection.connection.topology && Connection.connection.topology.isConnected()) await cleanUpDb();
+  await importQueue.close();
+  await execQueue.close();
   if (fs.existsSync('./tmp/testid')) fs.rmSync('./tmp/testid', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST')) fs.rmSync('./tmp/COMPLETED_REQUEST', { recursive: true });
   if (fs.existsSync('./tmp/COMPLETED_REQUEST_WITH_RESOURCE_COUNT'))
@@ -31,8 +39,6 @@ async function cleanUpTest() {
   if (fs.existsSync('./tmp/INVALID_ID')) fs.rmSync('./tmp/INVALID_ID', { recursive: true });
   if (fs.existsSync('./tmp/KNOWN_ERROR_REQUEST')) fs.rmSync('./tmp/KNOWN_ERROR_REQUEST', { recursive: true });
   if (fs.existsSync('./tmp/UNKNOWN_ERROR_REQUEST')) fs.rmSync('./tmp/UNKNOWN_ERROR_REQUEST', { recursive: true });
-  await importQueue.close();
-  await execQueue.close();
 }
 
 async function testSetup(testfixtureList) {
@@ -70,5 +76,6 @@ module.exports = {
   bulkStatusSetup,
   createTestResource,
   clientFileSetup,
-  resourceTestSetup
+  resourceTestSetup,
+  clearTMP
 };

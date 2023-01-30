@@ -1,5 +1,5 @@
 const supertest = require('supertest');
-const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
+const { bulkStatusSetup, cleanUpTest, clearTMP } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 
@@ -121,5 +121,5 @@ describe('bulkstatus.service', () => {
         });
     });
   });
-  afterAll(cleanUpTest);
+  afterAll(clearTMP);
 });

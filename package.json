@@ -16,7 +16,7 @@
     "db:reset": "npm run db:delete && npm run db:setup",
     "parse-compartment-definition": "node src/scripts/parseCompartmentDefinition.js",
     "upload-bundles": "node src/scripts/uploadPremadeBundles.js",
-    "test": "jest --runInBand",
+    "test": "jest",
     "test:coverage": "jest --collectCoverage --runInBand",
     "test:watch": "jest --watchAll --runInBand",
     "test:watch:coverage": "jest --watchAll --runInBand --collectCoverage"
