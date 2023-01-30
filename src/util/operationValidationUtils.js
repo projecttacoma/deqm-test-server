@@ -114,16 +114,6 @@ const validateCareGapsParams = query => {
 };
 
 /**
- * Checks that the parameters passed in for $data-requirements are valid
- * @param {Object} query query from the request passed in by the user
- * @returns void but throws a detailed error if necessary
- */
-const validateDataRequirementsParams = query => {
-  const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
-  checkRequiredParams(query, REQUIRED_PARAMS, '$data-requirements');
-};
-
-/**
  * Dynamic function for checking the presence of required params for all validation functions
  * @param {Object} query the query passed in through the client's request
  * @param {Array} requiredParams  an array of strings detailing which params are required
@@ -204,7 +194,6 @@ const checkSubmitDataBody = body => {
 module.exports = {
   validateEvalMeasureParams,
   validateCareGapsParams,
-  validateDataRequirementsParams,
   checkRequiredParams,
   gatherParams,
   checkSubmitDataBody

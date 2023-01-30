@@ -9,7 +9,6 @@ const { retrieveExportType, retrieveExportUrl } = require('../util/exportUtils')
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
-  validateDataRequirementsParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
@@ -207,8 +206,6 @@ const dataRequirements = async (args, { req }) => {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
   const id = args.id;
-
-  validateDataRequirementsParams(req.query);
 
   const measureBundle = await getMeasureBundleFromId(id);
 

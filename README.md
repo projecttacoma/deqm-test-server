@@ -190,10 +190,12 @@ Check out the [$care-gaps operation spec](https://build.fhir.org/ig/HL7/davinci-
 
 This operation retrieves all the data requirements for a given measure as a FHIR library.
 
-Required parameters include:
+Optional parameters for this function include:
 
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
+
+If either `periodStart` or `periodEnd` parameter is supplied without the other, a measurement period will be used with duration 1 year starting or ending at the provided date. If `periodStart` and `periodEnd` parameters are omitted entirely, the measurement period for the operation will default to the `effectivePeriod` of the referenced FHIR Measure. If no `effectivePeriod` property is present, `dateFilters` will be excluded from the returned FHIR Library entirely.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
 
