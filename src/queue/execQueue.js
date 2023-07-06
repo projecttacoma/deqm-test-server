@@ -41,7 +41,8 @@ class ScaledCalculation {
 
     // Prepare the fqm-execution measure report builder
     try {
-      this._mrBuilder = new MeasureReportBuilder(this._measureBundle, {
+      const measure_entry = this._measureBundle.entry?.find(e => e.resource?.resourceType === 'Measure');
+      this._mrBuilder = new MeasureReportBuilder(measure_entry.resource, {
         measurementPeriodStart: this._periodStart,
         measurementPeriodEnd: this._periodEnd,
         reportType: 'summary'
