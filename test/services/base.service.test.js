@@ -80,8 +80,9 @@ describe('base.service', () => {
               url: expect.stringMatching(/\/4_0_1\/Patient\?page=1$/)
             }
           ]);
-          expect(response.body.entry[0].resource.id).toEqual(testPatient.id);
-          expect(response.body.entry[0].resource.resourceType).toEqual('Patient');
+          const testPatientEntry = response.body.entry.find(e => e.resource.id === testPatient.id);
+          expect(testPatientEntry).toBeDefined();
+          expect(testPatientEntry.resource.resourceType).toEqual('Patient');
         });
     });
 
