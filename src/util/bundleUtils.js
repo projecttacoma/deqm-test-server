@@ -146,8 +146,9 @@ async function getDependentValueSets(lib) {
   }
 
   const depValueSetUrls = lib.relatedArtifact
-    .filter(ra => ra.type === 'depends-on' && ra.resource.includes('ValueSet'))
-    .map(ra => ra.resource);
+    .filter(ra => ra.type === 'depends-on' && (
+      (ra.resource && ra.resource.includes('ValueSet')) || (ra.url && ra.url.includes('ValueSet'))))
+    .map(ra => ra.resource || ra.url);
 
   const valueSetGets = depValueSetUrls.map(async url => {
     const vsQuery = getQueryFromReference(url);
@@ -180,10 +181,10 @@ async function getAllDependentLibraries(lib) {
     .filter(
       ra =>
         ra.type === 'depends-on' &&
-        ra.resource.includes('Library') &&
+        (ra.resource?.includes('Library') || ra.url?.includes('Library')) &&
         ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'
     ) // exclude modelinfo dependency
-    .map(ra => ra.resource);
+    .map(ra => ra.resource || ra.url);
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
     // Quick fix for invalid connectathon url references
@@ -225,7 +226,7 @@ function replaceReferences(entries) {
   // Add metadata for old IDs and newly created ones of POST entries
   entries.forEach(e => {
     logger.debug(`Replacing resourceIds for entry: ${JSON.stringify(e)}`);
-    if (e.request.method === 'POST') {
+    if (!e.request || e.request.method === 'POST') {
       e.isPost = true;
       e.oldId = e.resource.id;
       e.newId = uuidv4();
