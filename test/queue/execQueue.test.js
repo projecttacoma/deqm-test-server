@@ -94,7 +94,7 @@ describe('execQueue', () => {
           '2019-01-01',
           '2019-12-31'
         );
-      }).toThrow('Could not prepare report builder:');
+      }).toThrow('Measure resource was not found in bundle.');
     });
 
     test('Throws an error if scaled calculation is disabled', () => {

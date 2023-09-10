@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mongoUtil = require('../database/connection');
 const { createResource } = require('../database/dbOperations');
+const { randomUUID } = require('crypto');
 
 const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
 
@@ -84,7 +85,7 @@ async function main() {
   } else {
     try {
       if (!searchPattern) {
-        searchPattern = /^[A-Z].*-bundle.json$/;
+        searchPattern = /^[A-Z].*.json$/;
       }
       console.log(`Finding bundles in ecqm-content-r4-2021 repo at ${ecqmContentR4Path}.`);
       getEcqmBundleFiles(ecqmContentR4Path, searchPattern);
@@ -100,11 +101,21 @@ async function main() {
     // read each EXM bundle file
     const data = fs.readFileSync(filePath, 'utf8');
     if (data) {
-      console.log(`Uploading ${filePath.split('/').slice(-1)}...`);
       const bundle = JSON.parse(data);
+      if (bundle.resourceType !== 'Bundle') {
+        console.log(`Skipping ${filePath.split('/').slice(-1)} NOT A BUNDLE`);
+        continue;
+      }
+      //console.log(`Uploading ${filePath.split('/').slice(-1)}...`);
+      
       // retrieve each resource and insert into database
       const uploads = bundle.entry.map(async res => {
         try {
+          // If there is no ID... make one probably MADiE Bundle Measure
+          if (!res.resource.id) {
+            res.resource.id = filePath.split('/').slice(-1)[0].split('-')[0] || randomUUID();
+            console.log(`Gave ${res.resource.resourceType} an ID of ${res.resource.id}`)
+          }
           await createResource(res.resource, res.resource.resourceType);
           resourcesUploaded += 1;
         } catch (e) {
