@@ -19,7 +19,7 @@ services:
       NDJSON_WORKERS: 2
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      VALIDATE: "false"
+      VALIDATE: 'false'
       VALIDATOR_HOST: validator
       VALIDATOR_PORT: 4567
     ports:
@@ -31,7 +31,7 @@ services:
     tty: true
 
   mongo:
-    image: mongo:4.4.4
+    image: mongo:6.0
     ports:
       - '27017'
     volumes:
