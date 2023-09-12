@@ -146,11 +146,7 @@ async function getDependentValueSets(lib) {
   }
 
   const depValueSetUrls = lib.relatedArtifact
-    .filter(
-      ra =>
-        ra.type === 'depends-on' &&
-        ra.resource?.includes('ValueSet')
-    )
+    .filter(ra => ra.type === 'depends-on' && ra.resource?.includes('ValueSet'))
     .map(ra => ra.resource);
 
   const valueSetGets = depValueSetUrls.map(async url => {
