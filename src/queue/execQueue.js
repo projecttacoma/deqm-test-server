@@ -3,7 +3,6 @@
 const Queue = require('bee-queue');
 const logger = require('../server/logger.js');
 const { MeasureReportBuilder } = require('fqm-execution');
-const { getMeasureFromBundle } = require('../util/bundleUtils');
 
 // Create a new queue to establish new Redis connection
 const execQueue = new Queue('exec', {
@@ -37,7 +36,7 @@ class ScaledCalculation {
     }
 
     this._measureBundle = measureBundle;
-    const measureEntry = measureBundle.entry.find((e) => e.resource.resourceType === 'Measure');
+    const measureEntry = measureBundle.entry.find(e => e.resource.resourceType === 'Measure');
     if (measureEntry) {
       this._measure = measureEntry.resource;
     } else {

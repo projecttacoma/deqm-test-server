@@ -107,14 +107,14 @@ async function main() {
         continue;
       }
       //console.log(`Uploading ${filePath.split('/').slice(-1)}...`);
-      
+
       // retrieve each resource and insert into database
       const uploads = bundle.entry.map(async res => {
         try {
           // If there is no ID... make one probably MADiE Bundle Measure
           if (!res.resource.id) {
             res.resource.id = filePath.split('/').slice(-1)[0].split('-')[0] || randomUUID();
-            console.log(`Gave ${res.resource.resourceType} an ID of ${res.resource.id}`)
+            console.log(`Gave ${res.resource.resourceType} an ID of ${res.resource.id}`);
           }
           await createResource(res.resource, res.resource.resourceType);
           resourcesUploaded += 1;
