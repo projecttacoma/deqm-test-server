@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mongoUtil = require('../database/connection');
 const { createResource } = require('../database/dbOperations');
-const { randomUUID } = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 
 const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
 
@@ -98,7 +98,7 @@ async function main() {
   let filesUploaded = 0;
   let resourcesUploaded = 0;
   for (const filePath of bundleFiles) {
-    // read each EXM bundle file
+    // read each bundle file
     const data = fs.readFileSync(filePath, 'utf8');
     if (data) {
       const bundle = JSON.parse(data);
@@ -106,14 +106,17 @@ async function main() {
         console.log(`Skipping ${filePath.split('/').slice(-1)} NOT A BUNDLE`);
         continue;
       }
+
+      // uncomment if you want to see every bundle found that this script is processing
       //console.log(`Uploading ${filePath.split('/').slice(-1)}...`);
 
       // retrieve each resource and insert into database
       const uploads = bundle.entry.map(async res => {
         try {
-          // If there is no ID... make one probably MADiE Bundle Measure
+          // If there is no ID... make one. This probably is a MADiE Export Measure resource. Try to grab the first
+          // chunk from the filename looking for the `-` to hopefully get `CMSXXXFHIR` otherwise use a random ID
           if (!res.resource.id) {
-            res.resource.id = filePath.split('/').slice(-1)[0].split('-')[0] || randomUUID();
+            res.resource.id = filePath.split('/').slice(-1)[0].split('-')[0] || uuidv4();
             console.log(`Gave ${res.resource.resourceType} an ID of ${res.resource.id}`);
           }
           await createResource(res.resource, res.resource.resourceType);

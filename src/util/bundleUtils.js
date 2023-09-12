@@ -149,9 +149,9 @@ async function getDependentValueSets(lib) {
     .filter(
       ra =>
         ra.type === 'depends-on' &&
-        ((ra.resource && ra.resource.includes('ValueSet')) || (ra.url && ra.url.includes('ValueSet')))
+        ra.resource?.includes('ValueSet')
     )
-    .map(ra => ra.resource || ra.url);
+    .map(ra => ra.resource);
 
   const valueSetGets = depValueSetUrls.map(async url => {
     const vsQuery = getQueryFromReference(url);
@@ -184,10 +184,10 @@ async function getAllDependentLibraries(lib) {
     .filter(
       ra =>
         ra.type === 'depends-on' &&
-        (ra.resource?.includes('Library') || ra.url?.includes('Library')) &&
+        ra.resource?.includes('Library') &&
         ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'
     ) // exclude modelinfo dependency
-    .map(ra => ra.resource || ra.url);
+    .map(ra => ra.resource);
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
     // Quick fix for invalid connectathon url references
