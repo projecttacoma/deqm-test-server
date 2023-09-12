@@ -225,7 +225,7 @@ function replaceReferences(entries) {
   // Add metadata for old IDs and newly created ones of POST entries
   entries.forEach(e => {
     logger.debug(`Replacing resourceIds for entry: ${JSON.stringify(e)}`);
-    if (!e.request || e.request.method === 'POST') {
+    if (e.request.method === 'POST') {
       e.isPost = true;
       e.oldId = e.resource.id;
       e.newId = uuidv4();
