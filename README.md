@@ -26,7 +26,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 ### Prerequisites
 
 - [Node.js >=16.0.0](https://nodejs.org/en/)
-- [MongoDB >= 5.0](https://www.mongodb.com)
+- [MongoDB >= 6.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
 - [Docker](https://docs.docker.com/get-docker/)
 - [Redis](https://redis.com/break-the-data-matrix/)
