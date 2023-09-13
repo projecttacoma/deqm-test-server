@@ -237,7 +237,7 @@ const evaluateMeasure = async (args, { req }) => {
   const { reportType, subject } = req.query;
 
   // If reportType is not specified, default to 'subject', but
-  // only if the 'subject' parameter is also specificed
+  // only if the 'subject' parameter is also specified
   if (reportType === 'subject' || (reportType == null && subject != null)) {
     logger.debug('Evaluating measure for individual');
     return evaluateMeasureForIndividual(args, { req });

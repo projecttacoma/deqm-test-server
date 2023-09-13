@@ -36,12 +36,18 @@ class ScaledCalculation {
     }
 
     this._measureBundle = measureBundle;
+    const measureEntry = measureBundle.entry.find(e => e.resource.resourceType === 'Measure');
+    if (measureEntry) {
+      this._measure = measureEntry.resource;
+    } else {
+      throw new Error('Measure resource was not found in bundle.');
+    }
     this._periodStart = periodStart;
     this._periodEnd = periodEnd;
 
     // Prepare the fqm-execution measure report builder
     try {
-      this._mrBuilder = new MeasureReportBuilder(this._measureBundle, {
+      this._mrBuilder = new MeasureReportBuilder(this._measure, {
         measurementPeriodStart: this._periodStart,
         measurementPeriodEnd: this._periodEnd,
         reportType: 'summary'
