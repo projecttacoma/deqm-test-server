@@ -85,7 +85,7 @@ async function main() {
   } else {
     try {
       if (!searchPattern) {
-        searchPattern = /^[A-Z].*.json$/;
+        searchPattern = /^[A-Z].*-bundle.json$/;
       }
       console.log(`Finding bundles in ecqm-content-r4-2021 repo at ${ecqmContentR4Path}.`);
       getEcqmBundleFiles(ecqmContentR4Path, searchPattern);
