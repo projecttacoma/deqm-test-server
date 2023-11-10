@@ -27,7 +27,7 @@
     "@asymmetrik/fhir-qb": "^0.12.5",
     "@asymmetrik/fhir-qb-mongo": "^0.12.3",
     "@projecttacoma/node-fhir-server-core": "^2.2.7",
-    "axios": "^0.21.4",
+    "axios": "^1.6.0",
     "bee-queue": "^1.4.0",
     "bulk-data-utilities": "git+https://git@github.com/projecttacoma/bulk-data-utilities",
     "cors": "^2.8.5",
