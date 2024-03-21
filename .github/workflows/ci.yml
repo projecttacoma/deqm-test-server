@@ -44,6 +44,10 @@ jobs:
         run: npm run test
 
   coverage:
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -71,7 +75,8 @@ jobs:
         run: npm ci
 
       - name: Run Jest Coverage Report
-        uses: artiomtr/jest-coverage-report-action@v2.0-rc.4
+        uses: artiomtr/jest-coverage-report-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 60
+          test-script: npm test
