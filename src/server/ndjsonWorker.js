@@ -68,7 +68,7 @@ ndjsonWorker.process(async job => {
   const outcomes = await Promise.allSettled(insertions);
 
   const failedOutcomes = outcomes.filter(outcome => outcome.status === 'rejected');
-  const succesfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
+  const successfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
 
   const outcomeData = [];
 
@@ -76,7 +76,7 @@ ndjsonWorker.process(async job => {
     outcomeData.push(out.reason.message);
   });
   await pushBulkFailedOutcomes(clientId, outcomeData);
-  const successCount = succesfulOutcomes.length;
+  const successCount = successfulOutcomes.length;
   logger.info(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
   process.send({ clientId, resourceCount, successCount });

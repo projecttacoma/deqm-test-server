@@ -2,6 +2,22 @@ const { BadRequestError } = require('./errorUtils');
 const logger = require('../server/logger');
 
 /**
+ * Uses request body parameter to get all of the ndjson URLs
+ */
+const retrieveExportUrls = parameters => {
+  logger.debug(`Retrieving all export URLs from parameters: ${JSON.stringify(parameters)}`);
+  const exportUrlArray = parameters
+    .filter(param => param.name === 'input')
+    .flatMap(param =>
+      param.part
+        .filter(p => p.name === 'url')
+        .map(part => ({ type: part.valueUrl.split('.ndjson')[0].split('/').at(-1), url: part.valueUrl }))
+    );
+
+  return exportUrlArray;
+};
+
+/**
  * Uses request body parameter to search for the export server URL. Validates that
  * only one URL is present.
  * @param {Object} parameters - request body parameter
@@ -82,4 +98,4 @@ const retrieveExportType = parameters => {
   }
 };
 
-module.exports = { retrieveExportUrl, checkExportUrlArray, retrieveExportType };
+module.exports = { retrieveExportUrl, checkExportUrlArray, retrieveExportType, retrieveExportUrl, retrieveExportUrls };

@@ -1,7 +1,6 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
-const { BulkImportWrappers } = require('bulk-data-utilities');
 const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
@@ -16,16 +15,15 @@ const importQueue = new Queue('import', {
   removeOnSuccess: true
 });
 
-// This handler pulls down the jobs on Redis to handle
+// New
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
-  const { clientEntry, exportURL, exportType, measureBundle, useTypeFilters } = job.data;
+  const { clientEntry, exportURLs } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
   await mongoUtil.client.connect();
-  // Call the existing export ndjson function that writes the files
-  logger.info(`import-worker-${process.pid}: Kicking off export request: ${exportURL}`);
-  const result = await executePingAndPull(clientEntry, exportURL, exportType, measureBundle, useTypeFilters);
+  // Call function to get the ndjson files
+  const result = await executeNewImportWorkflow(clientEntry, exportURLs);
   if (result) {
     logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -34,50 +32,32 @@ importQueue.process(async job => {
   await mongoUtil.client.close();
 });
 
-/**
- * Calls the bulk-data-utilities wrapper function to get data requirements for the passed in measure, convert those to
- * export requests from a bulk export server, then retrieve ndjson from that server and parse it into valid transaction bundles.
- * Finally, uploads the resulting transaction bundles to the server and updates the bulkstatus endpoint
- * @param {string} clientEntryId The unique identifier which corresponds to the bulkstatus content location for update
- * @param {string} exportUrl The url of the bulk export fhir server
- * @param {string} exportType The code of the exportType
- * @param {Object} measureBundle The measure bundle for which to retrieve data requirements
- * @param {boolean} useTypeFilters optional boolean for whether to use type filters for bulk submit data
- */
-const executePingAndPull = async (clientEntryId, exportUrl, exportType, measureBundle, useTypeFilters) => {
+const executeNewImportWorkflow = async (clientEntryId, exportURLs) => {
   try {
-    // Default to not use typeFilters for measure specific import
-    const output = await BulkImportWrappers.executeBulkImport(
-      exportUrl,
-      exportType,
-      measureBundle,
-      useTypeFilters || false
-    );
-
-    if (output.length === 0) {
+    if (exportURLs.length === 0) {
       throw new Error('Export server failed to export any resources');
     }
+
     // Calculate number of resources to export, if available. Otherwise, set to -1.
-    const resourceCount = output.reduce((resources, fileInfo) => {
+    const resourceCount = exportURLs.reduce((resources, fileInfo) => {
       if (resources === -1 || fileInfo.count === undefined) {
         return -1;
       }
       return resources + fileInfo.count;
     }, 0);
 
-    await initializeBulkFileCount(clientEntryId, output.length, resourceCount);
+    await initializeBulkFileCount(clientEntryId, exportURLs.length, resourceCount);
 
     // Enqueue a parsing job for each ndjson file
     await ndjsonQueue.saveAll(
-      output.map(locationInfo =>
+      exportURLs.map(url =>
         ndjsonQueue.createJob({
-          fileUrl: locationInfo.url,
+          fileUrl: url.url,
           clientId: clientEntryId,
           resourceCount: resourceCount === -1 ? -1 : locationInfo.count
         })
       )
     );
-
     return true;
   } catch (e) {
     await failBulkImportRequest(clientEntryId, e);
