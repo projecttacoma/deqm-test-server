@@ -29,7 +29,6 @@
     "@projecttacoma/node-fhir-server-core": "^2.2.7",
     "axios": "^0.28.0",
     "bee-queue": "^1.4.0",
-    "bulk-data-utilities": "git+https://git@github.com/projecttacoma/bulk-data-utilities",
     "cors": "^2.8.5",
     "cql-exec-fhir-mongo": "git+https://git@github.com/projecttacoma/cql-exec-fhir-mongo",
     "dotenv": "^10.0.0",
