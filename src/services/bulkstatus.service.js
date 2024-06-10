@@ -87,16 +87,46 @@ async function checkBulkStatus(req, res) {
     writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
 
     const response = {
-      transactionTime: '2021-01-01T00:00:00Z',
-      requiresAccessToken: true,
-      outcome: [
+      resourceType: 'Parameters',
+      parameter: [
+        { name: 'request', resource: bulkStatus.importManifest },
         {
-          type: 'OperationOutcome',
-          url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/OperationOutcome.ndjson`
+          name: 'outcome',
+          resource: [
+            {
+              type: 'OperationOutcome',
+              url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/OperationOutcome.ndjson`
+            }
+          ]
         }
-      ],
-      extension: { 'https://example.com/extra-property': true }
+      ]
     };
+
+    // Potential error handling for individual ndjson files, needs to be discussed furhter
+    // for (const parameter of bulkStatus.importManifest.parameter) {
+    //   if (parameter.name === 'input') {
+    //     const url = parameter.part.find(p => p.name === 'url');
+    //     const ndjsonStatus = await getNdjsonFileStatus(clientId, url);
+    //     const inputResult = { name: 'inputResult', part: [url] };
+    //     if (ndjsonStatus) {
+    //       ndjsonStatus.failedOutcomes.forEach(fail => {
+    //         const failOutcome = {};
+    //         failOutcome.id = uuidv4();
+    //         failOutcome.issue = [
+    //           {
+    //             severity: 'error',
+    //             code: 'BadRequest',
+    //             details: {
+    //               text: fail
+    //             }
+    //           }
+    //         ];
+    //         inputResult.push(new OperationOutcome(failOutcome));
+    //       });
+    //     }
+    //     response.parameter.push(inputResult);
+    //   }
+    // }
 
     if (bulkStatus.failedOutcomes.length > 0) {
       logger.debug(`bulkStatus entry contains failed outcomes`);
@@ -114,10 +144,12 @@ async function checkBulkStatus(req, res) {
         ];
         writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(failOutcome).toJSON())), 'Errors', clientId);
       });
-      response.outcome.push({
-        type: 'OperationOutcome',
-        url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
-      });
+      response.parameter
+        .find(p => p.name === 'outcome')
+        .resource.push({
+          type: 'OperationOutcome',
+          url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
+        });
     }
     return response;
   } else {

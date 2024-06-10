@@ -1,5 +1,5 @@
 const { addPendingBulkImportRequest } = require('../database/dbOperations');
-const { retrieveExportUrls } = require('../util/exportUtils');
+const { retrieveInputUrls } = require('../util/exportUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
 
@@ -15,14 +15,13 @@ async function bulkImport(req, res) {
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);
 
   // ID assigned to the requesting client
-  const clientEntry = await addPendingBulkImportRequest();
+  const clientEntry = await addPendingBulkImportRequest(req.body);
 
-  // this is where we will want to get the multiple export ndjson URLs
-  const exportURLs = retrieveExportUrls(req.body.parameter);
+  const inputUrls = retrieveInputUrls(req.body.parameter);
 
   const jobData = {
     clientEntry,
-    exportURLs
+    inputUrls
   };
   await importQueue.createJob(jobData).save();
   res.status(202);

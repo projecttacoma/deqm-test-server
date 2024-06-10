@@ -1,0 +1,23 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "url",
+          "valueUrl": "http://example.com/Example1.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "url",
+          "valueUrl": "http://example.com/Example2.ndjson"
+        }
+      ]
+    }
+  ]
+}

@@ -18,12 +18,12 @@ const importQueue = new Queue('import', {
 // New
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
-  const { clientEntry, exportURLs } = job.data;
+  const { clientEntry, inputUrls } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
   await mongoUtil.client.connect();
   // Call function to get the ndjson files
-  const result = await executeNewImportWorkflow(clientEntry, exportURLs);
+  const result = await executeNewImportWorkflow(clientEntry, inputUrls);
   if (result) {
     logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -32,29 +32,17 @@ importQueue.process(async job => {
   await mongoUtil.client.close();
 });
 
-const executeNewImportWorkflow = async (clientEntryId, exportURLs) => {
+const executeNewImportWorkflow = async (clientEntryId, inputUrls) => {
   try {
-    if (exportURLs.length === 0) {
-      throw new Error('Export server failed to export any resources');
-    }
-
-    // Calculate number of resources to export, if available. Otherwise, set to -1.
-    const resourceCount = exportURLs.reduce((resources, fileInfo) => {
-      if (resources === -1 || fileInfo.count === undefined) {
-        return -1;
-      }
-      return resources + fileInfo.count;
-    }, 0);
-
-    await initializeBulkFileCount(clientEntryId, exportURLs.length, resourceCount);
+    await initializeBulkFileCount(clientEntryId, inputUrls.length, -1);
 
     // Enqueue a parsing job for each ndjson file
     await ndjsonQueue.saveAll(
-      exportURLs.map(url =>
+      inputUrls.map(url =>
         ndjsonQueue.createJob({
           fileUrl: url.url,
           clientId: clientEntryId,
-          resourceCount: resourceCount === -1 ? -1 : locationInfo.count
+          resourceCount: -1
         })
       )
     );

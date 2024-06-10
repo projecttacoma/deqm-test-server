@@ -9,9 +9,9 @@ const testGroup = require('../fixtures/fhir-resources/testGroup.json');
 const testOrganization = require('../fixtures/fhir-resources/testOrganization.json');
 const testOrganization2 = require('../fixtures/fhir-resources/testOrganization2.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
+const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
 const testParamWithExport = require('../fixtures/fhir-resources/parameters/paramWithExport.json');
-const testParamTwoExports = require('../fixtures/fhir-resources/parameters/paramTwoExports.json');
-const testParamNoValString = require('../fixtures/fhir-resources/parameters/paramNoValueUrl.json');
+const paramNoInputValueUrl = require('../fixtures/fhir-resources/parameters/paramNoInputValueUrl.json');
 const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
@@ -78,38 +78,24 @@ describe('measure.service', () => {
   });
 
   describe('$bulk-submit-data', () => {
-    test('FHIR Parameters object is missing export URL returns 400', async () => {
+    it('Returns 400 if FHIR Parameters object is missing input URL', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$bulk-submit-data')
-        .send(testParam)
+        .send(paramNoInput)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
         .expect(400)
         .then(response => {
           expect(response.body.resourceType).toEqual('OperationOutcome');
-          expect(response.body.issue[0].details.text).toEqual('No exportUrl parameter was found.');
-        });
-    });
-
-    test('FHIR Parameters object has two export URLs', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$bulk-submit-data')
-        .send(testParamTwoExports)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('prefer', 'respond-async')
-        .expect(400)
-        .then(response => {
-          expect(response.body.resourceType).toEqual('OperationOutcome');
-          expect(response.body.issue[0].details.text).toEqual('Expected exactly one export URL. Received: 2');
+          expect(response.body.issue[0].details.text).toEqual('No inputUrl parameters were found.');
         });
     });
 
     test('FHIR Parameters object is missing valueUrl for export URL', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$bulk-submit-data')
-        .send(testParamNoValString)
+        .send(paramNoInputValueUrl)
         .set('Accept', 'application/json+fhir')
         .set('content-type', 'application/json+fhir')
         .set('prefer', 'respond-async')
@@ -117,7 +103,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.resourceType).toEqual('OperationOutcome');
           expect(response.body.issue[0].details.text).toEqual(
-            'Expected a valueUrl for the exportUrl, but none was found'
+            'Expected a valueUrl for the inputUrl, but none were found.'
           );
         });
     });
@@ -1025,21 +1011,6 @@ describe('measure.service', () => {
         });
     });
 
-    test('bulk import fails if measure bundle cannot be found', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/invalid-id/$bulk-submit-data')
-        .send(testParam)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('prefer', 'respond-async')
-        .expect(404)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('ResourceNotFound');
-          expect(response.body.issue[0].details.text).toEqual(
-            'Measure with id invalid-id does not exist in the server'
-          );
-        });
-    });
     afterEach(() => {
       jest.clearAllMocks();
     });

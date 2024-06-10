@@ -3,99 +3,36 @@ const logger = require('../server/logger');
 
 /**
  * Uses request body parameter to get all of the ndjson URLs
- */
-const retrieveExportUrls = parameters => {
-  logger.debug(`Retrieving all export URLs from parameters: ${JSON.stringify(parameters)}`);
-  const exportUrlArray = parameters
-    .filter(param => param.name === 'input')
-    .flatMap(param =>
-      param.part
-        .filter(p => p.name === 'url')
-        .map(part => ({ type: part.valueUrl.split('.ndjson')[0].split('/').at(-1), url: part.valueUrl }))
-    );
-
-  return exportUrlArray;
-};
-
-/**
- * Uses request body parameter to search for the export server URL. Validates that
- * only one URL is present.
  * @param {Object} parameters - request body parameter
- * @returns export server URL string
+ * @returns array of ndjson fileUrls
  */
-const retrieveExportUrl = parameters => {
-  logger.debug(`Retrieving export URL from parameters: ${JSON.stringify(parameters)}`);
-  const exportUrlArray = parameters.filter(param => param.name === 'exportUrl');
-  checkExportUrlArray(exportUrlArray);
-  let exportUrl = exportUrlArray[0].valueUrl;
+const retrieveInputUrls = parameters => {
+  logger.debug(`Retrieving all input URLs from parameters: ${JSON.stringify(parameters)}`);
+  const inputParamArray = parameters.filter(param => param.name === 'input');
+  checkInputUrlArray(inputParamArray);
 
-  // Retrieve comma-delimited list of type filters from parameters
-  const typesString = parameters
-    .filter(param => param.name === '_type')
-    .map(function (type) {
-      logger.debug(`Adding type ${type} to exportUrl type parameter`);
-      return type.valueString;
-    })
-    .toString();
-
-  const typeFilterString = parameters
-    .filter(param => param.name === '_typeFilter')
-    .map(function (typeFilter) {
-      logger.debug(`Adding typeFilter ${typeFilter} to exportUrl typeFilter parameter`);
-      return typeFilter.valueString;
-    })
-    .toString();
-
-  if (typesString) {
-    if (exportUrl.includes(`_type=`)) {
-      console.warn('_type parameter already supplied in exportUrl. Omitting entries from parameter array');
-    } else {
-      // add types from parameters to exportUrl
-      exportUrl += `${exportUrl.includes('_typeFilter=') ? '&' : '?'}_type=${typesString}`;
-    }
-  }
-
-  if (typeFilterString) {
-    if (exportUrl.includes(`_typeFilter=`)) {
-      console.warn('_typeFilter parameter already supplied in exportUrl. Omitting entries from parameter array');
-    } else {
-      // add type filters from parameters to exportUrl
-      exportUrl += `${exportUrl.includes('_type=') ? '&' : '?'}_typeFilter=${typeFilterString}`;
-    }
-  }
-  return exportUrl;
+  const inputUrlArray = inputParamArray.flatMap(param =>
+    param.part
+      .filter(p => p.name === 'url')
+      .map(part => ({ type: part.valueUrl.split('.ndjson')[0].split('/').at(-1), url: part.valueUrl }))
+  );
+  return inputUrlArray;
 };
 
 /**
- * Checks whether the export URL array contains exactly one exportUrl
- * @param {Array} exportUrlArray array of export URLs provided in request
+ * Checks whether the input URL array contains at least one input url and that
+ * it contains a valueUrl
+ * @param {Array} inputUrlArray array of input URLs provided in the request
  */
-const checkExportUrlArray = exportUrlArray => {
-  if (exportUrlArray.length === 0) {
-    throw new BadRequestError(`No exportUrl parameter was found.`);
+const checkInputUrlArray = inputParamArray => {
+  if (inputParamArray.length === 0) {
+    throw new BadRequestError('No inputUrl parameters were found.');
   }
-  if (exportUrlArray.length !== 1) {
-    throw new BadRequestError(`Expected exactly one export URL. Received: ${exportUrlArray.length}`);
-  }
-  // if one export URL exists, check that valueUrl exists
-  if (!exportUrlArray[0].valueUrl) {
-    throw new BadRequestError(`Expected a valueUrl for the exportUrl, but none was found`);
-  }
+  inputParamArray.forEach(inputUrl => {
+    if (!inputUrl.part.find(p => p.name === 'url').valueUrl) {
+      throw new BadRequestError('Expected a valueUrl for the inputUrl, but none were found.');
+    }
+  });
 };
 
-/**
- * Uses request body parameter to search for the export server type if there is one.
- * If there is none, defaults to dynamic.
- */
-const retrieveExportType = parameters => {
-  logger.debug(`Retrieving export type from parameters: ${JSON.stringify(parameters)}`);
-  const exportType = parameters.find(param => param.name === 'exportType');
-
-  if (!exportType) {
-    return 'dynamic';
-  } else {
-    return exportType.valueCode;
-  }
-};
-
-module.exports = { retrieveExportUrl, checkExportUrlArray, retrieveExportType, retrieveExportUrl, retrieveExportUrls };
+module.exports = { checkInputUrlArray, retrieveInputUrls };
