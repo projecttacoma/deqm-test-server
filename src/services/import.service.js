@@ -1,4 +1,4 @@
-const { addPendingBulkImportRequest } = require('../database/dbOperations');
+const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
 const { retrieveInputUrls } = require('../util/exportUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
@@ -17,13 +17,18 @@ async function bulkImport(req, res) {
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest(req.body);
 
-  const inputUrls = retrieveInputUrls(req.body.parameter);
+  try {
+    const inputUrls = retrieveInputUrls(req.body.parameter);
 
-  const jobData = {
-    clientEntry,
-    inputUrls
-  };
-  await importQueue.createJob(jobData).save();
+    const jobData = {
+      clientEntry,
+      inputUrls
+    };
+    await importQueue.createJob(jobData).save();
+  } catch (e) {
+    await failBulkImportRequest(clientEntry, e);
+  }
+
   res.status(202);
   res.setHeader(
     'Content-Location',

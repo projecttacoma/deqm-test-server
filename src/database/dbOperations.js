@@ -205,10 +205,8 @@ const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
  */
 const pushNdjsonFailedOutcomes = async (clientId, fileUrl, failedOutcomes) => {
   const collection = db.collection('ndjsonStatuses');
-  await collection.findOneAndUpdate(
-    { id: clientId + fileUrl },
-    { $push: { failedOutcomes: { $each: failedOutcomes } } }
-  );
+  await collection.insertOne({ id: clientId + fileUrl, failedOutcomes: failedOutcomes });
+  return clientId;
 };
 
 /**

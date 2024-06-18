@@ -77,7 +77,7 @@ ndjsonWorker.process(async job => {
   });
 
   // keep track of failed outcomes for individual ndjson files
-  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomes);
+  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomeData);
 
   await pushBulkFailedOutcomes(clientId, outcomeData);
   const successCount = successfulOutcomes.length;

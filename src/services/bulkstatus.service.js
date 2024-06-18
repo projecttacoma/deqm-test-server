@@ -1,5 +1,5 @@
 const { NotFoundError, BulkStatusError } = require('../util/errorUtils');
-const { getBulkImportStatus } = require('../database/dbOperations');
+const { getBulkImportStatus, getNdjsonFileStatus } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
@@ -17,6 +17,7 @@ async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
   const bulkStatus = await getBulkImportStatus(clientId);
+  let response;
 
   if (!bulkStatus) {
     const outcome = {};
@@ -39,13 +40,7 @@ async function checkBulkStatus(req, res) {
   }
 
   logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
-  if (bulkStatus.status === 'Failed') {
-    logger.debug(`bulkStatus entry is failed`);
-    throw new BulkStatusError(
-      bulkStatus.error.message || `An unknown error occurred during bulk import with id: ${clientId}`,
-      bulkStatus.error.code || 'UnknownError'
-    );
-  } else if (bulkStatus.status === 'In Progress') {
+  if (bulkStatus.status === 'In Progress') {
     logger.debug(`bulkStatus entry is in progress`);
     res.status(202);
     // Compute percent of files or resources exported
@@ -60,97 +55,103 @@ async function checkBulkStatus(req, res) {
     }
     res.set('X-Progress', `${(percentComplete * 100).toFixed(2)}% Done`);
     res.set('Retry-After', 120);
+  } else if (bulkStatus.status === 'Failed') {
+    logger.debug(`bulkStatus entry is failed`);
+    res.status(200);
+
+    // Create FHIR Bundle response
+    response = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
+        {
+          response: {
+            status: '400',
+            outcome: {
+              resourceType: 'OperationOutcome',
+              issue: [
+                {
+                  severity: 'fatal',
+                  code: 'transient',
+                  details: {
+                    text: "Internal System Error: '$import' request not processed."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    };
+
+    return response;
   } else if (bulkStatus.status === 'Completed') {
     logger.debug(`bulkStatus entry is completed`);
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
 
-    // Create and respond with operation outcome
-    const outcome = {};
-    outcome.id = uuidv4();
-    outcome.issue = [
-      {
-        severity: 'information',
-        code: 'informational',
-        details: {
-          coding: [
-            {
-              code: 'MSG_CREATED',
-              display: 'New resource created'
-            }
-          ],
-          text: `Bulk import successfully completed, successfully imported ${bulkStatus.successCount} resources`
-        }
-      }
-    ];
-    const OperationOutcome = resolveSchema(req.params.base_version, 'operationoutcome');
-    writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(outcome).toJSON())), 'OperationOutcome', clientId);
-
-    const response = {
-      resourceType: 'Parameters',
-      parameter: [
-        { name: 'request', resource: bulkStatus.importManifest },
+    response = {
+      resourceType: 'Bundle',
+      type: 'batch-response',
+      entry: [
         {
-          name: 'outcome',
-          resource: [
-            {
-              type: 'OperationOutcome',
-              url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/OperationOutcome.ndjson`
-            }
-          ]
+          response: {
+            status: '200'
+          },
+          resource: {
+            resourceType: 'Parameters',
+            parameter: [bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')]
+          }
         }
       ]
     };
 
-    // Potential error handling for individual ndjson files, needs to be discussed furhter
-    // for (const parameter of bulkStatus.importManifest.parameter) {
-    //   if (parameter.name === 'input') {
-    //     const url = parameter.part.find(p => p.name === 'url');
-    //     const ndjsonStatus = await getNdjsonFileStatus(clientId, url);
-    //     const inputResult = { name: 'inputResult', part: [url] };
-    //     if (ndjsonStatus) {
-    //       ndjsonStatus.failedOutcomes.forEach(fail => {
-    //         const failOutcome = {};
-    //         failOutcome.id = uuidv4();
-    //         failOutcome.issue = [
-    //           {
-    //             severity: 'error',
-    //             code: 'BadRequest',
-    //             details: {
-    //               text: fail
-    //             }
-    //           }
-    //         ];
-    //         inputResult.push(new OperationOutcome(failOutcome));
-    //       });
-    //     }
-    //     response.parameter.push(inputResult);
-    //   }
-    // }
-
+    // check if there were any errors with the ndjson files
     if (bulkStatus.failedOutcomes.length > 0) {
-      logger.debug(`bulkStatus entry contains failed outcomes`);
-      bulkStatus.failedOutcomes.forEach(fail => {
-        const failOutcome = {};
-        failOutcome.id = uuidv4();
-        failOutcome.issue = [
+      logger.debug('bulkStatus entry contains failed outcomes');
+
+      // Go through all of the failed outcomes and add them as
+      // outcomes on the Parameters resource
+
+      for (const parameter of bulkStatus.importManifest.parameter) {
+        if (parameter.name === 'input') {
+          const url = parameter.part.find(p => p.name === 'url');
+          const ndjsonStatus = await getNdjsonFileStatus(clientId, url.valueUrl);
+          if (ndjsonStatus) {
+            ndjsonStatus.failedOutcomes.forEach(fail => {
+              const inputResult = {
+                name: 'outcome',
+                part: [
+                  { name: 'associatedInputUrl', valueUrl: url.valueUrl },
+                  {
+                    name: 'operationOutcome',
+                    resource: {
+                      resourceType: 'OperationOutcome',
+                      issue: [{ severity: 'error', code: 'processing', details: { text: fail } }]
+                    }
+                  }
+                ]
+              };
+              response.entry[0].resource.parameter.push(inputResult);
+            });
+          }
+        }
+      }
+    } else {
+      response.entry[0].resource.parameter.push({
+        name: 'outcome',
+        part: [
           {
-            severity: 'error',
-            code: 'BadRequest',
-            details: {
-              text: fail
+            name: 'operationOutcome',
+            resource: {
+              resourceType: 'OperationOutcome',
+              issue: [{ severity: 'information', code: 'informational', details: { text: 'All OK' } }]
             }
           }
-        ];
-        writeToFile(JSON.parse(JSON.stringify(new OperationOutcome(failOutcome).toJSON())), 'Errors', clientId);
+        ]
       });
-      response.parameter
-        .find(p => p.name === 'outcome')
-        .resource.push({
-          type: 'OperationOutcome',
-          url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/Errors.ndjson`
-        });
     }
+
     return response;
   } else {
     const outcome = {};
