@@ -74,7 +74,7 @@ async function checkBulkStatus(req, res) {
                   severity: 'fatal',
                   code: 'transient',
                   details: {
-                    text: "Internal System Error: '$import' request not processed."
+                    text: bulkStatus.error.message ?? "Internal System Error: '$import' request not processed."
                   }
                 }
               ]
