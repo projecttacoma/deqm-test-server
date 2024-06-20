@@ -100,11 +100,17 @@ async function checkBulkStatus(req, res) {
           },
           resource: {
             resourceType: 'Parameters',
-            parameter: [bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')]
+            parameter: []
           }
         }
       ]
     };
+
+    if (bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')) {
+      response.entry[0].resource.parameter.push(
+        bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')
+      );
+    }
 
     // check if there were any errors with the ndjson files
     if (bulkStatus.failedOutcomes.length > 0) {
