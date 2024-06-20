@@ -1,5 +1,6 @@
 const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
 const { retrieveInputUrls } = require('../util/exportUtils');
+const { checkContentTypeHeader } = require('../util/baseUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
 
@@ -13,6 +14,8 @@ async function bulkImport(req, res) {
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);
+
+  checkContentTypeHeader(req.header);
 
   // ID assigned to the requesting client
   const clientEntry = await addPendingBulkImportRequest(req.body);
