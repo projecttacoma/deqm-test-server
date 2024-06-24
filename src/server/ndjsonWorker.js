@@ -39,7 +39,18 @@ ndjsonWorker.process(async job => {
   logger.info(`ndjson-worker-${process.pid}: processing ${fileName}`);
 
   await mongoUtil.client.connect();
-  const ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
+
+  let ndjsonResources;
+  try {
+    ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
+  } catch (e) {
+    const outcome = [`ndjson retrieval of ${fileUrl} failed with message: ${e.message}`];
+
+    await pushNdjsonFailedOutcomes(clientId, fileUrl, outcome);
+    await pushBulkFailedOutcomes(clientId, outcome);
+    process.send({ clientId, resourceCount: 0, successCount: 0 });
+    return;
+  }
 
   const insertions = ndjsonResources
     .trim()
