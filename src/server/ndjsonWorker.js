@@ -49,6 +49,7 @@ ndjsonWorker.process(async job => {
     await pushNdjsonFailedOutcomes(clientId, fileUrl, outcome);
     await pushBulkFailedOutcomes(clientId, outcome);
     process.send({ clientId, resourceCount: 0, successCount: 0 });
+    logger.info(`ndjson-worker-${process.pid}: failed to fetch ${fileName}`);
     return;
   }
 
