@@ -127,7 +127,7 @@ const submitData = async (args, { req }) => {
 };
 
 /**
- * New $bulk-submit-data follows the same workflow as the new bulk import
+ * $bulk-submit-data follows the same workflow as bulk import
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  */

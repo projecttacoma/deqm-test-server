@@ -15,7 +15,6 @@ const importQueue = new Queue('import', {
   removeOnSuccess: true
 });
 
-// New
 importQueue.process(async job => {
   // Payload of createJob exists on job.data
   const { clientEntry, inputUrls } = job.data;
@@ -23,7 +22,7 @@ importQueue.process(async job => {
 
   await mongoUtil.client.connect();
   // Call function to get the ndjson files
-  const result = await executeNewImportWorkflow(clientEntry, inputUrls);
+  const result = await executeImportWorkflow(clientEntry, inputUrls);
   if (result) {
     logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
   } else {
@@ -32,7 +31,7 @@ importQueue.process(async job => {
   await mongoUtil.client.close();
 });
 
-const executeNewImportWorkflow = async (clientEntryId, inputUrls) => {
+const executeImportWorkflow = async (clientEntryId, inputUrls) => {
   try {
     await initializeBulkFileCount(clientEntryId, inputUrls.length, -1);
 
