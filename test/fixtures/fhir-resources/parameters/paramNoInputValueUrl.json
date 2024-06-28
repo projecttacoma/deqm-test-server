@@ -1,0 +1,13 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "url"
+        }
+      ]
+    }
+  ]
+}

@@ -2,21 +2,15 @@ const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils')
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { createTransactionBundleClass } = require('../resources/transactionBundle');
-const { executePingAndPull } = require('./import.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
 const importQueue = require('../queue/importQueue');
-const { retrieveExportType, retrieveExportUrl } = require('../util/exportUtils');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
-const {
-  getMeasureBundleFromId,
-  assembleCollectionBundleFromMeasure,
-  getQueryFromReference
-} = require('../util/bundleUtils');
+const { getMeasureBundleFromId, assembleCollectionBundleFromMeasure } = require('../util/bundleUtils');
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
@@ -30,6 +24,7 @@ const {
   findResourceById
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
+const { retrieveInputUrls } = require('../util/exportUtils');
 const logger = require('../server/logger');
 const { ScaledCalculation } = require('../queue/execQueue');
 
@@ -132,9 +127,7 @@ const submitData = async (args, { req }) => {
 };
 
 /**
- * Retrieves measure bundle from the measure ID and
- * maps data requirements into an export request, which is
- * returned to the initial import client.
+ * $bulk-submit-data follows the same workflow as bulk import
  * @param {Object} args the args object passed in by the user
  * @param {Object} req the request object passed in by the user
  */
@@ -143,48 +136,16 @@ const bulkSubmitData = async (args, { req }) => {
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
-  checkSubmitDataBody(req.body);
-
   // id of inserted client
-  const clientEntry = await addPendingBulkImportRequest();
+  const clientEntry = await addPendingBulkImportRequest(req.body);
   const res = req.res;
 
-  // use measure ID and export server location to map to data-requirements
-  let measureId;
-  let measureBundle;
-  const parameters = req.body.parameter;
-  // case 1: request is in Measure/<id>/$bulk-submit-data format
-  if (req.params.id) {
-    measureId = req.params.id;
-    measureBundle = await getMeasureBundleFromId(measureId);
-  }
-  // case 2: request is in Measure/$bulk-submit-data format
-  else {
-    const measureReport = parameters.filter(param => param.resource?.resourceType === 'MeasureReport')[0];
-    // get measure resource from db that matches measure param since no id is present in request
-    const query = getQueryFromReference(measureReport.resource.measure);
-    const measureResource = await findOneResourceWithQuery(query, 'Measure');
-    measureId = measureResource.id;
-    measureBundle = await getMeasureBundleFromId(measureId);
-  }
-
   // retrieve data requirements
-  const exportURL = retrieveExportUrl(parameters);
-  const exportType = retrieveExportType(parameters);
-
-  // retrieve useTypeFilters boolean
-  const useTypeFiltersArray = parameters.filter(param => param.name === 'useTypeFilters');
-  let useTypeFilters;
-  if (useTypeFiltersArray.length > 0) {
-    useTypeFilters = useTypeFiltersArray[0].valueBoolean;
-  }
+  const inputUrls = retrieveInputUrls(req.body.parameter);
 
   const jobData = {
     clientEntry,
-    exportURL,
-    exportType,
-    measureBundle,
-    useTypeFilters
+    inputUrls
   };
   await importQueue.createJob(jobData).save();
   res.status(202);
@@ -573,6 +534,5 @@ module.exports = {
   bulkSubmitData,
   dataRequirements,
   evaluateMeasure,
-  careGaps,
-  executePingAndPull
+  careGaps
 };

@@ -1,5 +1,18 @@
 [
-  { "id": "PENDING_REQUEST", "status": "In Progress", "error": { "code": null, "message": null } },
+  {
+    "id": "PENDING_REQUEST",
+    "status": "In Progress",
+    "error": { "code": null, "message": null },
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
+  },
   {
     "id": "PENDING_REQUEST_WITH_FILE_COUNT",
     "status": "In Progress",
@@ -8,7 +21,16 @@
     "totalResourceCount": -1,
     "exportedResourceCount": -1,
     "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
@@ -18,7 +40,16 @@
     "totalResourceCount": 500,
     "exportedResourceCount": 200,
     "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
@@ -28,31 +59,61 @@
     "totalResourceCount": 500,
     "exportedResourceCount": 10,
     "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
     "id": "COMPLETED_REQUEST",
     "status": "Completed",
     "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
     "status": "Completed",
     "error": { "code": null, "message": null },
-    "failedOutcomes": ["Test error message"]
+    "failedOutcomes": ["Test error message"],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
-    "id": "KNOWN_ERROR_REQUEST",
-    "status": "Error",
-    "error": { "code": "ErrorCode", "message": "Known Error Occurred!" },
-    "failedOutcomes": []
-  },
-  {
-    "id": "UNKNOWN_ERROR_REQUEST",
-    "status": "Error",
-    "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "id": "ERROR_REQUEST",
+    "status": "Failed",
+    "error": { "code": "ErrorCode", "message": "Error Occurred!" },
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
@@ -63,6 +124,15 @@
     "exportedResourceCount": 200,
     "successCount": 200,
     "error": { "code": null, "message": null },
-    "failedOutcomes": []
+    "failedOutcomes": [],
+    "importManifest": {
+      "resourceType": "Parameters",
+      "parameter": [
+        {
+          "name": "requestIdentity",
+          "valueString": "request-identity-example"
+        }
+      ]
+    }
   }
 ]

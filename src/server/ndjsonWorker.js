@@ -2,7 +2,7 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const axios = require('axios');
-const { updateResource, pushBulkFailedOutcomes } = require('../database/dbOperations');
+const { updateResource, pushBulkFailedOutcomes, pushNdjsonFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 const logger = require('./logger');
@@ -39,7 +39,19 @@ ndjsonWorker.process(async job => {
   logger.info(`ndjson-worker-${process.pid}: processing ${fileName}`);
 
   await mongoUtil.client.connect();
-  const ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
+
+  let ndjsonResources;
+  try {
+    ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
+  } catch (e) {
+    const outcome = [`ndjson retrieval of ${fileUrl} failed with message: ${e.message}`];
+
+    await pushNdjsonFailedOutcomes(clientId, fileUrl, outcome);
+    await pushBulkFailedOutcomes(clientId, outcome);
+    process.send({ clientId, resourceCount: 0, successCount: 0 });
+    logger.info(`ndjson-worker-${process.pid}: failed to fetch ${fileName}`);
+    return;
+  }
 
   const insertions = ndjsonResources
     .trim()
@@ -68,15 +80,19 @@ ndjsonWorker.process(async job => {
   const outcomes = await Promise.allSettled(insertions);
 
   const failedOutcomes = outcomes.filter(outcome => outcome.status === 'rejected');
-  const succesfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
+  const successfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
 
   const outcomeData = [];
 
   failedOutcomes.forEach(out => {
     outcomeData.push(out.reason.message);
   });
+
+  // keep track of failed outcomes for individual ndjson files
+  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomeData);
+
   await pushBulkFailedOutcomes(clientId, outcomeData);
-  const successCount = succesfulOutcomes.length;
+  const successCount = successfulOutcomes.length;
   logger.info(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
   process.send({ clientId, resourceCount, successCount });

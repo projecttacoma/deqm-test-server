@@ -1,5 +1,6 @@
-const { addPendingBulkImportRequest } = require('../database/dbOperations');
-const { retrieveExportUrl, retrieveExportType } = require('../util/exportUtils');
+const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
+const { retrieveInputUrls } = require('../util/exportUtils');
+const { checkContentTypeHeader } = require('../util/baseUtils');
 const importQueue = require('../queue/importQueue');
 const logger = require('../server/logger');
 
@@ -9,23 +10,28 @@ const logger = require('../server/logger');
  * @param {Object} res The response object returned to the client by the server
  */
 async function bulkImport(req, res) {
-  logger.info('Base >>> $import');
-  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.info('Base >>> Import');
+  logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);
 
+  checkContentTypeHeader(req.headers);
+
   // ID assigned to the requesting client
-  const clientEntry = await addPendingBulkImportRequest();
+  const clientEntry = await addPendingBulkImportRequest(req.body);
 
-  const exportURL = retrieveExportUrl(req.body.parameter);
-  const exportType = retrieveExportType(req.body.parameter);
+  try {
+    const inputUrls = retrieveInputUrls(req.body.parameter);
 
-  const jobData = {
-    clientEntry,
-    exportURL,
-    exportType
-  };
-  await importQueue.createJob(jobData).save();
+    const jobData = {
+      clientEntry,
+      inputUrls
+    };
+    await importQueue.createJob(jobData).save();
+  } catch (e) {
+    await failBulkImportRequest(clientEntry, e);
+  }
+
   res.status(202);
   res.setHeader(
     'Content-Location',

@@ -5,7 +5,7 @@ const { ServerError } = require('@projecttacoma/node-fhir-server-core');
  */
 class CustomServerError extends ServerError {
   constructor(message, customStatusCode, customCode) {
-    super(null, {
+    super(message, {
       statusCode: customStatusCode,
       issue: [
         {

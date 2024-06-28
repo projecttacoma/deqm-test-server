@@ -10,8 +10,9 @@ describe('bulkstatus.service', () => {
     server = initialize(config);
     await bulkStatusSetup();
   });
+
   describe('checkBulkStatus logic', () => {
-    test('check 202 returned for pending request', async () => {
+    it('returns 202 status for pending request', async () => {
       await supertest(server.app)
         .get('/4_0_1/bulkstatus/PENDING_REQUEST')
         .expect(202)
@@ -19,60 +20,27 @@ describe('bulkstatus.service', () => {
           expect(response.headers['retry-after']).toEqual('120');
         });
     });
-    test('check 200 returned for completed request', async () => {
+
+    it('returns 200 status for completed request and All OK Operation Outcome with no errors', async () => {
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
       expect(response.headers.expires).toBeDefined();
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
-      expect(response.body.outcome[0].type).toEqual('OperationOutcome');
-      await supertest(server.app)
-        .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
-        .expect(200);
+      expect(response.body.entry[0].response.status).toEqual('200');
+      // add check for All OK OperationOutcome ?
     });
-    test('check single OperationOutcome response for completed request', async () => {
-      const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
-      const operationResponse = await supertest(server.app)
-        .get(response.body.outcome[0].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, ''))
-        .expect(200);
-      const count = (operationResponse.text.match(/OperationOutcome/g) || []).length;
-      expect(count).toEqual(1);
-    });
-    test('check 200 returned with error OperationOutcome ndjson file when it exists', async () => {
-      const response = await supertest(server.app)
-        .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
-        .expect(200);
-      expect(response.headers.expires).toBeDefined();
+
+    it('returns 200 status and a batch-response bundle with 400 status when $import failed', async () => {
+      const response = await supertest(server.app).get('/4_0_1/bulkstatus/ERROR_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
-      expect(response.body.outcome.length).toEqual(2);
-      expect(response.body.outcome[1].type).toEqual('OperationOutcome');
-      await supertest(server.app)
-        .get(response.body.outcome[1].url.replace(`http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`, '')) //TODO: may need to break apart base_url to get slug
-        .expect(200);
+      expect(response.body.entry[0].response.status).toEqual('400');
+      // add check for fatal OperationOutcome ?
     });
-    test('check 500 and error returned for failed request with known error', async () => {
-      await supertest(server.app)
-        .get('/4_0_1/bulkstatus/KNOWN_ERROR_REQUEST')
-        .expect(500)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('ErrorCode');
-          expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
-          expect(response.body.issue[0].details.text).toEqual('Known Error Occurred!');
-        });
-    });
-    test('check 500 and generic error returned for request with unknown error', async () => {
-      await supertest(server.app)
-        .get('/4_0_1/bulkstatus/UNKNOWN_ERROR_REQUEST')
-        .expect(500)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('UnknownError');
-          expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
-          expect(response.body.issue[0].details.text).toEqual(
-            'An unknown error occurred during bulk import with id: UNKNOWN_ERROR_REQUEST'
-          );
-        });
-    });
-    test('check 404 error returned for request with unknown ID', async () => {
+
+    // TODO: Add tests for when a 200 status is returned but there were failed outcomes
+
+    it('returns 404 status for request with unknown ID', async () => {
       await supertest(server.app)
         .get('/4_0_1/bulkstatus/INVALID_ID')
         .expect(404)
@@ -80,16 +48,6 @@ describe('bulkstatus.service', () => {
           expect(response.body.issue[0].code).toEqual('NotFound');
           expect(response.body.issue[0].details.text).toEqual('Could not find bulk import request with id: INVALID_ID');
         });
-    });
-    test('check operationOutcome includes the number of resources when available', async () => {
-      await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_COUNT').expect(200);
-      const response = await supertest(server.app).get(
-        '/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_COUNT/OperationOutcome.ndjson'
-      );
-      const data = JSON.parse(response.text);
-      expect(data.issue[0].details.text).toEqual(
-        'Bulk import successfully completed, successfully imported 200 resources'
-      );
     });
   });
 

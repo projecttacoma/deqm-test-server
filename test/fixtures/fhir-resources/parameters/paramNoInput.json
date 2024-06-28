@@ -8,10 +8,6 @@
         "id": "measurereport-testMeasure",
         "measure": "Measure/testMeasure"
       }
-    },
-    {
-      "name": "exportUrl",
-      "valueUrl": "not-real-url"
     }
   ]
 }

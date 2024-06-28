@@ -217,22 +217,11 @@ Check out the [Patient-everything operation spec](https://www.hl7.org/fhir/opera
 
 ### Bulk Data Access
 
-The server contains functionality for the FHIR Bulk Data Import operation using the [Ping and Pull Approach](https://github.com/smart-on-fhir/bulk-import/blob/master/import-pnp.md).
+The server contains functionality for the bulk $import operation as defined by the [Data Exchange for Quality Measures Implementation Guide](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/bulk-import.html#data-exchange-using-bulk-import).
 
-To implement a bulk data import operation of all the resources on a FHIR Bulk Data Export server, POST a valid FHIR parameters object to `http://localhost:3000/$import`. Use the parameter format below to specify a bulk export server.
+The first step in the bulk $import operation work flow is to gather data for submission and organize that data into a set of inputs that this server will retrieve. This is outlined in detail in the [DEQM IG Data Exchange Using Bulk $import Section](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/bulk-import.html#data-exchange-using-bulk-import) and _by type_ inputs can be gathered using the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation. _by subject_ and hybrid _by type_ and _by subject_ inputs are not yet implemented in this server.
 
-To implement the bulk data import operation from the data requirements for a specific measure, first POST a valid transaction bundle. Then, POST a valid FHIR parameters object to `http://localhost:3000/4_0_1/Measure/$bulk-submit-data` or `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$bulk-submit-data` with the `"prefer": "respond-async"` header populated. This will kick off the "ping and pull" bulk import.
-
-For the bulk data import operation to be successful, the user must specify an export URL to a FHIR Bulk Data Export server in the request body of the FHIR parameters object. For example, in the `parameter` array of the FHIR parameters object, the user can include
-
-```bash
-{
-     "name": "exportUrl",
-     "valueString": "https://example-export.com"
-}
-```
-
-with a valid kickoff endpoint URL for the `valueString`.
+To kickoff a bulk data import operation, POST a valid [Import Manifest](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/StructureDefinition-ImportManifest.html) object to `http://localhost:3000/$import`.
 
 The user can check the status of an $import or $bulk-submit-data request by copying the content-location header in the response, and sending a GET request to `http://localhost:3000/<content-location-header>`.
 

@@ -131,7 +131,7 @@ const findResourcesWithAggregation = async (query, resourceType) => {
  * which can be queried to get updates on the status of the bulk import
  * @returns {string} the id of the inserted client
  */
-const addPendingBulkImportRequest = async () => {
+const addPendingBulkImportRequest = async body => {
   const collection = db.collection('bulkImportStatuses');
   const clientId = uuidv4();
   const bulkImportClient = {
@@ -146,7 +146,8 @@ const addPendingBulkImportRequest = async () => {
     totalFileCount: -1,
     exportedResourceCount: -1,
     totalResourceCount: -1,
-    failedOutcomes: []
+    failedOutcomes: [],
+    importManifest: body
   };
   logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
   await collection.insertOne(bulkImportClient);
@@ -193,6 +194,30 @@ const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
   const collection = db.collection('bulkImportStatuses');
   logger.debug(`Pushing failed outcomes to bulkImportStatus with clientId: ${clientId}`);
   await collection.findOneAndUpdate({ id: clientId }, { $push: { failedOutcomes: { $each: failedOutcomes } } });
+};
+
+/**
+ * Pushes an array of error messages to a ndjson status entry to later be converted to
+ * OperationOutcomes and made accessible via ndjson file to requestor
+ * @param {String} clientId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
+ */
+const pushNdjsonFailedOutcomes = async (clientId, fileUrl, failedOutcomes) => {
+  const collection = db.collection('ndjsonStatuses');
+  await collection.insertOne({ id: clientId + fileUrl, failedOutcomes: failedOutcomes });
+  return clientId;
+};
+
+/**
+ * Wrapper for the findResourceById function that only searches ndjsonStatuses db
+ * @param {string} clientId The id signifying the bulk status request
+ * @param {string} fileUrl The ndjson fileUrl
+ * @returns {Object} The ndjson status entry for the passed in clientId and fileUrl
+ */
+const getNdjsonFileStatus = async (clientId, fileUrl) => {
+  const status = await findResourceById(clientId + fileUrl, 'ndjsonStatuses');
+  return status;
 };
 
 /**
@@ -318,5 +343,7 @@ module.exports = {
   removeResource,
   updateResource,
   updateSuccessfulImportCount,
-  getCountOfCollection
+  getCountOfCollection,
+  pushNdjsonFailedOutcomes,
+  getNdjsonFileStatus
 };
