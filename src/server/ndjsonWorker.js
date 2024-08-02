@@ -53,29 +53,31 @@ ndjsonWorker.process(async job => {
     return;
   }
 
-  const insertions = ndjsonResources
-    .trim()
-    .split(/\n/)
-    .map(async resourceStr => {
-      let data;
-      try {
-        data = JSON.parse(resourceStr);
-      } catch (e) {
-        throw new Error(`Error parsing JSON: ${resourceStr}`);
-      }
-      try {
-        checkSupportedResource(data.resourceType);
-        return updateResource(data.id, data, data.resourceType);
-      } catch (e) {
-        // Here, the location of the error message varies between standard error and ServerError
-        // The former path finds the message for a ServerError, the latter for a standard error
-        throw new Error(
-          `${data.resourceType}/${data.id} failed import with the following message: ${
-            e.issue?.[0]?.details?.text ?? e.message
-          }`
-        );
-      }
-    });
+  const ndjsonLines = ndjsonResources.trim().split(/\n/);
+  if (ndjsonLines.length > 0 && JSON.parse(ndjsonLines[0]).resourceType === 'Parameters') {
+    // check first line for a Parameters header and remove if necessary
+    ndjsonLines.shift();
+  }
+  const insertions = ndjsonLines.map(async resourceStr => {
+    let data;
+    try {
+      data = JSON.parse(resourceStr);
+    } catch (e) {
+      throw new Error(`Error parsing JSON: ${resourceStr}`);
+    }
+    try {
+      checkSupportedResource(data.resourceType);
+      return updateResource(data.id, data, data.resourceType);
+    } catch (e) {
+      // Here, the location of the error message varies between standard error and ServerError
+      // The former path finds the message for a ServerError, the latter for a standard error
+      throw new Error(
+        `${data.resourceType}/${data.id} failed import with the following message: ${
+          e.issue?.[0]?.details?.text ?? e.message
+        }`
+      );
+    }
+  });
 
   const outcomes = await Promise.allSettled(insertions);
 
