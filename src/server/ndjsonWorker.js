@@ -58,24 +58,16 @@ ndjsonWorker.process(async job => {
     // check first line for a Parameters header and remove if necessary
     ndjsonLines.shift();
   }
-  const insertions = ndjsonLines.map(async resourceStr => {
+
+  const insertions = ndjsonLines.map(async (resourceStr, index) => {
     let data;
     try {
+      index++;
       data = JSON.parse(resourceStr);
-    } catch (e) {
-      throw new Error(`Error parsing JSON: ${resourceStr}`);
-    }
-    try {
       checkSupportedResource(data.resourceType);
       return updateResource(data.id, data, data.resourceType);
     } catch (e) {
-      // Here, the location of the error message varies between standard error and ServerError
-      // The former path finds the message for a ServerError, the latter for a standard error
-      throw new Error(
-        `${data.resourceType}/${data.id} failed import with the following message: ${
-          e.issue?.[0]?.details?.text ?? e.message
-        }`
-      );
+      throw new Error(`Failed to process entry at row ${index}: ${e.issue?.[0]?.details?.text ?? e.message}`);
     }
   });
 
@@ -89,14 +81,14 @@ ndjsonWorker.process(async job => {
   failedOutcomes.forEach(out => {
     outcomeData.push(out.reason.message);
   });
+  const successCount = successfulOutcomes.length;
 
   // keep track of failed outcomes for individual ndjson files
-  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomeData);
+  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomeData, successCount);
 
   await pushBulkFailedOutcomes(clientId, outcomeData);
-  const successCount = successfulOutcomes.length;
-  logger.info(`ndjson-worker-${process.pid}: processed ${fileName}`);
 
+  logger.info(`ndjson-worker-${process.pid}: processed ${fileName}`);
   process.send({ clientId, resourceCount, successCount });
 
   await mongoUtil.client.close();

@@ -96,6 +96,24 @@
         {
           "name": "requestIdentity",
           "valueString": "request-identity-example"
+        },
+        {
+          "name": "input",
+          "part": [
+            {
+              "name": "url",
+              "valueUrl": "http://localhost:3001/Condition.ndjson"
+            },
+            {
+              "name": "inputDetails",
+              "part": [
+                {
+                  "name": "resourceType",
+                  "valueCode": "Condition"
+                }
+              ]
+            }
+          ]
         }
       ]
     }

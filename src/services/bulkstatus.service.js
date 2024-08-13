@@ -140,6 +140,26 @@ async function checkBulkStatus(req, res) {
               };
               response.entry[0].resource.parameter.push(inputResult);
             });
+            const successCountResult = {
+              name: 'outcome',
+              part: [
+                { name: 'associatedInputUrl', valueUrl: url.valueUrl },
+                {
+                  name: 'operationOutcome',
+                  resource: {
+                    resourceType: 'OperationOutcome',
+                    issue: [
+                      {
+                        severity: 'information',
+                        code: 'informational',
+                        details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+                      }
+                    ]
+                  }
+                }
+              ]
+            };
+            response.entry[0].resource.parameter.push(successCountResult);
           }
         }
       }
