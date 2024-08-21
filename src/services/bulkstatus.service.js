@@ -40,7 +40,13 @@ async function checkBulkStatus(req, res) {
   }
 
   logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
-  if (bulkStatus.status === 'In Progress') {
+  if (
+    bulkStatus.status === 'In Progress' ||
+    (bulkStatus.status === 'In Progress' &&
+      bulkStatus.exportedFileCount &&
+      bulkStatus.totalFileCount &&
+      bulkStatus.exportedFileCount === bulkStatus.totalFileCount)
+  ) {
     logger.debug(`bulkStatus entry is in progress`);
     res.status(202);
     // Compute percent of files or resources exported
@@ -85,7 +91,7 @@ async function checkBulkStatus(req, res) {
     };
 
     return response;
-  } else if (bulkStatus.status === 'Completed') {
+  } else if (bulkStatus.status === 'Completed' || bulkStatus.exportedFileCount === bulkStatus.totalFileCount) {
     logger.debug(`bulkStatus entry is completed`);
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
@@ -140,26 +146,28 @@ async function checkBulkStatus(req, res) {
               };
               response.entry[0].resource.parameter.push(inputResult);
             });
-            const successCountResult = {
-              name: 'outcome',
-              part: [
-                { name: 'associatedInputUrl', valueUrl: url.valueUrl },
-                {
-                  name: 'operationOutcome',
-                  resource: {
-                    resourceType: 'OperationOutcome',
-                    issue: [
-                      {
-                        severity: 'information',
-                        code: 'informational',
-                        details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
-                      }
-                    ]
+            if (ndjsonStatus.successCount) {
+              const successCountResult = {
+                name: 'outcome',
+                part: [
+                  { name: 'associatedInputUrl', valueUrl: url.valueUrl },
+                  {
+                    name: 'operationOutcome',
+                    resource: {
+                      resourceType: 'OperationOutcome',
+                      issue: [
+                        {
+                          severity: 'information',
+                          code: 'informational',
+                          details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+                        }
+                      ]
+                    }
                   }
-                }
-              ]
-            };
-            response.entry[0].resource.parameter.push(successCountResult);
+                ]
+              };
+              response.entry[0].resource.parameter.push(successCountResult);
+            }
           }
         }
       }
