@@ -53,28 +53,36 @@ ndjsonWorker.process(async job => {
     return;
   }
 
-  const ndjsonLines = ndjsonResources.trim().split(/\n/);
-  if (ndjsonLines.length > 0 && JSON.parse(ndjsonLines[0]).resourceType === 'Parameters') {
-    // check first line for a Parameters header and remove if necessary
-    ndjsonLines.shift();
-  }
+  const ndjsonLines = ndjsonResources.split(/\n/);
 
   const insertions = ndjsonLines.map(async (resourceStr, index) => {
-    let data;
+    resourceStr = resourceStr.trim();
+
+    // if line is empty skip
+    if (resourceStr === '') {
+      return null;
+    }
+
+    // attempt to parse the line
     try {
-      index++;
-      data = JSON.parse(resourceStr);
+      const data = JSON.parse(resourceStr);
+
+      // check if first line is Parameters header and skip it
+      if (index === 0 && data.resourceType === 'Parameters') {
+        return null;
+      }
+
       checkSupportedResource(data.resourceType);
       return updateResource(data.id, data, data.resourceType);
     } catch (e) {
-      throw new Error(`Failed to process entry at row ${index}: ${e.issue?.[0]?.details?.text ?? e.message}`);
+      throw new Error(`Failed to process entry at row ${index + 1}: ${e.issue?.[0]?.details?.text ?? e.message}`);
     }
   });
 
   const outcomes = await Promise.allSettled(insertions);
 
   const failedOutcomes = outcomes.filter(outcome => outcome.status === 'rejected');
-  const successfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled');
+  const successfulOutcomes = outcomes.filter(outcome => outcome.status === 'fulfilled' && outcome.value?.id);
 
   const outcomeData = [];
 
