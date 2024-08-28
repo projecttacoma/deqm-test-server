@@ -55,6 +55,9 @@ ndjsonWorker.process(async job => {
 
   const ndjsonLines = ndjsonResources.split(/\n/);
 
+  // keep track of when we hit the first non-empty line
+  let hitNonEmpty = false;
+
   const insertions = ndjsonLines.map(async (resourceStr, index) => {
     resourceStr = resourceStr.trim();
 
@@ -65,16 +68,22 @@ ndjsonWorker.process(async job => {
 
     // attempt to parse the line
     try {
+      // capture the value of if we already hit a non empty line incase we can parse this resource
+      const wasNotEmptyHit = hitNonEmpty;
+      // set this to true now that we have reached a non empty line
+      hitNonEmpty = true;
+
       const data = JSON.parse(resourceStr);
 
-      // check if first line is Parameters header and skip it
-      if (index === 0 && data.resourceType === 'Parameters') {
+      // check if first non empty line is a Parameters header and skip it
+      if (!wasNotEmptyHit && data.resourceType === 'Parameters') {
         return null;
       }
 
       checkSupportedResource(data.resourceType);
       return updateResource(data.id, data, data.resourceType);
     } catch (e) {
+      // Rethrow the error with info on the line number. This fails the async promise and will be collected later.
       throw new Error(`Failed to process entry at row ${index + 1}: ${e.issue?.[0]?.details?.text ?? e.message}`);
     }
   });
