@@ -7,6 +7,7 @@ const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
 const os = require('os');
+const ndjsonQueue = require('./queue/ndjsonProcessQueue');
 
 const app = express();
 app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
@@ -14,6 +15,7 @@ app.use(express.json({ limit: '50mb', type: 'application/fhir+json' }));
 
 const config = buildConfig();
 const server = initialize(config, app);
+const workerProcesses = [];
 
 const workerTotal =
   parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS) + parseInt(process.env.EXEC_WORKERS);
@@ -23,22 +25,26 @@ if (workerTotal > os.cpus().length) {
 }
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
-  childProcess.fork('./src/server/importWorker.js');
+  workerProcesses.push(childProcess.fork('./src/server/importWorker.js'));
 }
 
 for (let i = 0; i < process.env.EXEC_WORKERS; i++) {
-  childProcess.fork('./src/server/execWorker.js');
+  workerProcesses.push(childProcess.fork('./src/server/execWorker.js'));
 }
 
 for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
-  const child = childProcess.fork('./src/server/ndjsonWorker.js');
-
-  // Database updates need to happen from the main process to avoid race conditions
-  child.on('message', async ({ clientId, resourceCount, successCount }) => {
+  workerProcesses.push(childProcess.fork('./src/server/ndjsonWorker.js'));
+}
+// Database updates need to happen from the main process to avoid race conditions for bulk status update
+ndjsonQueue.on('job succeeded', async (jobId, { clientId, resourceCount, successCount }) => {
+  logger.debug(`ndjson job ${jobId} succeeded`);
+  try {
     await decrementBulkFileCount(clientId, resourceCount);
     await updateSuccessfulImportCount(clientId, successCount);
-  });
-}
+  } catch (e) {
+    logger.info(`Error processing ndjson-worker message: ${e.message}`);
+  }
+});
 
 const port = process.env.SERVER_PORT || 3000;
 
@@ -51,3 +57,22 @@ server.listen(port, async () => {
     logger.info('Added qicore profiles to validator server');
   }
 });
+
+process.on('exit', exitHandler);
+process.on('SIGINT', exitHandler);
+process.on('SIGTERM', exitHandler);
+
+let stopping = false;
+function exitHandler(code) {
+  if (!stopping) {
+    stopping = true;
+    logger.info('Shuting down...');
+    workerProcesses.forEach(worker => {
+      worker.kill('SIGTERM');
+    });
+    setTimeout(() => {
+      logger.info('Workers stopped... Goodbye!');
+      process.exit(code ?? 0);
+    }, 2000);
+  }
+}

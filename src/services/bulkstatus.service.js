@@ -40,13 +40,7 @@ async function checkBulkStatus(req, res) {
   }
 
   logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
-  if (
-    bulkStatus.status === 'In Progress' ||
-    (bulkStatus.status === 'In Progress' &&
-      bulkStatus.exportedFileCount &&
-      bulkStatus.totalFileCount &&
-      bulkStatus.exportedFileCount === bulkStatus.totalFileCount)
-  ) {
+  if (bulkStatus.status === 'In Progress') {
     logger.debug(`bulkStatus entry is in progress`);
     res.status(202);
     // Compute percent of files or resources exported

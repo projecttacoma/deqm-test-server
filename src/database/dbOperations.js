@@ -292,6 +292,7 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
 
   // Complete import request when file count reaches 0
   if (value.exportedFileCount === 0) {
+    logger.info(`Completed Import Request for: ${clientId}`);
     await completeBulkImportRequest(clientId);
   }
 };

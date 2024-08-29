@@ -50,7 +50,7 @@ ndjsonWorker.process(async job => {
     await pushBulkFailedOutcomes(clientId, outcome);
     process.send({ clientId, resourceCount: 0, successCount: 0 });
     logger.info(`ndjson-worker-${process.pid}: failed to fetch ${fileName}`);
-    return;
+    return { clientId, resourceCount: 0, successCount: 0 };
   }
 
   const ndjsonLines = ndjsonResources.split(/\n/);
@@ -109,4 +109,18 @@ ndjsonWorker.process(async job => {
   process.send({ clientId, resourceCount, successCount });
 
   await mongoUtil.client.close();
+  return { clientId, resourceCount, successCount };
 });
+
+process.on('exit', exitHandler);
+process.on('SIGINT', exitHandler);
+process.on('SIGTERM', exitHandler);
+
+let stopping = false;
+function exitHandler() {
+  if (!stopping) {
+    stopping = true;
+    logger.info(`ndjson-worker-${process.pid}: ndjson Worker Stopping`);
+    process.exit();
+  }
+}
