@@ -85,7 +85,7 @@ async function checkBulkStatus(req, res) {
     };
 
     return response;
-  } else if (bulkStatus.status === 'Completed' || bulkStatus.exportedFileCount === bulkStatus.totalFileCount) {
+  } else if (bulkStatus.status === 'Completed') {
     logger.debug(`bulkStatus entry is completed`);
     res.status(200);
     res.set('Expires', 'EXAMPLE_EXPIRATION_DATE');
