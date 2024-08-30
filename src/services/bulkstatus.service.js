@@ -178,6 +178,35 @@ async function checkBulkStatus(req, res) {
           }
         ]
       });
+      // create success counts for every file
+      for (const parameter of bulkStatus.importManifest.parameter) {
+        if (parameter.name === 'input') {
+          const url = parameter.part.find(p => p.name === 'url');
+          const ndjsonStatus = await getNdjsonFileStatus(clientId, url.valueUrl);
+          if (ndjsonStatus?.successCount) {
+            const successCountResult = {
+              name: 'outcome',
+              part: [
+                { name: 'associatedInputUrl', valueUrl: url.valueUrl },
+                {
+                  name: 'operationOutcome',
+                  resource: {
+                    resourceType: 'OperationOutcome',
+                    issue: [
+                      {
+                        severity: 'information',
+                        code: 'informational',
+                        details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+                      }
+                    ]
+                  }
+                }
+              ]
+            };
+            response.entry[0].resource.parameter.push(successCountResult);
+          }
+        }
+      }
     }
 
     return response;
