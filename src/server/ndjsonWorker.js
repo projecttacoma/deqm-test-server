@@ -56,7 +56,7 @@ ndjsonWorker.process(async job => {
   const ndjsonLines = ndjsonResources.split(/\n/);
 
   // keep track of when we hit the first non-empty line
-  let hitNonEmpty = false;
+  let firstNonEmptyLine = null;
 
   const insertions = ndjsonLines.map(async (resourceStr, index) => {
     resourceStr = resourceStr.trim();
@@ -66,17 +66,17 @@ ndjsonWorker.process(async job => {
       return null;
     }
 
+    // if this is the first non empty line then mark that we found it
+    if (firstNonEmptyLine === null) {
+      firstNonEmptyLine = index;
+    }
+
     // attempt to parse the line
     try {
-      // capture the value of if we already hit a non empty line incase we can parse this resource
-      const wasNotEmptyHit = hitNonEmpty;
-      // set this to true now that we have reached a non empty line
-      hitNonEmpty = true;
-
       const data = JSON.parse(resourceStr);
 
       // check if first non empty line is a Parameters header and skip it
-      if (!wasNotEmptyHit && data.resourceType === 'Parameters') {
+      if (firstNonEmptyLine === index && data.resourceType === 'Parameters') {
         return null;
       }
 

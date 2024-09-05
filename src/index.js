@@ -63,7 +63,7 @@ process.on('SIGINT', exitHandler);
 process.on('SIGTERM', exitHandler);
 
 let stopping = false;
-function exitHandler(code) {
+function exitHandler() {
   if (!stopping) {
     stopping = true;
     logger.info('Shuting down...');
@@ -72,7 +72,7 @@ function exitHandler(code) {
     });
     setTimeout(() => {
       logger.info('Workers stopped... Goodbye!');
-      process.exit(code ?? 0);
+      process.exit();
     }, 2000);
   }
 }
