@@ -112,4 +112,17 @@ execQueue.process(async job => {
   return res;
 });
 
+process.on('exit', exitHandler);
+process.on('SIGINT', exitHandler);
+process.on('SIGTERM', exitHandler);
+
+let stopping = false;
+function exitHandler() {
+  if (!stopping) {
+    stopping = true;
+    logger.info(`exec-worker-${process.pid}: Execution Worker Stopping`);
+    process.exit();
+  }
+}
+
 module.exports = execQueue;

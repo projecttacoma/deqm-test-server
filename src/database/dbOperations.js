@@ -203,9 +203,13 @@ const pushBulkFailedOutcomes = async (clientId, failedOutcomes) => {
  * @param {String} fileUrl The url for the resource ndjson
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
  */
-const pushNdjsonFailedOutcomes = async (clientId, fileUrl, failedOutcomes) => {
+const pushNdjsonFailedOutcomes = async (clientId, fileUrl, failedOutcomes, successCount) => {
   const collection = db.collection('ndjsonStatuses');
-  await collection.insertOne({ id: clientId + fileUrl, failedOutcomes: failedOutcomes });
+  await collection.insertOne({
+    id: clientId + fileUrl,
+    failedOutcomes: failedOutcomes,
+    successCount: successCount
+  });
   return clientId;
 };
 
@@ -288,6 +292,7 @@ const decrementBulkFileCount = async (clientId, resourceCount) => {
 
   // Complete import request when file count reaches 0
   if (value.exportedFileCount === 0) {
+    logger.info(`Completed Import Request for: ${clientId}`);
     await completeBulkImportRequest(clientId);
   }
 };

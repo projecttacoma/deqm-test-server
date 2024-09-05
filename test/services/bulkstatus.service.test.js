@@ -27,7 +27,7 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.entry[0].response.status).toEqual('200');
-      // add check for All OK OperationOutcome ?
+      expect(response.body.entry[0].resource.parameter[1].part[0].resource.issue[0].details.text).toEqual('All OK');
     });
 
     it('returns 200 status and a batch-response bundle with 400 status when $import failed', async () => {
@@ -35,10 +35,23 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.entry[0].response.status).toEqual('400');
-      // add check for fatal OperationOutcome ?
+      expect(response.body.entry[0].response.outcome.issue[0].severity).toEqual('fatal');
     });
 
-    // TODO: Add tests for when a 200 status is returned but there were failed outcomes
+    it('returns 200 status for completed request but with one failed outcome', async () => {
+      const response = await supertest(server.app)
+        .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
+        .expect(200);
+      expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
+      expect(response.body).toBeDefined();
+      expect(response.body.entry[0].response.status).toEqual('200');
+      expect(response.body.entry[0].resource.parameter[1].part[1].resource.issue[0].details.text).toEqual(
+        'Test error message'
+      );
+      expect(response.body.entry[0].resource.parameter[2].part[1].resource.issue[0].details.text).toEqual(
+        'Successfully processed 3 rows.'
+      );
+    });
 
     it('returns 404 status for request with unknown ID', async () => {
       await supertest(server.app)

@@ -51,3 +51,16 @@ const executeImportWorkflow = async (clientEntryId, inputUrls) => {
     return false;
   }
 };
+
+process.on('exit', exitHandler);
+process.on('SIGINT', exitHandler);
+process.on('SIGTERM', exitHandler);
+
+let stopping = false;
+function exitHandler() {
+  if (!stopping) {
+    stopping = true;
+    logger.info(`import-worker-${process.pid}: Import Worker Stopping`);
+    process.exit();
+  }
+}

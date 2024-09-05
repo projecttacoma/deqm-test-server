@@ -1,0 +1,7 @@
+[
+  {
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORShttp://localhost:3001/Condition.ndjson",
+    "failedOutcomes": ["Test error message"],
+    "successCount": 3
+  }
+]

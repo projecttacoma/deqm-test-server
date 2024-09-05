@@ -1,5 +1,6 @@
 const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
+const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
 const importQueue = require('../src/queue/importQueue');
 const { execQueue } = require('../src/queue/execQueue');
@@ -44,7 +45,11 @@ const bulkStatusSetup = async () => {
   const promises = testStatuses.map(async status => {
     await createTestResource(status, 'bulkImportStatuses');
   });
+  const ndjsonStatus = testNdjsonStatuses.map(async ndjsonStatus => {
+    await createTestResource(ndjsonStatus, 'ndjsonStatuses');
+  });
   await Promise.all(promises);
+  await Promise.all(ndjsonStatus);
 };
 
 const clientFileSetup = async () => {
