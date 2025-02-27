@@ -1,8 +1,7 @@
 const { ResourceNotFoundError } = require('./errorUtils');
 const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');
-// lookup from patient compartment-definition
-const patientRefs = require('../compartment-definition/patient-attribute-paths');
+const { patientAttributePaths } = require('fhir-spec-tools/build/data/patient-attribute-paths');
 const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 const { getResourceReference } = require('./referenceUtils');
@@ -54,12 +53,12 @@ async function getPatientData(patientId, dataRequirements) {
     logger.debug(`Filtering patient data using dataRequirements: ${JSON.stringify(dataRequirements)}`);
     requiredTypes = _.uniq(dataRequirements.map(dr => dr.type));
   } else {
-    requiredTypes = supportedResources.filter(type => patientRefs[type]);
+    requiredTypes = supportedResources.filter(type => patientAttributePaths[type]);
   }
   const queries = requiredTypes.map(async type => {
     const allQueries = [];
     // for each resourceType, go through all keys that can reference patient
-    patientRefs[type].forEach(refKey => {
+    patientAttributePaths[type].forEach(refKey => {
       const query = {};
       query[`${refKey}.reference`] = `Patient/${patientId}`;
       allQueries.push(query);
