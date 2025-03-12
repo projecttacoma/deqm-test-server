@@ -17,7 +17,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
   - [CRUD Operations](#crud-operations)
   - [Searches](#searches)
   - [Supported FHIR Operations](#supported-fhir-operations)
-  - [Bulk Data Access](#bulk-data-access)
+  - [Bulk Import](#bulk-import)
 
 - [License](#license)
 
@@ -215,13 +215,13 @@ To use, first POST a bundle into your database, then send a GET request to `http
 
 Check out the [Patient-everything operation spec](https://www.hl7.org/fhir/operation-patient-everything.html) for more information.
 
-### Bulk Data Access
+### Bulk Import
 
-The server contains functionality for the bulk $import operation as defined by the [Data Exchange for Quality Measures Implementation Guide](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/bulk-import.html#data-exchange-using-bulk-import).
+The server contains functionality for the bulk $import operation using some parts of the Import Manifest approach defined by the [smart-on-fhir's Bulk Data Import Proposal](https://github.com/smart-on-fhir/bulk-import/blob/master/import-manifest.md).
 
-The first step in the bulk $import operation work flow is to gather data for submission and organize that data into a set of inputs that this server will retrieve. This is outlined in detail in the [DEQM IG Data Exchange Using Bulk $import Section](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/bulk-import.html#data-exchange-using-bulk-import) and _by type_ inputs can be gathered using the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation. _by subject_ and hybrid _by type_ and _by subject_ inputs are not yet implemented in this server.
+The first step in the bulk $import operation work flow is to gather data for submission and organize that data into a set of inputs that this server will retrieve. Inputs can be gathered using the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation.
 
-To kickoff a bulk data import operation, POST a valid [Import Manifest](https://build.fhir.org/ig/HL7/davinci-deqm/branches/bulk-import-draft/StructureDefinition-ImportManifest.html) object to `http://localhost:3000/$import`.
+To kickoff a bulk data import operation, POST a valid Import Manifest object to `http://localhost:3000/$import`. In contrast to the Bulk Data Import Proposal, this server accepts a FHIR Parameters resource Import Manifest as input for the $import operation.
 
 The user can check the status of an $import or $bulk-submit-data request by copying the content-location header in the response, and sending a GET request to `http://localhost:3000/<content-location-header>`.
 
