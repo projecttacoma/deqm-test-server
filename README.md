@@ -221,7 +221,51 @@ The server contains functionality for the bulk $import operation using some part
 
 The first step in the bulk $import operation work flow is to gather data for submission and organize that data into a set of inputs that this server will retrieve. Inputs can be gathered using the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation.
 
-To kickoff a bulk data import operation, POST a valid Import Manifest object to `http://localhost:3000/$import`. In contrast to the Bulk Data Import Proposal, this server accepts a FHIR Parameters resource Import Manifest as input for the $import operation.
+To kickoff a bulk data import operation, POST a valid Import Manifest object to `http://localhost:3000/$import`. In contrast to the Bulk Data Import Proposal, this server accepts a FHIR Parameters resource Import Manifest as input for the $import operation. Example Import Manifest:
+
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "url",
+          "valueUrl": "http://localhost:3001/ccdc6013-4a14-4bc5-8348-8c4b17a437f7/Coverage.ndjson"
+        },
+        {
+          "name": "inputDetails",
+          "part": [
+            {
+              "name": "resourceType",
+              "valueCode": "Coverage"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "url",
+          "valueUrl": "http://localhost:3001/ccdc6013-4a14-4bc5-8348-8c4b17a437f7/Condition.ndjson"
+        },
+        {
+          "name": "inputDetails",
+          "part": [
+            {
+              "name": "resourceType",
+              "valueCode": "Condition"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 The user can check the status of an $import or $bulk-submit-data request by copying the content-location header in the response, and sending a GET request to `http://localhost:3000/<content-location-header>`.
 
