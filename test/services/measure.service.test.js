@@ -200,7 +200,7 @@ describe('measure.service', () => {
         });
     });
 
-    test('$evaluate-measure returns 200 when subject is omitted and reportType is set to population', async () => {
+    test('$evaluate returns 200 when subject is omitted and reportType is set to population', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -229,7 +229,7 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -243,7 +243,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 200 when subject is existing group and reportType is set to population', async () => {
+    test('$evaluate returns 200 when subject is existing group and reportType is set to population', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -272,7 +272,7 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -287,7 +287,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure should default to reportType population when not set and no subject provided', async () => {
+    test('$evaluate should default to reportType population when not set and no subject provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -318,7 +318,7 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021'
@@ -332,7 +332,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure should default to reportType subject when not set and subject is provided', async () => {
+    test('$evaluate should default to reportType subject when not set and subject is provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -363,7 +363,7 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -378,7 +378,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 200 when passed a practitioner referenced by a Patient subject, individual report type', async () => {
+    test('$evaluate returns 200 when passed a practitioner referenced by a Patient subject, individual report type', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -407,7 +407,7 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -423,7 +423,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 200 when passed a practitioner referenced by a patient in the Group subject, population report type', async () => {
+    test('$evaluate returns 200 when passed a practitioner referenced by a patient in the Group subject, population report type', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -452,7 +452,7 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -468,7 +468,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 200 when passed a practitioner referenced by a patient, population report type, no subject', async () => {
+    test('$evaluate returns 200 when passed a practitioner referenced by a patient, population report type, no subject', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -497,7 +497,7 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
@@ -512,9 +512,9 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate-measure returns 400 when practitioner is not referenced by Patient subject, individual report type', async () => {
+    test('$evaluate returns 400 when practitioner is not referenced by Patient subject, individual report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           reportType: 'subject',
           periodStart: '01-01-2020',
@@ -531,9 +531,9 @@ describe('measure.service', () => {
         });
     });
 
-    test('$evaluate-measure returns 400 when practitioner is not referenced by any patients in Group subject, population report type', async () => {
+    test('$evaluate returns 400 when practitioner is not referenced by any patients in Group subject, population report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',
@@ -550,9 +550,9 @@ describe('measure.service', () => {
         });
     });
 
-    test('$evaluate-measure returns 400 when practitioner is not referenced by any patients, population report type, no subject', async () => {
+    test('$evaluate returns 400 when practitioner is not referenced by any patients, population report type, no subject', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate-measure')
+        .get('/4_0_1/Measure/testMeasure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',

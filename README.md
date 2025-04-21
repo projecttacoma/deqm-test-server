@@ -2,24 +2,26 @@
 
 Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs).
 
-- [Installation](#installation)
-
-  - [Prerequisites](#prerequisites)
-  - [Local Installation](#local-installation)
-  - [Testing](#testing)
-  - [MongoDB](#mongodb)
-  - [Redis Installation](#redis-installation)
-  - [Docker](#docker)
-
-- [Usage](#usage)
-
-  - [Database Setup](#database-setup)
-  - [CRUD Operations](#crud-operations)
-  - [Searches](#searches)
-  - [Supported FHIR Operations](#supported-fhir-operations)
-  - [Bulk Import](#bulk-import)
-
-- [License](#license)
+- [Data Exchange for Quality Measures (DEQM) Test Server](#data-exchange-for-quality-measures-deqm-test-server)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Local Installation](#local-installation)
+    - [Testing](#testing)
+    - [MongoDB](#mongodb)
+    - [Redis Installation](#redis-installation)
+    - [Docker](#docker)
+  - [Usage](#usage)
+    - [Database Setup](#database-setup)
+    - [CRUD Operations](#crud-operations)
+    - [Searches](#searches)
+    - [Supported FHIR Operations](#supported-fhir-operations)
+      - [`$evaluate`](#evaluate)
+      - [`$care-gaps`](#care-gaps)
+      - [`$data-requirements`](#data-requirements)
+      - [`$submit-data`](#submit-data)
+      - [`Patient/$everything`](#patienteverything)
+    - [Bulk Import](#bulk-import)
+  - [License](#license)
 
 ## Installation
 
@@ -124,7 +126,7 @@ The test server's resource searching capabilities support searches by identifier
 
 ### Supported FHIR Operations
 
-#### `$evaluate-measure`
+#### `$evaluate`
 
 This operation calculates a measure for a given patient. Currently, individual and population measure reports are supported. Subject-list measure reports are not yet supported.
 
@@ -141,7 +143,7 @@ Optional parameters include:
 Currently, `measure` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate-measure` with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` with the required parameters.
 
 This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 patients to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
@@ -152,7 +154,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-Check out the [$evaluate-measure operation spec](https://www.hl7.org/fhir/measure-operation-evaluate-measure.html) for more information.
+Check out the [$evaluate operation spec](https://www.hl7.org/fhir/measure-operation-evaluate.html) for more information.
 
 #### `$care-gaps`
 
