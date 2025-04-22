@@ -23,9 +23,7 @@ function validateEvalMeasureParams(query) {
   }
 
   if (!query.subject && query.reportType === 'subject') {
-    throw new BadRequestError(
-      `Must specify subject for all $evaluate requests with reportType parameter: subject`
-    );
+    throw new BadRequestError(`Must specify subject for all $evaluate requests with reportType parameter: subject`);
   }
 
   if (query.reportType === 'population' && query.subject) {
