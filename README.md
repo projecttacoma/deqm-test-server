@@ -3,25 +3,24 @@
 Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs).
 
 - [Data Exchange for Quality Measures (DEQM) Test Server](#data-exchange-for-quality-measures-deqm-test-server)
-  - [Installation](#installation)
-    - [Prerequisites](#prerequisites)
-    - [Local Installation](#local-installation)
-    - [Testing](#testing)
-    - [MongoDB](#mongodb)
-    - [Redis Installation](#redis-installation)
-    - [Docker](#docker)
-  - [Usage](#usage)
-    - [Database Setup](#database-setup)
-    - [CRUD Operations](#crud-operations)
-    - [Searches](#searches)
-    - [Supported FHIR Operations](#supported-fhir-operations)
-      - [`$evaluate`](#evaluate)
-      - [`$care-gaps`](#care-gaps)
-      - [`$data-requirements`](#data-requirements)
-      - [`$submit-data`](#submit-data)
-      - [`Patient/$everything`](#patienteverything)
-    - [Bulk Import](#bulk-import)
-  - [License](#license)
+- [Installation](#installation)
+
+  - [Prerequisites](#prerequisites)
+  - [Local Installation](#local-installation)
+  - [Testing](#testing)
+  - [MongoDB](#mongodb)
+  - [Redis Installation](#redis-installation)
+  - [Docker](#docker)
+
+- [Usage](#usage)
+
+  - [Database Setup](#database-setup)
+  - [CRUD Operations](#crud-operations)
+  - [Searches](#searches)
+  - [Supported FHIR Operations](#supported-fhir-operations)
+  - [Bulk Import](#bulk-import)
+
+- [License](#license)
 
 ## Installation
 
