@@ -154,7 +154,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-Check out the [$evaluate operation spec](https://www.hl7.org/fhir/measure-operation-evaluate.html) for more information.
+Check out the [$evaluate operation spec](https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html) for more information. Note: The server does not currently return a Bundle, but updates will be made to reflect this latest OperationDefinition.
 
 #### `$care-gaps`
 
