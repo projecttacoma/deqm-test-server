@@ -1,7 +1,7 @@
 const { BadRequestError, NotImplementedError } = require('./errorUtils');
 
 /**
- * Checks that the parameters input to $evaluate-measure are valid. Throws an error
+ * Checks that the parameters input to $evaluate are valid. Throws an error
  * for missing parameters, the use of unsupported parameters, and the use of unsupported
  * report types.
  * @param {Object} query query from http request object
@@ -10,8 +10,8 @@ function validateEvalMeasureParams(query) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   const UNSUPPORTED_PARAMS = ['measure', 'lastReceivedOn'];
 
-  checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate-measure');
-  checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate-measure');
+  checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate');
+  checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate');
 
   if (query.reportType === 'subject-list') {
     throw new NotImplementedError(`The subject-list reportType is not currently supported by the server.`);
@@ -19,13 +19,11 @@ function validateEvalMeasureParams(query) {
 
   // returns unsupported report type that is included in the http request
   if (!['subject', 'population', 'subject-list', undefined].includes(query.reportType)) {
-    throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate-measure`);
+    throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate`);
   }
 
   if (!query.subject && query.reportType === 'subject') {
-    throw new BadRequestError(
-      `Must specify subject for all $evaluate-measure requests with reportType parameter: subject`
-    );
+    throw new BadRequestError(`Must specify subject for all $evaluate requests with reportType parameter: subject`);
   }
 
   if (query.reportType === 'population' && query.subject) {

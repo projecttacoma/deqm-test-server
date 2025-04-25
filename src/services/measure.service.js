@@ -186,7 +186,7 @@ const dataRequirements = async (args, { req }) => {
  * @returns {Object} FHIR MeasureReport with population results
  */
 const evaluateMeasure = async (args, { req }) => {
-  logger.info('Measure >>> $evaluate-measure');
+  logger.info('Measure >>> $evaluate');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
@@ -277,7 +277,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
       reportType: 'summary'
     });
 
-    logger.info('Successfully generated $evaluate-measure report');
+    logger.info('Successfully generated $evaluate report');
     return results;
   }
 };

@@ -115,7 +115,7 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
 };
 
 /**
- * Takes in a Group resource and practitioner from an evaluate-measure query and filters the
+ * Takes in a Group resource and practitioner from an evaluate query and filters the
  * patients from the Group to those which reference the Practitioner resource
  * @param {Object} group A Group Resource
  * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner

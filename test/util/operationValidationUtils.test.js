@@ -109,7 +109,7 @@ describe('checkRequiredParams', () => {
 });
 
 describe('validateEvalMeasureParams', () => {
-  test('error thrown for unsupported $evaluate-measure params', () => {
+  test('error thrown for unsupported $evaluate params', () => {
     const UNSUPPORTEDREQ = {
       query: { lastReceivedOn: '2019-01-01', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
@@ -119,12 +119,12 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        `The following parameters were included and are not supported for $evaluate-measure: lastReceivedOn`
+        `The following parameters were included and are not supported for $evaluate: lastReceivedOn`
       );
     }
   });
 
-  test('error thrown for unsupported $evaluate-measure reportType', () => {
+  test('error thrown for unsupported $evaluate reportType', () => {
     const UNSUPPORTEDREQ = {
       query: { reportType: 'subject-list', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
@@ -137,7 +137,7 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
-  test('error thrown for invalid $evaluate-measure reportType', () => {
+  test('error thrown for invalid $evaluate reportType', () => {
     const INVALIDREQ = {
       query: { reportType: 'invalid', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
@@ -146,11 +146,11 @@ describe('validateEvalMeasureParams', () => {
       expect.fail('validateEvalMeasureParams failed to throw error for invalid reportType');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(`reportType invalid is not supported for $evaluate-measure`);
+      expect(e.issue[0].details.text).toEqual(`reportType invalid is not supported for $evaluate`);
     }
   });
 
-  test('error thrown for missing subject for $evaluate-measure', () => {
+  test('error thrown for missing subject for $evaluate', () => {
     const MISSING_SUBJECT_REQ = {
       query: { reportType: 'subject', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
     };
@@ -160,12 +160,12 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Must specify subject for all $evaluate-measure requests with reportType parameter: subject`
+        `Must specify subject for all $evaluate requests with reportType parameter: subject`
       );
     }
   });
 
-  test('error thrown for population $evaluate-measure with non-Group subject', () => {
+  test('error thrown for population $evaluate with non-Group subject', () => {
     const POPULATION_REQ = {
       query: {
         reportType: 'population',
@@ -185,7 +185,7 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
-  test('error thrown for subject $evaluate-measure with non-Patient reference subject', () => {
+  test('error thrown for subject $evaluate with non-Patient reference subject', () => {
     const INDIVIDUAL_REQ = {
       query: {
         reportType: 'subject',
