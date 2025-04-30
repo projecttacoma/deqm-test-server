@@ -15,6 +15,7 @@
     "db:delete": "node src/scripts/deleteCollections.js",
     "db:reset": "npm run db:delete && npm run db:setup",
     "upload-bundles": "node src/scripts/uploadPremadeBundles.js",
+    "upload-bundles-test": "node src/scripts/uploadPremadeBundles.js --test",
     "test": "jest --runInBand",
     "test:coverage": "jest --collectCoverage --runInBand",
     "test:watch": "jest --watchAll --runInBand",
