@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const mongoUtil = require('../database/connection');
-const { createResource } = require('../database/dbOperations');
+const { createResource, updateResource } = require('../database/dbOperations');
 const { v4: uuidv4 } = require('uuid');
 
 const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
@@ -53,6 +53,59 @@ const getBundleFiles = (directory, searchPattern) => {
   });
 };
 
+const addTestResources = async () => {
+  await createResource(
+    {
+      resourceType: 'Group',
+      id: 'Cervical-patients',
+      type: 'person',
+      actual: 'true',
+      member: [
+        {
+          entity: {
+            reference: 'Patient/denom-EXM124'
+          }
+        },
+        {
+          entity: {
+            reference: 'Patient/numer-EXM124'
+          }
+        }
+      ]
+    },
+    'Group'
+  );
+  await createResource(
+    {
+      resourceType: 'Organization',
+      id: '1'
+    },
+    'Organization'
+  );
+  await createResource(
+    {
+      resourceType: 'Practitioner',
+      id: '1'
+    },
+    'Practitioner'
+  );
+
+  await updateResource(
+    'denom-EXM124',
+    {
+      resourceType: 'Patient',
+      id: 'denom-EXM124',
+      managingOrganization: {
+        reference: 'Organization/1'
+      },
+      generalPractitioner: {
+        reference: 'Practitioner/1'
+      }
+    },
+    'Patient'
+  );
+};
+
 /**
  * Uploads all the resources from the specified directory into the
  * database.
@@ -63,12 +116,16 @@ const getBundleFiles = (directory, searchPattern) => {
 async function main() {
   await mongoUtil.client.connect();
   console.log('Connected successfully to server');
+
+  // --test assumes default for all other parameters
+  const test = process.argv[2] === '--test';
+
   // default searchPattern to retrieve all filenames that begin with a capital letter and end with -bundle.json
   let searchPattern;
-  if (process.argv[3]) {
+  if (process.argv[3] && !test) {
     searchPattern = process.argv[3];
   }
-  if (process.argv[2]) {
+  if (process.argv[2] && !test) {
     // if a path is provided
     const bundlePath = path.resolve(process.argv[2]);
     try {
@@ -132,6 +189,11 @@ async function main() {
       filesUploaded += 1;
     }
   }
+  if (test) {
+    await addTestResources();
+    console.log('Added test resources.');
+  }
+
   return `${resourcesUploaded} resources uploaded from ${filesUploaded} Bundle files.`;
 }
 
