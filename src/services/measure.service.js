@@ -278,10 +278,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     });
 
     logger.info('Successfully generated $evaluate report');
-
-    // grouping measureReports by patient
-    const groupedMeasureReports = results.map(report => [report]);
-    return wrapReportsInBundlesParameters(groupedMeasureReports);
+    return wrapReportsInBundlesParameters(results);
   }
 };
 
@@ -329,36 +326,32 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     reportType: 'individual'
   });
-  const groupedMeasureReports = [[results[0]]];
-  return wrapReportsInBundlesParameters(groupedMeasureReports);
+
+  return wrapReportsInBundlesParameters(results);
 };
 
 /**
  * Wraps groups of measureReports to bundles and wraps each Bundle in a parameter
- * @param {Array<Array<Object>>} groupedMeasureReports An array of arrays of
- * MeasureReports (one array per Bundle).
+ * @param {Array<Object>} measureReports An array of measureReports.
  * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle.
  */
-const wrapReportsInBundlesParameters = groupedMeasureReports => {
-  const parameters = groupedMeasureReports.map(reportGroup => {
-    const bundle = {
-      resourceType: 'Bundle',
-      // TODO: do we need an id here?
-      type: 'collection',
-      entry: reportGroup.map(report => ({
-        resource: report
-      }))
-    };
+const wrapReportsInBundlesParameters = measureReports => {
+  const bundle = {
+    resourceType: 'Bundle',
+    type: 'collection',
+    entry: measureReports.map(report => ({
+      resource: report
+    }))
+  };
 
-    return {
-      name: 'return',
-      resource: bundle
-    };
-  });
+  const parameter = {
+    name: 'return',
+    resource: bundle
+  };
 
   return {
     resourceType: 'Parameters',
-    parameter: parameters
+    parameter: [parameter]
   };
 };
 

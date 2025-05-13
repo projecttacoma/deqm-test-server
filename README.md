@@ -3,24 +3,25 @@
 Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs).
 
 - [Data Exchange for Quality Measures (DEQM) Test Server](#data-exchange-for-quality-measures-deqm-test-server)
-- [Installation](#installation)
-
-  - [Prerequisites](#prerequisites)
-  - [Local Installation](#local-installation)
-  - [Testing](#testing)
-  - [MongoDB](#mongodb)
-  - [Redis Installation](#redis-installation)
-  - [Docker](#docker)
-
-- [Usage](#usage)
-
-  - [Database Setup](#database-setup)
-  - [CRUD Operations](#crud-operations)
-  - [Searches](#searches)
-  - [Supported FHIR Operations](#supported-fhir-operations)
-  - [Bulk Import](#bulk-import)
-
-- [License](#license)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Local Installation](#local-installation)
+    - [Testing](#testing)
+    - [MongoDB](#mongodb)
+    - [Redis Installation](#redis-installation)
+    - [Docker](#docker)
+  - [Usage](#usage)
+    - [Database Setup](#database-setup)
+    - [CRUD Operations](#crud-operations)
+    - [Searches](#searches)
+    - [Supported FHIR Operations](#supported-fhir-operations)
+      - [`$evaluate`](#evaluate)
+      - [`$care-gaps`](#care-gaps)
+      - [`$data-requirements`](#data-requirements)
+      - [`$submit-data`](#submit-data)
+      - [`Patient/$everything`](#patienteverything)
+    - [Bulk Import](#bulk-import)
+  - [License](#license)
 
 ## Installation
 
@@ -153,7 +154,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-Check out the [$evaluate operation spec](https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html) for more information. Note: The server does not currently return a Bundle, but updates will be made to reflect this latest OperationDefinition.
+This operation returns a Parameters object with 0..* Bundles, each of which must contain at least one MeasureReport. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
 
 #### `$care-gaps`
 
