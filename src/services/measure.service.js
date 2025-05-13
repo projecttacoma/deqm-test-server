@@ -212,7 +212,7 @@ const evaluateMeasure = async (args, { req }) => {
  * Evaluate measure for "population" report type
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns {Object} Parameters resource containing one or more Bundles of MeasureReports.
+ * @returns {Object} Parameters resource containing one Bundle with measureReports.
  */
 const evaluateMeasureForPopulation = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
@@ -331,7 +331,7 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
 };
 
 /**
- * Wraps groups of measureReports to bundles and wraps each Bundle in a parameter
+ * Wraps groups of measureReports in a Bundle and wraps the Bundle in a parameter
  * @param {Array<Object>} measureReports An array of measureReports.
  * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle.
  */
