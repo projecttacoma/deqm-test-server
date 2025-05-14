@@ -278,7 +278,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     });
 
     logger.info('Successfully generated $evaluate report');
-    return wrapReportsInBundlesParameters(results);
+    return wrapReportsInBundlesParameters([results]);
   }
 };
 
