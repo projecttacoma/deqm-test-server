@@ -34,7 +34,7 @@
     "dotenv": "^10.0.0",
     "express": "^4.19.2",
     "fhir-spec-tools": "^0.3.0",
-    "fqm-execution": "^1.7.0",
+    "fqm-execution": "github:projecttacoma/fqm-execution",
     "lodash": "^4.17.21",
     "mongodb": "^4.1.3",
     "uuid": "^8.3.2",
