@@ -183,7 +183,7 @@ const dataRequirements = async (args, { req }) => {
  * Execute the measure for a given Patient or Group
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns {Object} FHIR MeasureReport with population results
+ * @returns {Object} Parameters resource containing one or more Bundles of MeasureReports.
  */
 const evaluateMeasure = async (args, { req }) => {
   logger.info('Measure >>> $evaluate');
@@ -212,7 +212,7 @@ const evaluateMeasure = async (args, { req }) => {
  * Evaluate measure for "population" report type
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns {Object} FHIR MeasureReport with population results
+ * @returns {Object} Parameters resource containing one Bundle with measureReports.
  */
 const evaluateMeasureForPopulation = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
@@ -278,7 +278,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
     });
 
     logger.info('Successfully generated $evaluate report');
-    return results;
+    return wrapReportsInBundlesParameters([results]);
   }
 };
 
@@ -286,7 +286,7 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
  * Evaluate measure for "individual" report type
  * @param {Object} args the args object passed in by the user, includes measure id
  * @param {Object} req http request object
- * @returns {Object} FHIR MeasureReport with population results
+ * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
 const evaluateMeasureForIndividual = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromId(args.id);
@@ -326,7 +326,33 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     reportType: 'individual'
   });
-  return results[0];
+
+  return wrapReportsInBundlesParameters(results);
+};
+
+/**
+ * Wraps groups of measureReports in a Bundle and wraps the Bundle in a parameter
+ * @param {Array<Object>} measureReports An array of measureReports.
+ * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle.
+ */
+const wrapReportsInBundlesParameters = measureReports => {
+  const bundle = {
+    resourceType: 'Bundle',
+    type: 'collection',
+    entry: measureReports.map(report => ({
+      resource: report
+    }))
+  };
+
+  const parameter = {
+    name: 'return',
+    resource: bundle
+  };
+
+  return {
+    resourceType: 'Parameters',
+    parameter: [parameter]
+  };
 };
 
 /**
