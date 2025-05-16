@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - docker-auto-build-platforms
     tags:
       - 'v*.*.*'
 
