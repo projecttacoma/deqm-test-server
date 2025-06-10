@@ -61,7 +61,7 @@ const buildConfig = () => {
             },
             {
               name: 'submitData',
-              route: '/:id/$submit-data',
+              route: '/:id/$submit-data', // do we even do anything with this id?
               method: 'POST',
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
@@ -98,6 +98,18 @@ const buildConfig = () => {
             {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
+              method: 'POST',
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+            },
+            {
+              name: 'evaluateMeasure',
+              route: '/$evaluate',
+              method: 'GET',
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+            },
+            {
+              name: 'evaluateMeasure',
+              route: '/$evaluate',
               method: 'POST',
               reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
             },

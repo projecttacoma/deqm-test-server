@@ -191,21 +191,29 @@ const evaluateMeasure = async (args, { req }) => {
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
+  let query;
+  if (req.method === 'POST') {
+    // Creates a new query from a combination of parameters in the body and query
+    query = gatherParams(req.query, req.body);
+  } else {
+    query = req.query;
+  }
+
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
-  validateEvalMeasureParams(req.query);
+  validateEvalMeasureParams(query, args.id);
 
-  const { reportType, subject } = req.query;
+  const { reportType, subject } = query;
 
   // If reportType is not specified, default to 'subject', but
   // only if the 'subject' parameter is also specified
   if (reportType === 'subject' || (reportType == null && subject != null)) {
     logger.debug('Evaluating measure for individual');
-    return evaluateMeasureForIndividual(args, { req });
+    return evaluateMeasureForIndividual(args, query);
   }
 
   logger.debug('Evaluating measure for population');
-  return evaluateMeasureForPopulation(args, { req });
+  return evaluateMeasureForPopulation(args, query);
 };
 
 /**
@@ -214,23 +222,29 @@ const evaluateMeasure = async (args, { req }) => {
  * @param {Object} req http request object
  * @returns {Object} Parameters resource containing one Bundle with measureReports.
  */
-const evaluateMeasureForPopulation = async (args, { req }) => {
-  const measureBundle = await getMeasureBundleFromId(args.id);
+const evaluateMeasureForPopulation = async (args, query) => {
+  let measureBundles;
+  if (query.measureId && Array.isArray(query.measureId)) {
+    // TODO maybe?: also handle comma separated GET url measureIds??
+    measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
+  } else {
+    measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
+  }
   // Collect patientId instead of bundles
   let patientIds = [];
-  if (req.query.subject) {
-    const subjectReference = req.query.subject.split('/');
+  if (query.subject) {
+    const subjectReference = query.subject.split('/');
     const group = await findResourceById(subjectReference[1], subjectReference[0]);
     if (!group) {
       throw new ResourceNotFoundError(
         `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
       );
     }
-    if (req.query.practitioner) {
-      const patients = await filterPatientIdsFromGroup(group, req.query.practitioner);
+    if (query.practitioner) {
+      const patients = await filterPatientIdsFromGroup(group, query.practitioner);
       if (patients.length === 0) {
         throw new BadRequestError(
-          `The given subject, ${req.query.subject}, does not reference the given practitioner, ${req.query.practitioner}`
+          `The given subject, ${query.subject}, does not reference the given practitioner, ${query.practitioner}`
         );
       } else {
         patientIds = patients.map(p => p.id);
@@ -242,35 +256,37 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
       });
     }
   } else {
-    if (req.query.practitioner) {
+    if (query.practitioner) {
       patientIds = await findResourceIdsWithQuery(
-        getResourceReference('generalPractitioner', req.query.practitioner),
+        getResourceReference('generalPractitioner', query.practitioner),
         'Patient'
       );
       if (patientIds.length === 0) {
-        throw new BadRequestError(`No Patient resources reference the given practitioner, ${req.query.practitioner}`);
+        throw new BadRequestError(`No Patient resources reference the given practitioner, ${query.practitioner}`);
       }
     } else {
       patientIds = await findResourceIdsWithQuery({}, 'Patient');
     }
   }
 
+  // temp for testing
+  const measureBundle = measureBundles[0];
   // count number of patientIds, if over threshold, then do them with workers, otherwise do it here
   if (process.env.EXEC_WORKERS > 0 && patientIds.length > process.env.SCALED_EXEC_THRESHOLD) {
     logger.info(`Starting scaled calculation run with ${patientIds.length} patients`);
-    const calc = new ScaledCalculation(measureBundle, patientIds, req.query.periodStart, req.query.periodEnd);
+    const calc = new ScaledCalculation(measureBundle, patientIds, query.periodStart, query.periodEnd);
     return await calc.execute();
   } else {
     logger.info(`Starting regular calculation run with ${patientIds.length} patients`);
     const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
-      measurementPeriodStart: req.query.periodStart,
-      measurementPeriodEnd: req.query.periodEnd
+      measurementPeriodStart: query.periodStart,
+      measurementPeriodEnd: query.periodEnd
     });
     let patientBundles = patientIds.map(async id => {
       return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
     });
     patientBundles = await Promise.all(patientBundles);
-    const { periodStart, periodEnd } = req.query;
+    const { periodStart, periodEnd } = query;
     const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd,
@@ -288,14 +304,15 @@ const evaluateMeasureForPopulation = async (args, { req }) => {
  * @param {Object} req http request object
  * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
-const evaluateMeasureForIndividual = async (args, { req }) => {
-  const measureBundle = await getMeasureBundleFromId(args.id);
+const evaluateMeasureForIndividual = async (args, query) => {
+  // TODO: update!
+  const measureBundle = await getMeasureBundleFromId(args.id && query.measureId);
   const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
-    measurementPeriodStart: req.query.periodStart,
-    measurementPeriodEnd: req.query.periodEnd
+    measurementPeriodStart: query.periodStart,
+    measurementPeriodEnd: query.periodEnd
   });
 
-  const { periodStart, periodEnd, subject, practitioner } = req.query;
+  const { periodStart, periodEnd, subject, practitioner } = query;
   let patientBundle;
   if (practitioner) {
     let patientId = subject;
@@ -304,12 +321,12 @@ const evaluateMeasureForIndividual = async (args, { req }) => {
       patientId = subject.split('/')[1];
     }
 
-    const query = {
+    const practitionerQuery = {
       id: patientId,
       ...getResourceReference('generalPractitioner', practitioner)
     };
 
-    const patient = await findOneResourceWithQuery(query, 'Patient');
+    const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
     if (patient) {
       patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
     } else {

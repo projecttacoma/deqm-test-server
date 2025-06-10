@@ -5,13 +5,21 @@ const { BadRequestError, NotImplementedError } = require('./errorUtils');
  * for missing parameters, the use of unsupported parameters, and the use of unsupported
  * report types.
  * @param {Object} query query from http request object
+ * @param {string} expectedId an id passed from the url arguments
  */
-function validateEvalMeasureParams(query) {
+function validateEvalMeasureParams(query, expectedId) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
-  const UNSUPPORTED_PARAMS = ['measure', 'lastReceivedOn'];
+  // currently only supports measureId as the identifier
+  const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measureUrl', 'measure', 'measureResource'];
 
-  checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate');
+  // if there is not a url argument id, then there must be measure identifying information (measureId is supported)
+  checkRequiredParams(query, !expectedId ? ['measureId', ...REQUIRED_PARAMS] : REQUIRED_PARAMS, '$evaluate');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate');
+
+  // if both url argument id and parameter measureId exist, they must match
+  if (expectedId && query.measureId && expectedId !== query.measureId) {
+    throw new BadRequestError(`URL argument id ${expectedId} must match parameter id ${query.measureId}`);
+  }
 
   if (query.reportType === 'subject-list') {
     throw new NotImplementedError(`The subject-list reportType is not currently supported by the server.`);
@@ -157,7 +165,17 @@ const gatherParams = (query, body) => {
     body.parameter.reduce((acc, e) => {
       if (!e.resource) {
         // For now, all usable params are expected to be stored under one of these four keys
-        acc[e.name] = e.valueDate || e.valueString || e.valueId || e.valueCode;
+        const value = e.valueDate || e.valueString || e.valueId || e.valueCode;
+        if (acc[e.name] !== undefined) {
+          // add to existing parameter values
+          if (Array.isArray(acc[e.name])) {
+            acc[e.name].push(value);
+          } else {
+            acc[e.name] = [acc[e.name], value];
+          }
+        } else {
+          acc[e.name] = value;
+        }
       }
       return acc;
     }, params);
