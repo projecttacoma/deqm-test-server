@@ -305,8 +305,14 @@ const evaluateMeasureForPopulation = async (args, query) => {
  * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
 const evaluateMeasureForIndividual = async (args, query) => {
-  // TODO: update!
-  const measureBundle = await getMeasureBundleFromId(args.id && query.measureId);
+  // TODO: update to match
+  let measureBundles;
+  if (query.measureId && Array.isArray(query.measureId)) {
+    measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
+  } else {
+    measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
+  }
+  const measureBundle = measureBundles[0];
   const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
     measurementPeriodStart: query.periodStart,
     measurementPeriodEnd: query.periodEnd
