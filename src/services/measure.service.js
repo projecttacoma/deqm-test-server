@@ -225,7 +225,7 @@ const evaluateMeasure = async (args, { req }) => {
 const evaluateMeasureForPopulation = async (args, query) => {
   let measureBundles;
   if (query.measureId && Array.isArray(query.measureId)) {
-    // TODO maybe?: also handle comma separated GET url measureIds??
+    // TODO maybe also handle comma separated GET url measureIds??
     measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
   } else {
     measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
@@ -358,6 +358,7 @@ const evaluateMeasureForIndividual = async (args, query) => {
       measurementPeriodEnd: periodEnd,
       reportType: 'individual'
     });
+    // Always called with exactly one patient, so returns a single measure report in the array
     return results;
   });
 

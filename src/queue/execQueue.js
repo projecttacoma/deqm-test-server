@@ -124,14 +124,16 @@ class ScaledCalculation {
   /**
    * Take the calculation results from a completed job and add them to the measure report builder.
    *
-   * @param {import('fqm-execution/build/types/Calculator').CalculationOutput} jobResult The non-verbose calculation
+   * @param {calcResult: {import('fqm-execution/build/types/Calculator').CalculationOutput}, jobInfo: {}} jobResult The non-verbose calculation
    *   result from the fqm-execution `calculate` call.
    */
   async tabulateResults(jobResult) {
-    this._count += jobResult.results.length;
-    jobResult.results.forEach(execResult => {
-      // reassociate results using measure url (TODO: doing association with job data would likely be more efficient if possible?)
-      const currentBuilder = this._mrBuilders.find(mrb => mrb.measure.url === execResult.measureReport.measure);
+    this._count += jobResult.calcResult.results.length;
+    // find the correct builder for this job
+    console.log('mrb length', this._mrBuilders.length);
+    console.log('jobResult', jobResult);
+    const currentBuilder = this._mrBuilders.find(mrb => mrb.measure.id === jobResult.jobInfo.measureId);
+    jobResult.calcResult.results.forEach(execResult => {
       currentBuilder.addPatientResults(execResult);
     });
   }
