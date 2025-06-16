@@ -109,7 +109,7 @@ execQueue.process(async job => {
     });
   }
 
-  return res;
+  return res; //TODO: consider returning job information to make association easier?
 });
 
 process.on('exit', exitHandler);

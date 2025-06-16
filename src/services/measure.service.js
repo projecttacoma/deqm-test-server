@@ -269,32 +269,40 @@ const evaluateMeasureForPopulation = async (args, query) => {
     }
   }
 
-  // temp for testing
-  const measureBundle = measureBundles[0];
-  // count number of patientIds, if over threshold, then do them with workers, otherwise do it here
-  if (process.env.EXEC_WORKERS > 0 && patientIds.length > process.env.SCALED_EXEC_THRESHOLD) {
-    logger.info(`Starting scaled calculation run with ${patientIds.length} patients`);
-    const calc = new ScaledCalculation(measureBundle, patientIds, query.periodStart, query.periodEnd);
-    return await calc.execute();
+  const calcCount = patientIds.length * measureBundles.length;
+  // count number of patientIds times measureBundles, if over threshold, then do them with workers, otherwise do it here
+  if (process.env.EXEC_WORKERS > 0 && calcCount > process.env.SCALED_EXEC_THRESHOLD) {
+    logger.info(
+      `Starting scaled calculation run with ${patientIds.length} patients and ${measureBundles.length} measures`
+    );
+    const calc = new ScaledCalculation(measureBundles, patientIds, query.periodStart, query.periodEnd);
+    return wrapReportsInBundlesParameters(await calc.execute());
   } else {
-    logger.info(`Starting regular calculation run with ${patientIds.length} patients`);
-    const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
-      measurementPeriodStart: query.periodStart,
-      measurementPeriodEnd: query.periodEnd
+    logger.info(
+      `Starting regular calculation run with ${patientIds.length} patients and ${measureBundles.length} measures`
+    );
+    const resultsPromises = measureBundles.map(async measureBundle => {
+      const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
+        measurementPeriodStart: query.periodStart,
+        measurementPeriodEnd: query.periodEnd
+      });
+      let patientBundles = patientIds.map(async id => {
+        return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
+      });
+      patientBundles = await Promise.all(patientBundles);
+      const { periodStart, periodEnd } = query;
+      const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
+        measurementPeriodStart: periodStart,
+        measurementPeriodEnd: periodEnd,
+        reportType: 'summary'
+      });
+      return results;
     });
-    let patientBundles = patientIds.map(async id => {
-      return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
-    });
-    patientBundles = await Promise.all(patientBundles);
-    const { periodStart, periodEnd } = query;
-    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
-      measurementPeriodStart: periodStart,
-      measurementPeriodEnd: periodEnd,
-      reportType: 'summary'
-    });
+    const allResults = await Promise.all(resultsPromises);
 
-    logger.info('Successfully generated $evaluate report');
-    return wrapReportsInBundlesParameters([results]);
+    logger.info('Successfully generated $evaluate reports');
+    // an array of summary reports, one for each measure
+    return wrapReportsInBundlesParameters(allResults);
   }
 };
 
@@ -305,52 +313,57 @@ const evaluateMeasureForPopulation = async (args, query) => {
  * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
 const evaluateMeasureForIndividual = async (args, query) => {
-  // TODO: update to match
+  // TODO: update to match ... do scaled calculation for a large enough set of measures (measure x patient)??
   let measureBundles;
   if (query.measureId && Array.isArray(query.measureId)) {
     measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
   } else {
     measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
   }
-  const measureBundle = measureBundles[0];
-  const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
-    measurementPeriodStart: query.periodStart,
-    measurementPeriodEnd: query.periodEnd
-  });
 
-  const { periodStart, periodEnd, subject, practitioner } = query;
-  let patientBundle;
-  if (practitioner) {
-    let patientId = subject;
+  const resultsPromises = measureBundles.map(async measureBundle => {
+    const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
+      measurementPeriodStart: query.periodStart,
+      measurementPeriodEnd: query.periodEnd
+    });
 
-    if (subject.includes('/')) {
-      patientId = subject.split('/')[1];
-    }
+    const { periodStart, periodEnd, subject, practitioner } = query;
+    let patientBundle;
+    if (practitioner) {
+      let patientId = subject;
 
-    const practitionerQuery = {
-      id: patientId,
-      ...getResourceReference('generalPractitioner', practitioner)
-    };
+      if (subject.includes('/')) {
+        patientId = subject.split('/')[1];
+      }
 
-    const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
-    if (patient) {
-      patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
+      const practitionerQuery = {
+        id: patientId,
+        ...getResourceReference('generalPractitioner', practitioner)
+      };
+
+      const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
+      if (patient) {
+        patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
+      } else {
+        throw new BadRequestError(
+          `The given subject, ${subject}, does not reference the given practitioner, ${practitioner}`
+        );
+      }
     } else {
-      throw new BadRequestError(
-        `The given subject, ${subject}, does not reference the given practitioner, ${practitioner}`
-      );
+      patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
     }
-  } else {
-    patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
-  }
 
-  const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd,
-    reportType: 'individual'
+    const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
+      measurementPeriodStart: periodStart,
+      measurementPeriodEnd: periodEnd,
+      reportType: 'individual'
+    });
+    return results;
   });
 
-  return wrapReportsInBundlesParameters(results);
+  const allResults = await Promise.all(resultsPromises);
+
+  return wrapReportsInBundlesParameters(allResults);
 };
 
 /**
@@ -358,6 +371,7 @@ const evaluateMeasureForIndividual = async (args, query) => {
  * @param {Array<Object>} measureReports An array of measureReports.
  * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle.
  */
+// TODO: fix this probably? How do we want the measure reports distributed? Is there a bundle for each measure? probs
 const wrapReportsInBundlesParameters = measureReports => {
   const bundle = {
     resourceType: 'Bundle',
