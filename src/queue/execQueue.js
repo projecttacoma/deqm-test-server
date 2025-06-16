@@ -118,7 +118,7 @@ class ScaledCalculation {
       `exec-queue: Completed ${this._jobs.length} jobs for scaled calculation of ${this._count} calculations.`
     );
 
-    return this._mrBuilders.map(mrb => mrb.getReport());
+    return this._mrBuilders.map(mrb => [mrb.getReport()]);
   }
 
   /**
@@ -130,8 +130,6 @@ class ScaledCalculation {
   async tabulateResults(jobResult) {
     this._count += jobResult.calcResult.results.length;
     // find the correct builder for this job
-    console.log('mrb length', this._mrBuilders.length);
-    console.log('jobResult', jobResult);
     const currentBuilder = this._mrBuilders.find(mrb => mrb.measure.id === jobResult.jobInfo.measureId);
     jobResult.calcResult.results.forEach(execResult => {
       currentBuilder.addPatientResults(execResult);

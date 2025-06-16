@@ -296,7 +296,7 @@ const evaluateMeasureForPopulation = async (args, query) => {
         measurementPeriodEnd: periodEnd,
         reportType: 'summary'
       });
-      return results;
+      return [results];
     });
     const allResults = await Promise.all(resultsPromises);
 
@@ -358,7 +358,7 @@ const evaluateMeasureForIndividual = async (args, query) => {
       measurementPeriodEnd: periodEnd,
       reportType: 'individual'
     });
-    // Always called with exactly one patient, so returns a single measure report in the array
+    // Currently called with exactly one patient, so returns a single measure report in the array
     return results;
   });
 
@@ -368,28 +368,30 @@ const evaluateMeasureForIndividual = async (args, query) => {
 };
 
 /**
- * Wraps groups of measureReports in a Bundle and wraps the Bundle in a parameter
- * @param {Array<Object>} measureReports An array of measureReports.
- * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle.
+ * Wraps groups of measureReports in a Bundle, where each Bundle is grouped by measure, then wraps each Bundle in a return parameter
+ * @param {Array<Object>} measureReportsArray An array where each entry is an array of measureReports associated with a specific measure.
+ * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle, where each parameter/bundle contains all measure reports for a single measure.
  */
-// TODO: fix this probably? How do we want the measure reports distributed? Is there a bundle for each measure? probs
-const wrapReportsInBundlesParameters = measureReports => {
-  const bundle = {
-    resourceType: 'Bundle',
-    type: 'collection',
-    entry: measureReports.map(report => ({
-      resource: report
-    }))
-  };
+const wrapReportsInBundlesParameters = measureReportsArray => {
+  const parameterArray = measureReportsArray.map(measureReports => {
+    const bundle = {
+      resourceType: 'Bundle',
+      type: 'collection',
+      entry: measureReports.map(report => ({
+        resource: report
+      }))
+    };
 
-  const parameter = {
-    name: 'return',
-    resource: bundle
-  };
+    // every parameter has name 'return'
+    return {
+      name: 'return',
+      resource: bundle
+    };
+  });
 
   return {
     resourceType: 'Parameters',
-    parameter: [parameter]
+    parameter: parameterArray
   };
 };
 
