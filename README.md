@@ -128,33 +128,34 @@ The test server's resource searching capabilities support searches by identifier
 
 #### `$evaluate`
 
-This operation calculates a measure for a given patient. Currently, individual and population measure reports are supported. Subject-list measure reports are not yet supported.
+This operation calculates measure(s) for a given patient or set of patients. Currently, individual and population measure reports are supported. Subject-list measure reports are not yet supported.
 
 Required parameters include:
 
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject for which the measure will be calculated (unless a `population` `reportType` is specified)
+- `subject`: subject is required for an `individual` `reportType` and is the subject for which a measure will be calculated
+- `measureId`: measureId is required if the measure id is not specified via the url and may be a list of measure ids if specified in a passed Parameters object
 
 Optional parameters include:
 
 - `practitioner`: practitioner for which the measure will be calculated
 
-Currently, `measure` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
+Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` OR `http://localhost:3000/4_0_1/Measure/$evaluate` with the required parameters.
 
-This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 patients to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
+This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 calculations to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
 | ENV Variable              | Description                                                                 | Default Value |
 | ------------------------- | --------------------------------------------------------------------------- | ------------- |
 | `EXEC_WORKERS`            | Number of worker processes. 0 will disable multi-process calculation.       | 5             |
-| `SCALED_EXEC_THRESHOLD`   | Patient count threshold to execute in worker processes.                     | 100           |
+| `SCALED_EXEC_THRESHOLD`   | Calculation count threshold to execute in worker processes.                     | 100           |
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-This operation returns a Parameters object with 0..* Bundles, each of which must contain at least one MeasureReport. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
+This operation returns a Parameters object with 0..* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
 
 #### `$care-gaps`
 

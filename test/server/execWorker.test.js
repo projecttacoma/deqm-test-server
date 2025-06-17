@@ -38,14 +38,14 @@ describe('execWorker', () => {
 
       // Created scaled calculation for 8 patients. This should create 4 jobs that will get run by one processor.
       const calc = new ScaledCalculation(
-        testMeasureBundle,
+        [testMeasureBundle],
         ['pat0', 'pat1', 'pat2', 'pat3', 'pat4', 'pat5', 'pat6', 'pat7'],
         '2019-01-01',
         '2019-12-31'
       );
 
       // Wait for MeasureReport to come back
-      const measureReport = await calc.execute();
+      const measureReport = (await calc.execute())[0][0];
 
       // Calculation should have happened 4 times
       expect(calcSpy.mock.calls.length).toBe(4);
