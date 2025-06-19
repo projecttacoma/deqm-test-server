@@ -102,6 +102,18 @@ const buildConfig = () => {
               reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
             },
             {
+              name: 'evaluateMeasure',
+              route: '/$evaluate',
+              method: 'GET',
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+            },
+            {
+              name: 'evaluateMeasure',
+              route: '/$evaluate',
+              method: 'POST',
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+            },
+            {
               name: 'careGaps',
               route: '/$care-gaps',
               method: 'GET',
