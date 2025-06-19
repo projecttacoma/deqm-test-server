@@ -45,7 +45,7 @@ describe('execWorker', () => {
       );
 
       // Wait for MeasureReport to come back
-      const measureReport = (await calc.execute())[0][0];
+      const measureReport = (await calc.execute())[0];
 
       // Calculation should have happened 4 times
       expect(calcSpy.mock.calls.length).toBe(4);

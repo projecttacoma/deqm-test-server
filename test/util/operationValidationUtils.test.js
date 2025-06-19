@@ -473,6 +473,36 @@ describe('validateCareGapsParams', () => {
     expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(VALID_SUBJECT_QUERY);
   });
 
+  test('gatherParams gather a repeated parameter', () => {
+    const SPLIT_REQ = {
+      query: {
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        status: 'open-gap'
+      },
+      body: {
+        resourceType: 'Parameters',
+        parameter: [
+          {
+            name: 'subject',
+            valueString: 'Patient/testPatient'
+          },
+          {
+            name: 'measureId',
+            valueId: 'testID'
+          },
+          {
+            name: 'measureId',
+            valueId: 'testID2'
+          }
+        ]
+      }
+    };
+    const doubleMeasureQuery = { ...VALID_SUBJECT_QUERY };
+    doubleMeasureQuery.measureId = ['testID', 'testID2'];
+    expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(doubleMeasureQuery);
+  });
+
   afterAll(async () => await queue.close());
 });
 

@@ -61,7 +61,7 @@ const buildConfig = () => {
             },
             {
               name: 'submitData',
-              route: '/:id/$submit-data', // do we even do anything with this id?
+              route: '/:id/$submit-data',
               method: 'POST',
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },

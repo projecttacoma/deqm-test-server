@@ -276,7 +276,7 @@ const evaluateMeasureForPopulation = async (args, query) => {
       `Starting scaled calculation run with ${patientIds.length} patients and ${measureBundles.length} measures`
     );
     const calc = new ScaledCalculation(measureBundles, patientIds, query.periodStart, query.periodEnd);
-    return wrapReportsInBundlesParameters(await calc.execute());
+    return wrapReportsInBundlesParameters([await calc.execute()]);
   } else {
     logger.info(
       `Starting regular calculation run with ${patientIds.length} patients and ${measureBundles.length} measures`
@@ -296,13 +296,13 @@ const evaluateMeasureForPopulation = async (args, query) => {
         measurementPeriodEnd: periodEnd,
         reportType: 'summary'
       });
-      return [results];
+      return results;
     });
     const allResults = await Promise.all(resultsPromises);
 
     logger.info('Successfully generated $evaluate reports');
     // an array of summary reports, one for each measure
-    return wrapReportsInBundlesParameters(allResults);
+    return wrapReportsInBundlesParameters([allResults]);
   }
 };
 
@@ -313,7 +313,6 @@ const evaluateMeasureForPopulation = async (args, query) => {
  * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
 const evaluateMeasureForIndividual = async (args, query) => {
-  // TODO: update to match ... do scaled calculation for a large enough set of measures (measure x patient)??
   let measureBundles;
   if (query.measureId && Array.isArray(query.measureId)) {
     measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
@@ -359,18 +358,18 @@ const evaluateMeasureForIndividual = async (args, query) => {
       reportType: 'individual'
     });
     // Currently called with exactly one patient, so returns a single measure report in the array
-    return results;
+    return results[0];
   });
 
   const allResults = await Promise.all(resultsPromises);
 
-  return wrapReportsInBundlesParameters(allResults);
+  return wrapReportsInBundlesParameters([allResults]);
 };
 
 /**
- * Wraps groups of measureReports in a Bundle, where each Bundle is grouped by measure, then wraps each Bundle in a return parameter
- * @param {Array<Object>} measureReportsArray An array where each entry is an array of measureReports associated with a specific measure.
- * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle, where each parameter/bundle contains all measure reports for a single measure.
+ * Wraps groups of measureReports in a Bundle, where each Bundle is grouped by subject, then wraps each Bundle in a return parameter
+ * @param {Array<Object>} measureReportsArray An array where each entry is an array of measureReports associated with a specific subject.
+ * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle, where each parameter/bundle contains all measure reports for a single subject.
  */
 const wrapReportsInBundlesParameters = measureReportsArray => {
   const parameterArray = measureReportsArray.map(measureReports => {

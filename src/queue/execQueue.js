@@ -118,7 +118,7 @@ class ScaledCalculation {
       `exec-queue: Completed ${this._jobs.length} jobs for scaled calculation of ${this._count} calculations.`
     );
 
-    return this._mrBuilders.map(mrb => [mrb.getReport()]);
+    return this._mrBuilders.map(mrb => mrb.getReport());
   }
 
   /**
