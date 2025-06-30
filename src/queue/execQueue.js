@@ -26,7 +26,7 @@ class ScaledCalculation {
    * Constructs a scaled calculation instance and prepares job data.
    *
    * @param {fhir4.Bundle[]} measureBundles Measure bundle resources
-   * @param {string[]}} patientIds Patient ids list.
+   * @param {string[]} patientIds Patient ids list.
    * @param {string} periodStart Start of measurement period
    * @param {string} periodEnd End of measurement period
    */
@@ -124,9 +124,11 @@ class ScaledCalculation {
   /**
    * Take the calculation results from a completed job and add them to the measure report builder.
    *
-   * @param {calcResult: {import('fqm-execution/build/types/Calculator').CalculationOutput}, jobInfo: {}} jobResult The non-verbose calculation
-   *   result from the fqm-execution `calculate` call.
-   */
+/**
+ * @param {Object} jobResult
+ * @param {import('fqm-execution/build/types/Calculator').CalculationOutput} jobResult.calcResult
+ * @param {Object} jobResult.jobInfo result from the fqm-execution `calculate` call.
+ */
   async tabulateResults(jobResult) {
     this._count += jobResult.calcResult.results.length;
     // find the correct builder for this job

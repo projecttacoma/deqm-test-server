@@ -223,13 +223,10 @@ const evaluateMeasure = async (args, { req }) => {
  * @returns {Object} Parameters resource containing one Bundle with measureReports.
  */
 const evaluateMeasureForPopulation = async (args, query) => {
-  let measureBundles;
-  if (query.measureId && Array.isArray(query.measureId)) {
-    // TODO maybe also handle comma separated GET url measureIds??
-    measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
-  } else {
-    measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
-  }
+  const measureBundles =
+    query.measureId && Array.isArray(query.measureId)
+      ? await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)))
+      : [await getMeasureBundleFromId(args.id ?? query.measureId)];
   // Collect patientId instead of bundles
   let patientIds = [];
   if (query.subject) {
@@ -313,12 +310,10 @@ const evaluateMeasureForPopulation = async (args, query) => {
  * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
  */
 const evaluateMeasureForIndividual = async (args, query) => {
-  let measureBundles;
-  if (query.measureId && Array.isArray(query.measureId)) {
-    measureBundles = await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)));
-  } else {
-    measureBundles = [await getMeasureBundleFromId(args.id ?? query.measureId)];
-  }
+  const measureBundles =
+    query.measureId && Array.isArray(query.measureId)
+      ? await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)))
+      : [await getMeasureBundleFromId(args.id ?? query.measureId)];
 
   const resultsPromises = measureBundles.map(async measureBundle => {
     const dataReq = await Calculator.calculateDataRequirements(measureBundle, {

@@ -135,7 +135,7 @@ Required parameters include:
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
 - `subject`: subject is required for an `individual` `reportType` and is the subject for which a measure will be calculated
-- `measureId`: measureId is required if the measure id is not specified via the url and may be a list of measure ids if specified in a passed Parameters object
+- `measureId`: Required if the measure ID is not specified in the URL. May also be a list of measure IDs if provided in a Parameters object.
 
 Optional parameters include:
 
@@ -144,7 +144,7 @@ Optional parameters include:
 Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` OR `http://localhost:3000/4_0_1/Measure/$evaluate` with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters.
 
 This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 calculations to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
