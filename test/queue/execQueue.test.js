@@ -7,7 +7,7 @@ describe('execQueue', () => {
   describe('ScaledCalculation', () => {
     test('Prepares even number of jobs less than max job size even', () => {
       const calc = new ScaledCalculation(
-        testBundle,
+        [testBundle],
         ['pat0', 'pat1', 'pat2', 'pat3', 'pat4', 'pat5', 'pat6', 'pat7'],
         '2019-01-01',
         '2019-12-31'
@@ -41,7 +41,7 @@ describe('execQueue', () => {
 
     test('Prepares odd number of jobs less than max job size even', () => {
       const calc = new ScaledCalculation(
-        testBundle,
+        [testBundle],
         ['pat0', 'pat1', 'pat2', 'pat3', 'pat4', 'pat5', 'pat6'],
         '2019-01-01',
         '2019-12-31'
@@ -76,7 +76,7 @@ describe('execQueue', () => {
     test('Prepares more jobs than workers if n/workers is more than limit', () => {
       const patientIds = Array.from({ length: 150 }, (_, i) => `pat${i}`);
 
-      const calc = new ScaledCalculation(testBundle, patientIds, '2019-01-01', '2019-12-31');
+      const calc = new ScaledCalculation([testBundle], patientIds, '2019-01-01', '2019-12-31');
       expect(calc._jobs.length).toEqual(6);
       expect(calc._jobs[0].patientIds[0]).toEqual('pat0');
       expect(calc._jobs[0].patientIds[24]).toEqual('pat24');
@@ -89,19 +89,19 @@ describe('execQueue', () => {
     test('Fails to set up calculation if measure bundle is bad', () => {
       expect(() => {
         new ScaledCalculation(
-          { resourceType: 'Bundle', entry: [{ resource: { resourceType: 'Observation' } }] },
+          [{ id: 'test', resourceType: 'Bundle', entry: [{ resource: { resourceType: 'Observation' } }] }],
           ['pat1'],
           '2019-01-01',
           '2019-12-31'
         );
-      }).toThrow('Measure resource was not found in bundle.');
+      }).toThrow('Measure resource was not found for bundle with id test.');
     });
 
     test('Throws an error if scaled calculation is disabled', () => {
       const workers = process.env.EXEC_WORKERS;
       process.env.EXEC_WORKERS = 0;
       expect(() => {
-        new ScaledCalculation(testBundle, ['pat1'], '2019-01-01', '2019-12-31');
+        new ScaledCalculation([testBundle], ['pat1'], '2019-01-01', '2019-12-31');
       }).toThrow('Scalable Calculation is disabled. To enable set EXEC_WORKERS to a value greater than 0.');
       process.env.EXEC_WORKERS = workers;
     });

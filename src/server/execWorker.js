@@ -109,7 +109,7 @@ execQueue.process(async job => {
     });
   }
 
-  return res;
+  return { calcResult: res, jobInfo: job.data };
 });
 
 process.on('exit', exitHandler);
