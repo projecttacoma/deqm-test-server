@@ -144,7 +144,35 @@ Optional parameters include:
 Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters.
+To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters. Example `Parameters` object for `$evaluate`:
+```json
+{
+  "resourceType" : "Parameters",
+  "parameter" : [
+  {
+    "name" : "measureId",
+    "valueString" : "BreastCancerScreeningsFHIR"
+  },
+  {
+    "name" : "measureId",
+    "valueString" : "CervicalCancerScreeningFHIR"
+  },
+  {
+    "name" : "periodEnd",
+    "valueString" : "2022-12-31"
+  },
+  {
+    "name" : "periodStart",
+    "valueString" : "2022-01-01"
+  },
+  {
+    "name" : "reportType",
+    "valueString" : "population"
+  }
+  ]
+}
+```
+
 
 This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 calculations to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
