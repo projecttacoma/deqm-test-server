@@ -57,25 +57,25 @@ const buildConfig = () => {
               name: 'submitData',
               route: '/$submit-data',
               method: 'POST',
-              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
+              reference: 'https://hl7.org/fhir/operation-measure-submit-data.html'
             },
             {
               name: 'submitData',
               route: '/:id/$submit-data',
               method: 'POST',
-              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
+              reference: 'https://hl7.org/fhir/operation-measure-submit-data.html'
             },
             {
               name: 'bulkSubmitData',
               route: '/$bulk-submit-data',
               method: 'POST',
-              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-bulk-submit-data.html'
             },
             {
               name: 'bulkSubmitData',
               route: '/:id/$bulk-submit-data',
               method: 'POST',
-              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-bulk-submit-data.html'
             },
             {
               name: 'dataRequirements',
@@ -93,25 +93,25 @@ const buildConfig = () => {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
               method: 'GET',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
             },
             {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
             },
             {
               name: 'evaluateMeasure',
               route: '/$evaluate',
               method: 'GET',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
             },
             {
               name: 'evaluateMeasure',
               route: '/$evaluate',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/2024Sep/OperationDefinition-evaluate.html'
+              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
             },
             {
               name: 'careGaps',
