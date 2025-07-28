@@ -57,7 +57,7 @@ const buildConfig = () => {
               name: 'submitData',
               route: '/$submit-data',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/operation-measure-submit-data.html'
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
             {
               name: 'submitData',
@@ -69,7 +69,7 @@ const buildConfig = () => {
               name: 'bulkSubmitData',
               route: '/$bulk-submit-data',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-bulk-submit-data.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
             },
             {
               name: 'bulkSubmitData',
@@ -93,7 +93,7 @@ const buildConfig = () => {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
               method: 'GET',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/evaluate'
             },
             {
               name: 'evaluateMeasure',
