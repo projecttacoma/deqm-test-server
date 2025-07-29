@@ -63,7 +63,7 @@ const buildConfig = () => {
               name: 'submitData',
               route: '/:id/$submit-data',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/operation-measure-submit-data.html'
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
             {
               name: 'bulkSubmitData',
@@ -75,19 +75,19 @@ const buildConfig = () => {
               name: 'bulkSubmitData',
               route: '/:id/$bulk-submit-data',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-bulk-submit-data.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
             },
             {
               name: 'dataRequirements',
               route: '/:id/$data-requirements',
               method: 'GET',
-              reference: 'https://www.hl7.org/fhir/measure-operation-data-requirements.html'
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-data-requirements'
             },
             {
               name: 'dataRequirements',
               route: '/:id/$data-requirements',
               method: 'POST',
-              reference: 'https://www.hl7.org/fhir/measure-operation-data-requirements.html'
+              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-data-requirements'
             },
             {
               name: 'evaluateMeasure',
@@ -99,7 +99,7 @@ const buildConfig = () => {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
               method: 'POST',
-              reference: 'https://hl7.org/fhir/us/davinci-deqm/STU5/OperationDefinition-evaluate.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/evaluate'
             },
             {
               name: 'evaluateMeasure',
@@ -117,13 +117,13 @@ const buildConfig = () => {
               name: 'careGaps',
               route: '/$care-gaps',
               method: 'GET',
-              reference: 'https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/care-gaps'
             },
             {
               name: 'careGaps',
               route: '/$care-gaps',
               method: 'POST',
-              reference: 'https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-care-gaps.html'
+              reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/care-gaps'
             }
           ]
         };
