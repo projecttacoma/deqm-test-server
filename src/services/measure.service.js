@@ -1,7 +1,6 @@
 const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { createTransactionBundleClass } = require('../resources/transactionBundle');
 const { handleSubmitDataBundles } = require('./bundle.service');
 const importQueue = require('../queue/importQueue');
 const {
@@ -105,25 +104,20 @@ const submitData = async (args, { req }) => {
 
   checkSubmitDataBody(req.body);
   const parameters = req.body.parameter;
-  // Ensure no bulk submit data parameters are included
-  const invalidParameters = parameters.filter(param => !param.resource);
-  if (invalidParameters.length > 0) {
-    throw new BadRequestError(
-      'Unexpected parameter included in request. All parameters for the $submit-data operation must be FHIR resources.'
-    );
-  }
+  const output = await handleSubmitDataBundles(
+    parameters.map(p => p.resource),
+    req
+  );
 
-  const { base_version: baseVersion } = req.params;
-  const tb = createTransactionBundleClass(baseVersion);
-  parameters.forEach(param => {
-    //TODO: add functionality for if resource is itself a bundle
-
-    tb.addEntryFromResource(param.resource, 'POST');
-  });
-  const output = await handleSubmitDataBundles([tb], req);
-  // expect exactly one output because uses exactly one transaction bundle
   logger.info('Completed $submit-data request');
-  return output[0];
+  const parameterEntries = output.map(responseBundle => {
+    return { name: 'responseBundle', resource: responseBundle };
+  });
+  const responseParams = {
+    resourceType: 'Parameters',
+    parameter: parameterEntries
+  };
+  return responseParams;
 };
 
 /**

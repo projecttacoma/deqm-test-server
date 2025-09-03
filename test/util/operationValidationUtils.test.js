@@ -555,7 +555,7 @@ describe('checkSubmitDataBody', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
+        `Unexpected parameter included in request. All parameters for the $submit-data operation must be named bundle with type Bundle.`
       );
     }
   });

@@ -60,12 +60,6 @@ const buildConfig = () => {
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
             {
-              name: 'submitData',
-              route: '/:id/$submit-data',
-              method: 'POST',
-              reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
-            },
-            {
               name: 'bulkSubmitData',
               route: '/$bulk-submit-data',
               method: 'POST',

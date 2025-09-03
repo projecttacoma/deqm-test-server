@@ -77,27 +77,29 @@ async function handleSubmitDataBundles(transactionBundles, req) {
   }
   const tbTemplate = resolveSchema(baseVersion, 'bundle');
   // upload transaction bundles and add resources to auditevent from those successfully uploaded
-  return transactionBundles.map(async tb => {
-    // Check upload succeeds
-    tb = new tbTemplate(tb);
-    req.body = tb.toJSON();
-    const bundleResponse = await uploadTransactionBundle(req, req.res);
+  return Promise.all(
+    transactionBundles.map(async tb => {
+      // Check upload succeeds
+      tb = new tbTemplate(tb);
+      req.body = tb.toJSON();
+      const bundleResponse = await uploadTransactionBundle(req, req.res);
 
-    if (auditID) {
-      // save resources to the AuditEvent
+      if (auditID) {
+        // save resources to the AuditEvent
 
-      const entities = bundleResponse.entry
-        .filter(entry => {
-          return entry.response.status === '200 OK' || entry.response.status === '201 Created';
-        })
-        .map(entry => {
-          return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
-        });
-      // use $each to push multiple
-      await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
-    }
-    return bundleResponse;
-  });
+        const entities = bundleResponse.entry
+          .filter(entry => {
+            return entry.response.status === '200 OK' || entry.response.status === '201 Created';
+          })
+          .map(entry => {
+            return { what: { reference: entry.response.location.replace(`${baseVersion}/`, '') } };
+          });
+        // use $each to push multiple
+        await pushToResource(auditID, { entity: { $each: entities } }, 'AuditEvent');
+      }
+      return bundleResponse;
+    })
+  );
 }
 
 /**

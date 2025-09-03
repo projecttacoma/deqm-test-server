@@ -1,13 +1,25 @@
 {
-  "resourceType": "Parameters",
-  "parameter": [
-    {
-      "name": "measureReport",
-      "resource": {
-        "resourceType": "MeasureReport",
-        "id": "measurereport-testMeasure",
-        "measure": "Measure/testMeasure"
-      }
-    }
-  ]
+    "resourceType": "Parameters",
+    "parameter": [
+        {
+            "name": "bundle",
+            "resource": {
+                "resourceType": "Bundle",
+                "type": "transaction",
+                "entry": [
+                    {
+                        "resource": {
+                            "resourceType": "MeasureReport",
+                            "id": "measurereport-testMeasure",
+                            "measure": "Measure/testMeasure"
+                        },
+                        "request": {
+                            "method": "PUT",
+                            "url": "MeasureReport/measurereport-testMeasure"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
 }
