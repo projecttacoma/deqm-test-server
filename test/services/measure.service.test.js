@@ -23,6 +23,7 @@ const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 const testParam2Resources = require('../fixtures/fhir-resources/parameters/paramNoExport2Resources.json');
+const testParamPartial = require('../fixtures/fhir-resources/parameters/paramNoExportPartialFailure.json');
 
 let server;
 
@@ -239,6 +240,25 @@ describe('measure.service', () => {
           expect(response.body.parameter[1].resource.entry[3].response.status).toEqual('201 Created');
           expect(response.body.parameter[1].resource.resourceType).toEqual('Bundle');
           expect(response.body.parameter[1].resource.type).toEqual('transaction-response');
+        });
+      await resetMeasureData(); // reset to base db
+    });
+
+    test('$submit-data uploads returns a transaction bundle response with a partial success', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testParamPartial)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(response => {
+          expect(response.body.parameter[0].resource.entry[0].response.status).toEqual('400 BadRequest');
+          expect(response.body.parameter[0].resource.entry[1].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[2].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[3].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[0].resource.type).toEqual('transaction-response');
         });
       await resetMeasureData(); // reset to base db
     });
