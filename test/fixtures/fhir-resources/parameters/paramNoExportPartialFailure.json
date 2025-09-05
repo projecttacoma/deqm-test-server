@@ -9,7 +9,7 @@
         "entry":[
           {
             "request": {
-              "method": "PUT",
+              "method": "GET",
               "url": "MeasureReport/measurereport-testMeasure"
             },
             "resource": {
@@ -21,12 +21,34 @@
           {
             "request": {
               "method": "PUT",
+              "url": "MeasureReport/measurereport-testMeasure2"
+            },
+            "resource": {
+              "resourceType": "MeasureReport",
+              "id": "measurereport-testMeasure2",
+              "measure": "Measure/testMeasure2"
+            }
+          },
+          {
+            "request": {
+              "method": "PUT",
+              "url": "Patient/test-patient"
+            },
+            "resource": {
+              "resourceType": "Patient",
+              "id": "test-patient"
+            }
+          },
+          {
+            "request": {
+              "method": "PUT",
               "url": "Encounter/test-encounter"
             },
             "resource": {
               "resourceType": "Encounter",
               "id": "test-encounter",
-              "status": "finished"
+              "status": "finished",
+              "subject": "Patient/test-patient"
             }
           }
         ]

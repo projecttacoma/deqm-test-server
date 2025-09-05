@@ -60,4 +60,4 @@ const clientFileSetup = async () => {
     console.error(err);
   }
 };
-module.exports = { testSetup, cleanUpTest, bulkStatusSetup, createTestResource, clientFileSetup };
+module.exports = { testSetup, cleanUpDb, cleanUpTest, bulkStatusSetup, createTestResource, clientFileSetup };

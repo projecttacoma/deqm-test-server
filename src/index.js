@@ -66,7 +66,7 @@ let stopping = false;
 function exitHandler() {
   if (!stopping) {
     stopping = true;
-    logger.info('Shuting down...');
+    logger.info('Shutting down...');
     workerProcesses.forEach(worker => {
       worker.kill('SIGTERM');
     });

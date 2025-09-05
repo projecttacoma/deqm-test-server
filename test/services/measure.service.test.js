@@ -10,20 +10,38 @@ const testOrganization = require('../fixtures/fhir-resources/testOrganization.js
 const testOrganization2 = require('../fixtures/fhir-resources/testOrganization2.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
 const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
-const testParamWithExport = require('../fixtures/fhir-resources/parameters/paramWithExport.json');
+const testEmptyParamList = require('../fixtures/fhir-resources/parameters/emptyParamList.json');
 const paramNoInputValueUrl = require('../fixtures/fhir-resources/parameters/paramNoInputValueUrl.json');
 const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
 const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
-const { testSetup, cleanUpTest } = require('../populateTestData');
+const { testSetup, cleanUpTest, cleanUpDb } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
+const testParam2Resources = require('../fixtures/fhir-resources/parameters/paramNoExport2Resources.json');
+const testParamPartial = require('../fixtures/fhir-resources/parameters/paramNoExportPartialFailure.json');
 
 let server;
+
+const resetMeasureData = async () => {
+  await cleanUpDb();
+  const dataToImport = [
+    testMeasure,
+    testMeasure2,
+    testPatient,
+    testPatient2,
+    testLibrary,
+    testGroup,
+    testOrganization,
+    testOrganization2,
+    deleteMeasure
+  ];
+  await testSetup(dataToImport);
+};
 
 describe('measure.service', () => {
   beforeAll(async () => {
@@ -140,7 +158,20 @@ describe('measure.service', () => {
         });
     });
 
-    test('$submit-data returns 400 for invalid number of measure reports', async () => {
+    test('$submit-data returns 400 for empty parameter list', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testEmptyParamList)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(400)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('BadRequest');
+          expect(response.body.issue[0].details.text).toEqual(`Expected 1..* bundles. Received: 0`);
+        });
+    });
+
+    test('$submit-data returns 400 for invalid type within parameters', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
         .send(testParamTwoMeasureReports)
@@ -150,22 +181,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: 2`
-          );
-        });
-    });
-
-    test('$submit-data returns 400 for invalid parameter included in request', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$submit-data')
-        .send(testParamWithExport)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .expect(400)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('BadRequest');
-          expect(response.body.issue[0].details.text).toEqual(
-            'Unexpected parameter included in request. All parameters for the $submit-data operation must be FHIR resources.'
+            `Unexpected parameter included in request. All parameters for the $submit-data operation must be named bundle with type Bundle.`
           );
         });
     });
@@ -179,13 +195,14 @@ describe('measure.service', () => {
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
         .then(response => {
-          expect(response.body.entry[0].response.status).toEqual('201 Created');
-          expect(response.body.resourceType).toEqual('Bundle');
-          expect(response.body.type).toEqual('transaction-response');
+          expect(response.body.parameter[0].resource.entry[0].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[0].resource.type).toEqual('transaction-response');
         });
+      await resetMeasureData(); // reset to base db
     });
 
-    test('$submit-data uploads txn bundle for valid parameters request with resource', async () => {
+    test('$submit-data uploads txn bundle for valid parameters request with bundle with resource', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
         .send(testParamResource)
@@ -194,10 +211,56 @@ describe('measure.service', () => {
         .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
         .expect(200)
         .then(response => {
-          expect(response.body.entry[0].response.status).toEqual('201 Created');
-          expect(response.body.resourceType).toEqual('Bundle');
-          expect(response.body.type).toEqual('transaction-response');
+          expect(response.body.parameter[0].resource.entry[0].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[1].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[0].resource.type).toEqual('transaction-response');
         });
+      await resetMeasureData(); // reset to base db
+    });
+
+    test('$submit-data uploads 2 txn bundles for 2 patients with 2 referenced measures', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testParam2Resources)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(response => {
+          expect(response.body.parameter[0].resource.entry[0].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[1].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[2].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[3].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[0].resource.type).toEqual('transaction-response');
+          expect(response.body.parameter[1].resource.entry[0].response.status).toEqual('201 Created');
+          expect(response.body.parameter[1].resource.entry[1].response.status).toEqual('201 Created');
+          expect(response.body.parameter[1].resource.entry[2].response.status).toEqual('201 Created');
+          expect(response.body.parameter[1].resource.entry[3].response.status).toEqual('201 Created');
+          expect(response.body.parameter[1].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[1].resource.type).toEqual('transaction-response');
+        });
+      await resetMeasureData(); // reset to base db
+    });
+
+    test('$submit-data upload returns a transaction bundle response with a partial success', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$submit-data')
+        .send(testParamPartial)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+        .expect(200)
+        .then(response => {
+          expect(response.body.parameter[0].resource.entry[0].response.status).toEqual('400 BadRequest');
+          expect(response.body.parameter[0].resource.entry[1].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[2].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.entry[3].response.status).toEqual('201 Created');
+          expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+          expect(response.body.parameter[0].resource.type).toEqual('transaction-response');
+        });
+      await resetMeasureData(); // reset to base db
     });
 
     test('$evaluate returns 200 when subject is omitted and reportType is set to population', async () => {

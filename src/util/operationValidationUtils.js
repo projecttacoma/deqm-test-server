@@ -196,14 +196,15 @@ const checkSubmitDataBody = body => {
     throw new BadRequestError(`Unreadable or empty entity for attribute 'parameter'. Received: ${body.parameter}`);
   }
   const parameters = body.parameter;
-  // Ensure exactly 1 measureReport is in parameters
-  const numMeasureReportsInput = parameters.filter(
-    param => param.name === 'measureReport' || param.resource?.resourceType === 'MeasureReport'
-  ).length;
-  if (numMeasureReportsInput !== 1) {
+  const bundleParams = parameters.filter(param => param.name === 'bundle' && param.resource?.resourceType === 'Bundle');
+
+  if (bundleParams.length !== parameters.length) {
     throw new BadRequestError(
-      `Expected exactly one resource with name: 'measureReport' and/or resourceType: 'MeasureReport. Received: ${numMeasureReportsInput}`
+      `Unexpected parameter included in request. All parameters for the $submit-data operation must be named bundle with type Bundle.`
     );
+  }
+  if (bundleParams.length < 1) {
+    throw new BadRequestError(`Expected 1..* bundles. Received: ${bundleParams.length}`);
   }
 };
 
