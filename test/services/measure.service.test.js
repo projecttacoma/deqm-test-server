@@ -244,7 +244,7 @@ describe('measure.service', () => {
       await resetMeasureData(); // reset to base db
     });
 
-    test('$submit-data uploads returns a transaction bundle response with a partial success', async () => {
+    test('$submit-data upload returns a transaction bundle response with a partial success', async () => {
       await supertest(server.app)
         .post('/4_0_1/Measure/$submit-data')
         .send(testParamPartial)
