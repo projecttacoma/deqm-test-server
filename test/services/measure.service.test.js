@@ -472,6 +472,69 @@ describe('measure.service', () => {
       });
     });
 
+    test('$evaluate returns 200 when subjectGroup is provided and reportType is set to population', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'individual'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$evaluate')
+        .send({
+          resourceType: 'Parameters',
+          parameter: [
+            {
+              name: 'periodStart',
+              valueString: '01-01-2020'
+            },
+            {
+              name: 'periodEnd',
+              valueString: '01-01-2021'
+            },
+            {
+              name: 'reportType',
+              valueString: 'population'
+            },
+            {
+              name: 'measureId',
+              valueString: 'testMeasure'
+            },
+            {
+              name: 'subjectGroup',
+              resource: testGroup
+            }
+          ]
+        })
+        .expect(200);
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+        measurementPeriodStart: '01-01-2020',
+        measurementPeriodEnd: '01-01-2021',
+        reportType: 'summary'
+      });
+    });
+
     test('$evaluate should default to reportType population when not set and no subject provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {

@@ -58,6 +58,31 @@ function validateEvalMeasureParams(query, expectedId) {
       throw new BadRequestError(`practitioner may only be a Practitioner resource of format "Practitioner/{id}".`);
     }
   }
+
+  // check subjectGroup resource if specified
+  if (query.subjectGroup) {
+    // ensure it is a group resource
+    if (query.subjectGroup.resourceType !== 'Group') {
+      throw new BadRequestError('subjectGroup must be an embedded Group resource.');
+    }
+    // ensure it has members
+    if (query.subjectGroup.member && query.subjectGroup.member.length > 0) {
+      // check each member to make sure they all have valid references
+      for (let i = 0; i < query.subjectGroup.member.length; i++) {
+        const member = query.subjectGroup.member[i];
+        if (member.entity.reference) {
+          const patientReference = member.entity.reference.split('/');
+          if (patientReference.length !== 2 || patientReference[0] !== 'Patient') {
+            throw new BadRequestError('subjectGroup members may only be Patient resource references of format "Patient/{id}".')
+          }
+        } else {
+          throw new BadRequestError('subjectGroup members must have references to Patients.');
+        }
+      }
+    } else {
+      throw new BadRequestError('subjectGroup must contain members.');
+    }
+  }
 }
 
 /**
@@ -163,9 +188,9 @@ const gatherParams = (query, body) => {
 
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
-      if (!e.resource) {
+      //if (!e.resource) {
         // For now, all usable params are expected to be stored under one of these four keys
-        const value = e.valueDate || e.valueString || e.valueId || e.valueCode;
+        const value = e.valueDate || e.valueString || e.valueId || e.valueCode || e.resource;
         if (acc[e.name] !== undefined) {
           // add to existing parameter values
           if (Array.isArray(acc[e.name])) {
@@ -176,7 +201,7 @@ const gatherParams = (query, body) => {
         } else {
           acc[e.name] = value;
         }
-      }
+      //}
       return acc;
     }, params);
   }

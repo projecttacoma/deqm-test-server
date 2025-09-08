@@ -189,6 +189,7 @@ const evaluateMeasure = async (args, { req }) => {
   if (req.method === 'POST') {
     // Creates a new query from a combination of parameters in the body and query
     query = gatherParams(req.query, req.body);
+    logger.info(JSON.stringify(req.body))
   } else {
     query = req.query;
   }
@@ -223,9 +224,14 @@ const evaluateMeasureForPopulation = async (args, query) => {
       : [await getMeasureBundleFromId(args.id ?? query.measureId)];
   // Collect patientId instead of bundles
   let patientIds = [];
-  if (query.subject) {
-    const subjectReference = query.subject.split('/');
-    const group = await findResourceById(subjectReference[1], subjectReference[0]);
+  if (query.subject || query.subjectGroup) {
+    let group;
+    if (query.subject) {
+      const subjectReference = query.subject.split('/');
+      group = await findResourceById(subjectReference[1], subjectReference[0]);
+    } else {
+      group = query.subjectGroup
+    }
     if (!group) {
       throw new ResourceNotFoundError(
         `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
