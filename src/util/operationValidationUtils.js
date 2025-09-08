@@ -73,7 +73,9 @@ function validateEvalMeasureParams(query, expectedId) {
         if (member.entity.reference) {
           const patientReference = member.entity.reference.split('/');
           if (patientReference.length !== 2 || patientReference[0] !== 'Patient') {
-            throw new BadRequestError('subjectGroup members may only be Patient resource references of format "Patient/{id}".')
+            throw new BadRequestError(
+              'subjectGroup members may only be Patient resource references of format "Patient/{id}".'
+            );
           }
         } else {
           throw new BadRequestError('subjectGroup members must have references to Patients.');
@@ -188,20 +190,17 @@ const gatherParams = (query, body) => {
 
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
-      //if (!e.resource) {
-        // For now, all usable params are expected to be stored under one of these four keys
-        const value = e.valueDate || e.valueString || e.valueId || e.valueCode || e.resource;
-        if (acc[e.name] !== undefined) {
-          // add to existing parameter values
-          if (Array.isArray(acc[e.name])) {
-            acc[e.name].push(value);
-          } else {
-            acc[e.name] = [acc[e.name], value];
-          }
+      const value = e.valueDate || e.valueString || e.valueId || e.valueCode || e.resource;
+      if (acc[e.name] !== undefined) {
+        // add to existing parameter values
+        if (Array.isArray(acc[e.name])) {
+          acc[e.name].push(value);
         } else {
-          acc[e.name] = value;
+          acc[e.name] = [acc[e.name], value];
         }
-      //}
+      } else {
+        acc[e.name] = value;
+      }
       return acc;
     }, params);
   }
