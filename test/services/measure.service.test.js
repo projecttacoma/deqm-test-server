@@ -502,6 +502,8 @@ describe('measure.service', () => {
       });
       await supertest(server.app)
         .post('/4_0_1/Measure/$evaluate')
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
         .send({
           resourceType: 'Parameters',
           parameter: [
