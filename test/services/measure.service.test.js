@@ -482,7 +482,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -524,8 +524,29 @@ describe('measure.service', () => {
               valueString: 'testMeasure'
             },
             {
+              name: 'subject',
+              valueString: 'Group/testSubjectGroup'
+            },
+            {
               name: 'subjectGroup',
-              resource: testGroup
+              resource: {
+                resourceType: 'Group',
+                id: 'testSubjectGroup',
+                type: 'person',
+                actual: 'true',
+                member: [
+                  {
+                    entity: {
+                      reference: 'Patient/testPatient'
+                    }
+                  },
+                  {
+                    entity: {
+                      reference: 'Patient/testPatient2'
+                    }
+                  }
+                ]
+              }
             }
           ]
         })
