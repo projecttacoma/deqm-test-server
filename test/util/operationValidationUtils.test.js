@@ -222,6 +222,45 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
+  test('error thrown for population $evaluate with subject/subjectGroup used for reportType subject', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'subject',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Patient/testPatient2'
+              }
+            }
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(501);
+      expect(e.issue[0].details.text).toEqual(
+        `"subject" parameter referencing a Group is not currently supported for "reportType" subject.`
+      );
+    }
+  });
+
   test('error thrown for population $evaluate with subjectGroup without subject parameter referencing the group', () => {
     expect.assertions(2);
     const POPULATION_REQ = {
@@ -297,6 +336,7 @@ describe('validateEvalMeasureParams', () => {
       );
     }
   });
+
   test('error thrown for population $evaluate with subjectGroup with members missing references', () => {
     expect.assertions(2);
     const POPULATION_REQ = {
@@ -418,7 +458,7 @@ describe('validateEvalMeasureParams', () => {
         reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        subject: 'Group/testGroup'
+        subject: 'Measure/testGroup'
       }
     };
     try {

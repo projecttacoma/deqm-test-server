@@ -80,7 +80,11 @@ function validateEvalMeasureParams(query, expectedId) {
 
   if (query.reportType === 'subject') {
     const subjectReference = query.subject.split('/');
-    if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
+    if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
+      throw new NotImplementedError(
+        `"subject" parameter referencing a Group is not currently supported for "reportType" subject.`
+      );
+    } else if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
       throw new BadRequestError(
         `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
