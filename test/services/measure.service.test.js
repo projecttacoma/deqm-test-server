@@ -551,7 +551,17 @@ describe('measure.service', () => {
           ]
         })
         .expect(200);
-      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+      const patientBundleMatcher = expect.objectContaining({
+        entry: expect.arrayContaining([
+          expect.objectContaining({
+            resource: expect.objectContaining({
+              resourceType: 'Patient',
+              id: expect.stringMatching(/testPatient|testPatient2/)
+            })
+          })
+        ])
+      });
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher, patientBundleMatcher], {
         measurementPeriodStart: '01-01-2020',
         measurementPeriodEnd: '01-01-2021',
         reportType: 'summary'
