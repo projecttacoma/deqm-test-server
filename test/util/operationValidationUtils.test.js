@@ -256,7 +256,7 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(501);
       expect(e.issue[0].details.text).toEqual(
-        `"subject" parameter referencing a Group is not currently supported for "reportType" subject.`
+        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
       );
     }
   });

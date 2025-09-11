@@ -82,7 +82,7 @@ function validateEvalMeasureParams(query, expectedId) {
     const subjectReference = query.subject.split('/');
     if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
       throw new NotImplementedError(
-        `"subject" parameter referencing a Group is not currently supported for "reportType" subject.`
+        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
       );
     } else if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
       throw new BadRequestError(
