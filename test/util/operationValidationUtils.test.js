@@ -186,6 +186,271 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
+  test('error thrown for population $evaluate with subjectGroup without subject parameter set', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Patient/testPatient2'
+              }
+            }
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(`"subject" parameter must be included when "subjectGroup" is used.`);
+    }
+  });
+
+  test('error thrown for population $evaluate with subject/subjectGroup used for reportType subject', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'subject',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Patient/testPatient2'
+              }
+            }
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(501);
+      expect(e.issue[0].details.text).toEqual(
+        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
+      );
+    }
+  });
+
+  test('error thrown for population $evaluate with subjectGroup without subject parameter referencing the group', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/notTheTestGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Patient/testPatient2'
+              }
+            }
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual("'subjectGroup' resource must be referenced by the 'subject' parameter.");
+    }
+  });
+
+  test('error thrown for population $evaluate with subjectGroup without valid Patient reference members', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Medication/testMedication'
+              }
+            }
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual(
+        '\'subjectGroup\' members may only be Patient resource references of format "Patient/{id}".'
+      );
+    }
+  });
+
+  test('error thrown for population $evaluate with subjectGroup with members missing references', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {}
+          ]
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual("'subjectGroup' members must have references to Patients.");
+    }
+  });
+
+  test('error thrown for population $evaluate with subjectGroup without members list', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true'
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual("'subjectGroup' must contain members.");
+    }
+  });
+
+  test('error thrown for population $evaluate with subjectGroup not a Group resource', () => {
+    expect.assertions(2);
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Measure',
+          id: 'testMeasure'
+        }
+      }
+    };
+    try {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    } catch (e) {
+      expect(e.statusCode).toEqual(400);
+      expect(e.issue[0].details.text).toEqual("'subjectGroup' must be an embedded Group resource.");
+    }
+  });
+
+  test('no error thrown for population $evaluate with valid subjectGroup', () => {
+    const POPULATION_REQ = {
+      query: {
+        measureId: 'testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31',
+        subject: 'Group/testGroup',
+        subjectGroup: {
+          resourceType: 'Group',
+          id: 'testGroup',
+          type: 'person',
+          actual: 'true',
+          member: [
+            {
+              entity: {
+                reference: 'Patient/testPatient'
+              }
+            },
+            {
+              entity: {
+                reference: 'Patient/testPatient2'
+              }
+            }
+          ]
+        }
+      }
+    };
+    expect(() => {
+      validateEvalMeasureParams(POPULATION_REQ.query);
+    }).not.toThrow();
+  });
+
   test('error thrown for subject $evaluate with non-Patient reference subject', () => {
     const INDIVIDUAL_REQ = {
       query: {
@@ -193,7 +458,7 @@ describe('validateEvalMeasureParams', () => {
         reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
-        subject: 'Group/testGroup'
+        subject: 'Measure/testGroup'
       }
     };
     try {

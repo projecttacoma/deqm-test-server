@@ -224,12 +224,17 @@ const evaluateMeasureForPopulation = async (args, query) => {
   // Collect patientId instead of bundles
   let patientIds = [];
   if (query.subject) {
-    const subjectReference = query.subject.split('/');
-    const group = await findResourceById(subjectReference[1], subjectReference[0]);
-    if (!group) {
-      throw new ResourceNotFoundError(
-        `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
-      );
+    let group;
+    if (query.subjectGroup) {
+      group = query.subjectGroup;
+    } else {
+      const subjectReference = query.subject.split('/');
+      group = await findResourceById(subjectReference[1], subjectReference[0]);
+      if (!group) {
+        throw new ResourceNotFoundError(
+          `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
+        );
+      }
     }
     if (query.practitioner) {
       const patients = await filterPatientIdsFromGroup(group, query.practitioner);

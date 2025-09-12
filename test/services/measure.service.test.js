@@ -472,6 +472,102 @@ describe('measure.service', () => {
       });
     });
 
+    test('$evaluate returns 200 when subjectGroup is provided and reportType is set to population', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'summary'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$evaluate')
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .send({
+          resourceType: 'Parameters',
+          parameter: [
+            {
+              name: 'periodStart',
+              valueString: '01-01-2020'
+            },
+            {
+              name: 'periodEnd',
+              valueString: '01-01-2021'
+            },
+            {
+              name: 'reportType',
+              valueString: 'population'
+            },
+            {
+              name: 'measureId',
+              valueString: 'testMeasure'
+            },
+            {
+              name: 'subject',
+              valueString: 'Group/testSubjectGroup'
+            },
+            {
+              name: 'subjectGroup',
+              resource: {
+                resourceType: 'Group',
+                id: 'testSubjectGroup',
+                type: 'person',
+                actual: 'true',
+                member: [
+                  {
+                    entity: {
+                      reference: 'Patient/testPatient'
+                    }
+                  },
+                  {
+                    entity: {
+                      reference: 'Patient/testPatient2'
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        })
+        .expect(200);
+      const patientBundleMatcher = expect.objectContaining({
+        entry: expect.arrayContaining([
+          expect.objectContaining({
+            resource: expect.objectContaining({
+              resourceType: 'Patient',
+              id: expect.stringMatching(/testPatient|testPatient2/)
+            })
+          })
+        ])
+      });
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher, patientBundleMatcher], {
+        measurementPeriodStart: '01-01-2020',
+        measurementPeriodEnd: '01-01-2021',
+        reportType: 'summary'
+      });
+    });
+
     test('$evaluate should default to reportType population when not set and no subject provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {

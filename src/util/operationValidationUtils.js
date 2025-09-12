@@ -41,11 +41,50 @@ function validateEvalMeasureParams(query, expectedId) {
         `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
       );
     }
+
+    // check subjectGroup resource if specified
+    if (query.subjectGroup) {
+      // ensure it is a group resource
+      if (query.subjectGroup.resourceType !== 'Group') {
+        throw new BadRequestError("'subjectGroup' must be an embedded Group resource.");
+      }
+      // ensure it is referenced by the subject parameter
+      if (query.subjectGroup.id !== subjectReference[1]) {
+        throw new BadRequestError("'subjectGroup' resource must be referenced by the 'subject' parameter.");
+      }
+      // ensure it has members
+      if (query.subjectGroup.member && query.subjectGroup.member.length > 0) {
+        // check each member to make sure they all have valid references
+        for (let i = 0; i < query.subjectGroup.member.length; i++) {
+          const member = query.subjectGroup.member[i];
+          if (member.entity?.reference) {
+            const patientReference = member.entity.reference.split('/');
+            if (patientReference.length !== 2 || patientReference[0] !== 'Patient') {
+              throw new BadRequestError(
+                '\'subjectGroup\' members may only be Patient resource references of format "Patient/{id}".'
+              );
+            }
+          } else {
+            throw new BadRequestError("'subjectGroup' members must have references to Patients.");
+          }
+        }
+      } else {
+        throw new BadRequestError("'subjectGroup' must contain members.");
+      }
+    }
+  }
+
+  if (query.subjectGroup && !query.subject) {
+    throw new BadRequestError(`"subject" parameter must be included when "subjectGroup" is used.`);
   }
 
   if (query.reportType === 'subject') {
     const subjectReference = query.subject.split('/');
-    if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
+    if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
+      throw new NotImplementedError(
+        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
+      );
+    } else if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
       throw new BadRequestError(
         `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
       );
@@ -163,19 +202,16 @@ const gatherParams = (query, body) => {
 
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
-      if (!e.resource) {
-        // For now, all usable params are expected to be stored under one of these four keys
-        const value = e.valueDate || e.valueString || e.valueId || e.valueCode;
-        if (acc[e.name] !== undefined) {
-          // add to existing parameter values
-          if (Array.isArray(acc[e.name])) {
-            acc[e.name].push(value);
-          } else {
-            acc[e.name] = [acc[e.name], value];
-          }
+      const value = e.valueDate || e.valueString || e.valueId || e.valueCode || e.resource;
+      if (acc[e.name] !== undefined) {
+        // add to existing parameter values
+        if (Array.isArray(acc[e.name])) {
+          acc[e.name].push(value);
         } else {
-          acc[e.name] = value;
+          acc[e.name] = [acc[e.name], value];
         }
+      } else {
+        acc[e.name] = value;
       }
       return acc;
     }, params);
