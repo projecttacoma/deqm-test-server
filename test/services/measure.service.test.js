@@ -524,10 +524,6 @@ describe('measure.service', () => {
               valueString: 'testMeasure'
             },
             {
-              name: 'subject',
-              valueString: 'Group/testSubjectGroup'
-            },
-            {
               name: 'subjectGroup',
               resource: {
                 resourceType: 'Group',
