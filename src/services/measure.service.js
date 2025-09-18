@@ -223,7 +223,7 @@ const evaluateMeasureForPopulation = async (args, query) => {
       : [await getMeasureBundleFromId(args.id ?? query.measureId)];
   // Collect patientId instead of bundles
   let patientIds = [];
-  if (query.subject) {
+  if (query.subject || query.subjectGroup) {
     let group;
     if (query.subjectGroup) {
       group = query.subjectGroup;
@@ -240,7 +240,7 @@ const evaluateMeasureForPopulation = async (args, query) => {
       const patients = await filterPatientIdsFromGroup(group, query.practitioner);
       if (patients.length === 0) {
         throw new BadRequestError(
-          `The given subject, ${query.subject}, does not reference the given practitioner, ${query.practitioner}`
+          `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.practitioner}`
         );
       } else {
         patientIds = patients.map(p => p.id);

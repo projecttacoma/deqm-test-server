@@ -30,16 +30,19 @@ function validateEvalMeasureParams(query, expectedId) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate`);
   }
 
-  if (!query.subject && query.reportType === 'subject') {
-    throw new BadRequestError(`Must specify subject for all $evaluate requests with reportType parameter: subject`);
+  // ensure that subject and subjectGroup are exclusive
+  if (query.subjectGroup && query.subject) {
+    throw new BadRequestError(`"subject" parameter must not be included when "subjectGroup" is used.`);
   }
 
-  if (query.reportType === 'population' && query.subject) {
-    const subjectReference = query.subject.split('/');
-    if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
-      throw new BadRequestError(
-        `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
-      );
+  if (query.reportType === 'population') {
+    if (query.subject) {
+      const subjectReference = query.subject.split('/');
+      if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
+        throw new BadRequestError(
+          `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
+        );
+      }
     }
 
     // check subjectGroup resource if specified
@@ -47,10 +50,6 @@ function validateEvalMeasureParams(query, expectedId) {
       // ensure it is a group resource
       if (query.subjectGroup.resourceType !== 'Group') {
         throw new BadRequestError("'subjectGroup' must be an embedded Group resource.");
-      }
-      // ensure it is referenced by the subject parameter
-      if (query.subjectGroup.id !== subjectReference[1]) {
-        throw new BadRequestError("'subjectGroup' resource must be referenced by the 'subject' parameter.");
       }
       // ensure it has members
       if (query.subjectGroup.member && query.subjectGroup.member.length > 0) {
@@ -72,22 +71,30 @@ function validateEvalMeasureParams(query, expectedId) {
         throw new BadRequestError("'subjectGroup' must contain members.");
       }
     }
-  }
-
-  if (query.subjectGroup && !query.subject) {
-    throw new BadRequestError(`"subject" parameter must be included when "subjectGroup" is used.`);
-  }
-
-  if (query.reportType === 'subject') {
-    const subjectReference = query.subject.split('/');
-    if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
-      throw new NotImplementedError(
-        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
-      );
-    } else if (subjectReference.length > 1 && subjectReference[0] !== 'Patient') {
+  } else if (query.reportType === 'subject') {
+    if (!query.subject && !query.subjectGroup) {
       throw new BadRequestError(
-        `For reportType parameter 'subject', subject reference may only be a Patient resource of format "Patient/{id}".`
+        `Must specify subject or subjectGroup for all $evaluate requests with reportType parameter: subject`
       );
+    }
+
+    if (query.subjectGroup) {
+      throw new NotImplementedError(
+        `"subjectGroup" parameter is not currently supported for "reportType" parameter with value subject.`
+      );
+    }
+
+    if (query.subject) {
+      const subjectReference = query.subject.split('/');
+      if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
+        throw new NotImplementedError(
+          `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
+        );
+      } else if (subjectReference.length > 1 && !['Patient', 'Group'].includes(subjectReference[0])) {
+        throw new BadRequestError(
+          `For reportType parameter 'subject', subject reference may only be a Patient or Group resource of format "Patient/{id}" or "Group/{id}".`
+        );
+      }
     }
   }
 
