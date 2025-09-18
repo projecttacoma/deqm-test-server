@@ -535,11 +535,6 @@ describe('measure.service', () => {
                     entity: {
                       reference: 'Patient/testPatient'
                     }
-                  },
-                  {
-                    entity: {
-                      reference: 'Patient/testPatient2'
-                    }
                   }
                 ]
               }
@@ -552,12 +547,12 @@ describe('measure.service', () => {
           expect.objectContaining({
             resource: expect.objectContaining({
               resourceType: 'Patient',
-              id: expect.stringMatching(/testPatient|testPatient2/)
+              id: expect.stringMatching(/testPatient/)
             })
           })
         ])
       });
-      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher, patientBundleMatcher], {
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher], {
         measurementPeriodStart: '01-01-2020',
         measurementPeriodEnd: '01-01-2021',
         reportType: 'summary'
@@ -822,7 +817,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject, Group/testGroup, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `The given subject with id, testGroup, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
