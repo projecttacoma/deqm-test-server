@@ -4,12 +4,13 @@
   "description": "A test server for quality measure operations",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "lint": "eslint \"**/*.js\"",
     "lint:fix": "eslint \"**/*.js\" --fix",
     "prettier": "prettier --check \"**/*.js\"",
     "prettier:fix": "prettier --write \"**/*.js\"",
     "check": "npm run test && npm run lint && npm run prettier",
-    "start": "node src/index.js",
+    "start": "ts-node src/index.ts",
     "start:watch": "nodemon src/index.js",
     "db:setup": "node src/scripts/createCollections.js",
     "db:delete": "node src/scripts/deleteCollections.js",
@@ -47,7 +48,10 @@
     "jest": "^30.0.0",
     "nodemon": "^2.0.19",
     "prettier": "^2.4.1",
-    "supertest": "^6.1.6"
+    "supertest": "^6.1.6",
+    "ts-jest": "^29.4.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   },
   "jest": {
     "setupFiles": [
