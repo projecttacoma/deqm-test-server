@@ -1,5 +1,5 @@
-//@ts-nocheck 
-const service = require('../services/bulkstatus.service.js');
+//@ts-nocheck
+const service = require('../services/bulkstatus.service');
 
 /**
  * @name exports

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { Server } = require('@projecttacoma/node-fhir-server-core');
 const cors = require('cors');
 const configBulkImport = require('../controllers/import.controller');
@@ -7,7 +7,7 @@ const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
 const configResourceCount = require('../controllers/resourcecount.controller');
 const { validateFhir } = require('../util/resourceValidationUtils');
-const logger = require('./logger.js');
+const logger = require('./logger');
 /**
  * Server used for deqm routes
  */

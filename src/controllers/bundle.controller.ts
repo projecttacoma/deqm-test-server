@@ -1,5 +1,5 @@
-//@ts-nocheck 
-const service = require('../services/bundle.service.js');
+//@ts-nocheck
+const service = require('../services/bundle.service');
 
 /**
  * @name exports

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { v4: uuidv4 } = require('uuid');
 const { getSearchParameters, resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
@@ -19,7 +19,7 @@ const {
   checkExpectedResource,
   createPaginationLinks
 } = require('../util/baseUtils');
-const logger = require('../server/logger.js');
+const logger = require('../server/logger');
 
 /**
  * Query Builder Parameter Definitions for all resources

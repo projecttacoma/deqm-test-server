@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { constants } = require('@projecttacoma/node-fhir-server-core');
 const path = require('path');
 const supportedResources = require('../server/supportedResources');
@@ -19,7 +19,7 @@ const buildConfig = () => {
     switch (resourceType) {
       case 'Patient':
         config.profiles['Patient'] = {
-          service: path.resolve('src', 'services', 'patient.service.js'),
+          service: path.resolve(__dirname, '..', 'services', 'patient.service'),
           versions: [VERSIONS['4_0_1']],
           operation: [
             {
@@ -51,7 +51,7 @@ const buildConfig = () => {
         break;
       case 'Measure':
         config.profiles['Measure'] = {
-          service: path.resolve('src', 'services', 'measure.service.js'),
+          service: path.resolve(__dirname, '..', 'services', 'measure.service'),
           versions: [VERSIONS['4_0_1']],
           operation: [
             {

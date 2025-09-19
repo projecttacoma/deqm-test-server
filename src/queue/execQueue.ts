@@ -1,8 +1,8 @@
-//@ts-nocheck 
+//@ts-nocheck
 // Setup for exec queue which pushes jobs to Redis
 
 const Queue = require('bee-queue');
-const logger = require('../server/logger.js');
+const logger = require('../server/logger');
 const { MeasureReportBuilder } = require('fqm-execution');
 
 // Create a new queue to establish new Redis connection

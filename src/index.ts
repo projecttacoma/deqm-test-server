@@ -1,6 +1,6 @@
 //@ts-nocheck
 const axios = require('axios');
-const logger = require('./server/logger.js');
+const logger = require('./server/logger');
 const express = require('express');
 const mongoUtil = require('./database/connection');
 const { decrementBulkFileCount, updateSuccessfulImportCount } = require('./database/dbOperations');
@@ -8,6 +8,7 @@ const { buildConfig } = require('./config/profileConfig');
 const { initialize } = require('./server/server');
 const childProcess = require('child_process');
 const os = require('os');
+const path = require('path');
 const ndjsonQueue = require('./queue/ndjsonProcessQueue');
 
 const app = express();
@@ -26,15 +27,15 @@ if (workerTotal > os.cpus().length) {
 }
 
 for (let i = 0; i < process.env.IMPORT_WORKERS; i++) {
-  workerProcesses.push(childProcess.fork('./src/server/importWorker.js'));
+  workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'importWorker')));
 }
 
 for (let i = 0; i < process.env.EXEC_WORKERS; i++) {
-  workerProcesses.push(childProcess.fork('./src/server/execWorker.js'));
+  workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'execWorker')));
 }
 
 for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
-  workerProcesses.push(childProcess.fork('./src/server/ndjsonWorker.js'));
+  workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'ndjsonWorker')));
 }
 // Database updates need to happen from the main process to avoid race conditions for bulk status update
 ndjsonQueue.on('job succeeded', async (jobId, { clientId, resourceCount, successCount }) => {

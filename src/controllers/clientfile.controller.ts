@@ -1,5 +1,5 @@
-//@ts-nocheck 
-const service = require('../services/clientfile.service.js');
+//@ts-nocheck
+const service = require('../services/clientfile.service');
 
 /**
  * @name exports
