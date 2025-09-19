@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const {
   retrieveProfiles,
   getValidationInfo,

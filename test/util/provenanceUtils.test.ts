@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { buildDelegator, createAuditEventFromProvenance } = require('../../src/util/provenanceUtils');
 const {

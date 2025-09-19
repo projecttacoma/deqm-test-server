@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const { checkInputUrlArray, retrieveInputUrls } = require('../../src/util/exportUtils');
 const paramOneInput = require('../fixtures/fhir-resources/parameters/paramOneInput.json');
 const paramTwoInputs = require('../fixtures/fhir-resources/parameters/paramTwoInputs.json');

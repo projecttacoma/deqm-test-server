@@ -55,7 +55,14 @@
   },
   "jest": {
     "setupFiles": [
-      "./test/globalSetup.js"
+      "./test/globalSetup.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "node_modules",
+      "src/scripts"
     ]
   }
 }

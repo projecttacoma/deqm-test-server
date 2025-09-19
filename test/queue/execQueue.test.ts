@@ -1,3 +1,4 @@
+//@ts-nocheck 
 require('../../src/config/envConfig');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const { ScaledCalculation } = require('../../src/queue/execQueue');

@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const { bulkStatusSetup, cleanUpTest, createTestResource } = require('../populateTestData');
 const { client } = require('../../src/database/connection');
 const {

@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const supertest = require('supertest');
 const { uploadTransactionBundle } = require('../../src/services/bundle.service');
 const { client } = require('../../src/database/connection');

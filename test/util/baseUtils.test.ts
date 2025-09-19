@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const { checkSupportedResource, checkContentTypeHeader } = require('../../src/util/baseUtils');
 const queue = require('../../src/queue/importQueue');
 

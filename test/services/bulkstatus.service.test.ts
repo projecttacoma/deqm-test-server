@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const supertest = require('supertest');
 const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');

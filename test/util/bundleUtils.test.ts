@@ -1,3 +1,4 @@
+//@ts-nocheck 
 const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
 const { client } = require('../../src/database/connection');
 const queue = require('../../src/queue/importQueue');
