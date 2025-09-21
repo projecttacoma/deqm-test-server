@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
@@ -107,7 +107,7 @@ async function getValidationInfo(profiles, body, base_version) {
   try {
     logger.debug(`Validating request body using url: ${validationUrl}`);
     response = await axios.post(validationUrl, body);
-  } catch (e) {
+  } catch {
     /*
         We can't throw server errors inside this middleware, so best to construct
         our own operation outcomes and return them

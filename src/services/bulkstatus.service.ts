@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { NotFoundError, BulkStatusError } = require('../util/errorUtils');
 const { getBulkImportStatus, getNdjsonFileStatus } = require('../database/dbOperations');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
@@ -274,7 +274,7 @@ const checkForFile = function (type, clientId) {
       const data = fs.readFileSync(filename);
       return data.length !== 0;
     }
-  } catch (err) {
+  } catch {
     return false;
   }
   return false;

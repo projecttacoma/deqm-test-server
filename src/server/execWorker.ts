@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const Queue = require('bee-queue');
 const { Calculator } = require('fqm-execution');
 const logger = require('./logger');

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const fs = require('fs');
 const path = require('path');
 const mongoUtil = require('../database/connection');
@@ -135,7 +135,7 @@ async function main() {
       }
       console.log(`Finding bundles in ${bundlePath}.`);
       getBundleFiles(bundlePath, searchPattern);
-    } catch (e) {
+    } catch {
       throw new Error('Provided directory not found.');
     }
 
@@ -147,7 +147,7 @@ async function main() {
       }
       console.log(`Finding bundles in ecqm-content-r4-2021 repo at ${ecqmContentR4Path}.`);
       getEcqmBundleFiles(ecqmContentR4Path, searchPattern);
-    } catch (e) {
+    } catch {
       throw new Error(
         'ecqm-content-r4-2021 directory not found. Git clone the ecqm-content-r4-2021 repo into the root directory and run script again'
       );

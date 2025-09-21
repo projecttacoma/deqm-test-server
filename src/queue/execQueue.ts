@@ -98,15 +98,17 @@ class ScaledCalculation {
    */
   async execute() {
     this._count = 0;
-    const _this = this;
 
     // Construct the bee-queue jobs
     const jobs = this._jobs.map(jobData => execQueue.createJob(jobData));
     // Create promises for all jobs
     const jobPromises = jobs.map(job => {
       return new Promise((res, rej) => {
-        job.on('succeeded', _this.tabulateResults.bind(_this));
-        job.on('succeeded', () => res(true));
+        job.on('succeeded', result => {
+          this.tabulateResults(result).then(() => {
+            res(true);
+          });
+        });
         job.on('failed', rej);
       });
     });

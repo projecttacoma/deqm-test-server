@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const {
   retrieveProfiles,
   getValidationInfo,
@@ -44,7 +44,8 @@ describe('resourceValidationInfo tests', () => {
       };
     });
     const res = {};
-    (res.status = jest.fn().mockReturnValue(res)), (res.json = jest.fn().mockReturnValue(res));
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
     const next = jest.fn();
     await validateFhir(req, res, next);
     expect(next).toHaveBeenCalledTimes(1);
@@ -55,7 +56,8 @@ describe('resourceValidationInfo tests', () => {
     });
 
     const res = {};
-    (res.status = jest.fn().mockReturnValue(res)), (res.json = jest.fn().mockReturnValue(res));
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
     const next = jest.fn();
     await validateFhir(req, res, next);
     expect(res.status).toHaveBeenCalledTimes(1);
