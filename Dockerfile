@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:20
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -18,10 +18,9 @@ WORKDIR /home/node/app
 COPY --chown=node:node . .
 # Install dependencies
 RUN npm install
-
-
-
+# Build
+RUN npm run build
 
 # Start app
 EXPOSE 3000
-CMD [ "npm", "start" ]
+CMD [ "node", "build/index.js" ]
