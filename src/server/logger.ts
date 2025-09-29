@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { loggers, format, transports } = require('winston');
 
 const LOGGER_NAME = 'server-logger';

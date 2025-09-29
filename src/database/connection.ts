@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { MongoClient } = require('mongodb');
 require('../config/envConfig');
 

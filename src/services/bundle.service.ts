@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');

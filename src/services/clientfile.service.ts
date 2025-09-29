@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { NotFoundError } = require('../util/errorUtils');
 const fs = require('fs');
 const path = require('path');

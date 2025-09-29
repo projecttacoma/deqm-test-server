@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { ResourceNotFoundError, InternalError } = require('./errorUtils');
 const _ = require('lodash');

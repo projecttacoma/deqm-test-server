@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 /**
  * List of all resource types supported by this server. The commented out types are not supported by Asymmetrik.
  */

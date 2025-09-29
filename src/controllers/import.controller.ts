@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const service = require('../services/import.service');
 
 /**

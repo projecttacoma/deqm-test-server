@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const env = require('dotenv');
 
 if (process.env.NODE_ENV === 'test') {

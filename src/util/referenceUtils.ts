@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const supportedResources = require('../server/supportedResources');
 
 /**

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { ServerError } = require('@projecttacoma/node-fhir-server-core');
 
 /**

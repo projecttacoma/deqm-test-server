@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { BadRequestError } = require('./errorUtils');
 const logger = require('../server/logger');
 

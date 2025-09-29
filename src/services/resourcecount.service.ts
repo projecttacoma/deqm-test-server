@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { getCountOfCollection } = require('../database/dbOperations');
 const supportedResources = require('../server/supportedResources');
 

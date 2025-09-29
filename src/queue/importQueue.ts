@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 // Setup for import queue which pushes jobs to Redis
 
 const Queue = require('bee-queue');

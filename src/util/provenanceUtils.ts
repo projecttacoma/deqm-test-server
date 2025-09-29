@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { BadRequestError } = require('./errorUtils');
 const { v4: uuidv4 } = require('uuid');

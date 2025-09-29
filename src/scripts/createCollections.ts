@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const mongoUtil = require('../database/connection');
 const supportedResources = require('../server/supportedResources');
 

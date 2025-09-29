@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');

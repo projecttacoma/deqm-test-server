@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const Queue = require('bee-queue');
 
 // Create a new queue to establish new Redis connection

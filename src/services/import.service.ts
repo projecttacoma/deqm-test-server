@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
 const { retrieveInputUrls } = require('../util/exportUtils');
 const { checkContentTypeHeader } = require('../util/baseUtils');

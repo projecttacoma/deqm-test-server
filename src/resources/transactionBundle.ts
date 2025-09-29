@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 /**
  * Defines the TransactionBundle class which will allow us to add resources to
  * a txn bundle in the proper format and convert the representation to JSON

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { ResourceNotFoundError } = require('./errorUtils');
 const _ = require('lodash');
 const supportedResources = require('../server/supportedResources');

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');

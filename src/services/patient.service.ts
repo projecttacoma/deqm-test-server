@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const _ = require('lodash');
 const { NotImplementedError } = require('../util/errorUtils');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
