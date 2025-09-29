@@ -1,17 +1,16 @@
-//@ts-nocheck 
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
-const { ResourceNotFoundError, InternalError } = require('./errorUtils');
-const _ = require('lodash');
-const url = require('url');
-const { v4: uuidv4 } = require('uuid');
-const { findResourceById, findOneResourceWithQuery } = require('../database/dbOperations');
-const logger = require('../server/logger');
+import { ResourceNotFoundError, InternalError } from './errorUtils';
+import _ from 'lodash';
+import url from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import { findResourceById, findOneResourceWithQuery } from '../database/dbOperations';
+import logger from '../server/logger';
 
 /*
  Some connectathon bundles currently contain incorrect url references from the main library
  to its dependent libraries. This map identifies those issues and provides the correct url reference
 */
-const INCORRECT_CONNECTATHON_URLS_MAP = {
+const INCORRECT_CONNECTATHON_URLS_MAP: Record<string, string> = {
   'http://hl7.org/fhir/Library/SupplementalDataElements|2.0.0':
     'http://fhir.org/guides/dbcg/connectathon/Library/SupplementalDataElements|2.0.0',
   'http://hl7.org/fhir/Library/TJCOverall|5.0.000':
@@ -29,7 +28,7 @@ const INCORRECT_CONNECTATHON_URLS_MAP = {
  * @param {string} host host specified in request headers
  * @returns {Object} a FHIR searchset bundle containing the properly formatted resources
  */
-function mapArrayToSearchSetBundle(resources, base_version, host) {
+export function mapArrayToSearchSetBundle(resources: fhir4.FhirResource[], base_version: string, host: string) {
   const Bundle = resolveSchema(base_version, 'bundle');
 
   return new Bundle({
@@ -51,7 +50,7 @@ function mapArrayToSearchSetBundle(resources, base_version, host) {
  * @param {Array} resources an array of FHIR resources to map
  * @returns {Object} FHIR collection bundle of all resources
  */
-function mapResourcesToCollectionBundle(resources) {
+export function mapResourcesToCollectionBundle(resources: fhir4.FhirResource[]): fhir4.Bundle {
   return {
     resourceType: 'Bundle',
     type: 'collection',
@@ -66,7 +65,7 @@ function mapResourcesToCollectionBundle(resources) {
  * @param {string} s the string to check
  * @returns {boolean} true if the string is a url, false otherwise
  */
-function isCanonicalUrl(s) {
+function isCanonicalUrl(s: string) {
   const urlRegex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return urlRegex.test(s);
 }
@@ -76,7 +75,8 @@ function isCanonicalUrl(s) {
  * @param {Object} lib FHIR Library resource to check dependencies of
  * @returns {boolean} true if there are any other Library/ValueSet resources that this library depends on, false otherwise
  */
-function hasNoDependencies(lib) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function hasNoDependencies(lib: any) {
   return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
 }
 
@@ -85,7 +85,7 @@ function hasNoDependencies(lib) {
  * @param {string} reference either a canonical or resourceType/id reference
  * @returns {Object} mongo query to pass in to mongo controller to search for the referenced resource
  */
-function getQueryFromReference(reference) {
+export function getQueryFromReference(reference: string) {
   // References could be canonical or resourceType/id
   if (isCanonicalUrl(reference)) {
     if (reference.includes('|')) {
@@ -105,8 +105,8 @@ function getQueryFromReference(reference) {
  * @param {string} measureId id of the measure to assemble bundle for
  * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
-async function getMeasureBundleFromId(measureId) {
-  const measure = await findResourceById(measureId, 'Measure');
+export async function getMeasureBundleFromId(measureId: string): Promise<fhir4.Bundle> {
+  const measure = (await findResourceById(measureId, 'Measure')) as fhir4.Measure | null;
   if (!measure) {
     throw new ResourceNotFoundError(`Measure with id ${measureId} does not exist in the server`);
   }
@@ -119,11 +119,11 @@ async function getMeasureBundleFromId(measureId) {
  * @param {Object} measure a fhir measure resource
  * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
  */
-async function assembleCollectionBundleFromMeasure(measure) {
+export async function assembleCollectionBundleFromMeasure(measure: fhir4.Measure): Promise<fhir4.Bundle> {
   logger.info(`Assembling collection bundle from Measure ${measure.id}`);
-  const [mainLibraryRef] = measure.library;
+  const [mainLibraryRef] = measure.library as string[];
   const mainLibQuery = getQueryFromReference(mainLibraryRef);
-  const mainLib = await findOneResourceWithQuery(mainLibQuery, 'Library');
+  const mainLib = (await findOneResourceWithQuery(mainLibQuery, 'Library')) as fhir4.Library | null;
 
   if (!mainLib) {
     throw new InternalError(`Could not find Library ${mainLibraryRef} referenced by Measure ${measure.id}`);
@@ -141,21 +141,25 @@ async function assembleCollectionBundleFromMeasure(measure) {
  * @param {Object} lib FHIR library to grab ValueSets for
  * @returns {Array} array of ValueSet resources required by the library
  */
-async function getDependentValueSets(lib) {
+async function getDependentValueSets(lib: fhir4.Library): Promise<fhir4.ValueSet[]> {
   if (hasNoDependencies(lib)) {
     return [];
   }
 
   const depValueSetUrls = lib.relatedArtifact
-    .filter(ra => ra.type === 'depends-on' && ra.resource?.includes('ValueSet'))
-    .map(ra => ra.resource);
+    ?.filter(ra => ra.type === 'depends-on' && ra.resource?.includes('ValueSet'))
+    .map(ra => ra.resource as string);
 
-  const valueSetGets = depValueSetUrls.map(async url => {
+  const valueSetGets = depValueSetUrls?.map(async (url: string) => {
     const vsQuery = getQueryFromReference(url);
-    return findOneResourceWithQuery(vsQuery, 'ValueSet');
+    return findOneResourceWithQuery(vsQuery, 'ValueSet') as Promise<fhir4.ValueSet | null>;
   });
 
-  return Promise.all(valueSetGets);
+  if (valueSetGets) {
+    return (await Promise.all(valueSetGets)).filter(valueSet => valueSet != null);
+  } else {
+    return [];
+  }
 }
 
 /**
@@ -163,7 +167,7 @@ async function getDependentValueSets(lib) {
  * @param {Object} lib FHIR library resources to traverse dependencies from
  * @returns {Array} array of all libraries
  */
-async function getAllDependentLibraries(lib) {
+export async function getAllDependentLibraries(lib: fhir4.Library) {
   logger.debug(`Retrieving all dependent libraries for library: ${lib.id}`);
 
   // Kick off function with current library and any ValueSets it uses
@@ -177,14 +181,15 @@ async function getAllDependentLibraries(lib) {
 
   // This filter checks for the 'Library' keyword on all related artifacts
   // TODO: This filter can probably be improved, but will work in our cases for now
-  const depLibUrls = lib.relatedArtifact
-    .filter(
-      ra =>
-        ra.type === 'depends-on' &&
-        ra.resource?.includes('Library') &&
-        ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'
-    ) // exclude modelinfo dependency
-    .map(ra => ra.resource);
+  const depLibUrls =
+    lib.relatedArtifact
+      ?.filter(
+        ra =>
+          ra.type === 'depends-on' &&
+          ra.resource?.includes('Library') &&
+          ra.resource !== 'http://fhir.org/guides/cqf/common/Library/FHIR-ModelInfo|4.0.1'
+      ) // exclude modelinfo dependency
+      .map(ra => ra.resource as string) || [];
   // Obtain all libraries referenced in the related artifact, and recurse on their dependencies
   const libraryGets = depLibUrls.map(async url => {
     // Quick fix for invalid connectathon url references
@@ -195,7 +200,7 @@ async function getAllDependentLibraries(lib) {
       url = INCORRECT_CONNECTATHON_URLS_MAP[url];
     }
     const libQuery = getQueryFromReference(url);
-    const lib = await findOneResourceWithQuery(libQuery, 'Library');
+    const lib = (await findOneResourceWithQuery(libQuery, 'Library')) as fhir4.Library | null;
     if (lib === null) {
       throw new InternalError(
         `Failed to find dependent library with ${
@@ -206,7 +211,7 @@ async function getAllDependentLibraries(lib) {
     return getAllDependentLibraries(lib);
   });
 
-  const allDeps = await Promise.all(libraryGets);
+  const allDeps = (await Promise.all(libraryGets)).flat();
 
   results.push(...allDeps);
 
@@ -222,7 +227,8 @@ async function getAllDependentLibraries(lib) {
  * @param {Array} entries array of bundle entries
  * @returns {Array} new array of entries with replaced references
  */
-function replaceReferences(entries) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function replaceReferences(entries: any[]) {
   // Add metadata for old IDs and newly created ones of POST entries
   entries.forEach(e => {
     logger.debug(`Replacing resourceIds for entry: ${JSON.stringify(e)}`);
@@ -251,7 +257,8 @@ function replaceReferences(entries) {
   });
 
   // Remove metadata and modify request type/resource id
-  const newEntries = JSON.parse(entriesStr).map(e => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const newEntries = JSON.parse(entriesStr).map((e: any) => {
     if (e.isPost) {
       logger.debug(`Removing metadata and changing request type to PUT for entry: ${JSON.stringify(e)}`);
       e.resource.id = e.newId;
@@ -266,13 +273,3 @@ function replaceReferences(entries) {
 
   return newEntries;
 }
-
-module.exports = {
-  mapArrayToSearchSetBundle,
-  getMeasureBundleFromId,
-  replaceReferences,
-  assembleCollectionBundleFromMeasure,
-  getQueryFromReference,
-  mapResourcesToCollectionBundle,
-  getAllDependentLibraries
-};

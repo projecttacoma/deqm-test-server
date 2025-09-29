@@ -1,5 +1,4 @@
-//@ts-nocheck 
-const { loggers, format, transports } = require('winston');
+import { loggers, format, transports } from 'winston';
 
 const LOGGER_NAME = 'server-logger';
 const logFormat = format.printf(({ level, message, timestamp }) => `${timestamp} [${level}]: ${message}`);
@@ -12,4 +11,4 @@ if (!loggers.has(LOGGER_NAME)) {
   });
 }
 
-module.exports = loggers.get(LOGGER_NAME);
+export default loggers.get(LOGGER_NAME);

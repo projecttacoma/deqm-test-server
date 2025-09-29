@@ -1,11 +1,11 @@
-//@ts-nocheck 
+//@ts-nocheck
 const _ = require('lodash');
 const { NotImplementedError } = require('../util/errorUtils');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 const { getPatientData, getPatientDataSearchSetBundle } = require('../util/patientUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient

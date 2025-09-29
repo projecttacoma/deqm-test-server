@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
@@ -6,7 +6,7 @@ const axios = require('axios');
 const { updateResource, pushBulkFailedOutcomes, pushNdjsonFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
-const logger = require('./logger');
+import logger from './logger';
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {

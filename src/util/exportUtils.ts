@@ -1,6 +1,6 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { BadRequestError } = require('./errorUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Uses request body parameter to get all of the ndjson URLs

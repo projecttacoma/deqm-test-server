@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
@@ -8,7 +8,7 @@ const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/pro
 const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 const { checkSupportedResource, checkContentTypeHeader } = require('../util/baseUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Creates transaction-response Bundle

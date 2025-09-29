@@ -1,9 +1,8 @@
-//@ts-nocheck
-const Queue = require('bee-queue');
-const { Calculator } = require('fqm-execution');
-const logger = require('./logger');
-const mongoUtil = require('../database/connection');
-const { getMeasureBundleFromId } = require('../util/bundleUtils');
+import Queue from 'bee-queue';
+import { Calculator, DRCalculationOutput } from 'fqm-execution';
+import logger from './logger';
+import * as mongoUtil from '../database/connection';
+import { getMeasureBundleFromId } from '../util/bundleUtils';
 const { getPatientDataCollectionBundle } = require('../util/patientUtils');
 const { PatientSource: MongoPatientSource } = require('cql-exec-fhir-mongo');
 
@@ -20,7 +19,12 @@ const execQueue = new Queue('exec', {
  * Hold measure bundles and dataRequirements for quick reuse indexed by `id-periodStart-periodEnd with fields
  *  { lastUsed, bundle, dataReq }
  */
-const measureBundleCache = {};
+interface MeasureBundleAndDRCacheItem {
+  lastUsed: number;
+  bundle: fhir4.Bundle;
+  dataReq: DRCalculationOutput;
+}
+const measureBundleCache: Record<string, MeasureBundleAndDRCacheItem> = {};
 
 /**
  * Gets a measure bundle and data requirements from either mongo or cache. When storing or using from cache, the
@@ -32,7 +36,7 @@ const measureBundleCache = {};
  * @param {string} periodEnd Measurement period end.
  * @returns {object} Object with measureBundle and dataReqs.
  */
-async function getMeasureBundle(measureId, periodStart, periodEnd) {
+async function getMeasureBundle(measureId: string, periodStart: string, periodEnd: string) {
   const cacheLabel = `${measureId}-${periodStart}-${periodEnd}`;
   // first check in cache if it has been more than 20seconds dump it.
   const cachedBundle = measureBundleCache[cacheLabel];
@@ -71,7 +75,7 @@ async function getMeasureBundle(measureId, periodStart, periodEnd) {
  * @param {Bundle} measureBundle Bundle of measure data used for calculation
  * @return {MongoPatientSource | Bundle[]}
  */
-async function resolvePatients(patientIds, measureBundle) {
+async function resolvePatients(patientIds: string[], measureBundle: MeasureBundleAndDRCacheItem) {
   if (process.env.SCALED_EXEC_STRATEGY === 'mongo') {
     logger.info('Using MongoDB-based PatientSource for scaled calculation');
     const patientSource = MongoPatientSource.FHIRv401(mongoUtil.db);

@@ -1,9 +1,7 @@
-//@ts-nocheck 
-const { MongoClient } = require('mongodb');
-require('../config/envConfig');
+import { MongoClient } from 'mongodb';
+import '../config/envConfig';
 
 // Connection URL
 const url = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}`;
-const client = new MongoClient(url);
-
-module.exports = { client, db: client.db(process.env.DB_NAME) };
+export const client = new MongoClient(url);
+export const db = client.db(process.env.DB_NAME);

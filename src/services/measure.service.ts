@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
@@ -25,7 +25,7 @@ const {
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
 const { retrieveInputUrls } = require('../util/exportUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 const { ScaledCalculation } = require('../queue/execQueue');
 
 /**
