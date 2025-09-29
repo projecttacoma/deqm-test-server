@@ -1,6 +1,6 @@
 //@ts-nocheck
 const axios = require('axios');
-const logger = require('./server/logger');
+import logger from './server/logger';
 const express = require('express');
 const mongoUtil = require('./database/connection');
 const { decrementBulkFileCount, updateSuccessfulImportCount } = require('./database/dbOperations');

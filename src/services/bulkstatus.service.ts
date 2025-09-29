@@ -5,7 +5,7 @@ const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and

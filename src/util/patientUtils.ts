@@ -6,7 +6,7 @@ const { patientAttributePaths } = require('fhir-spec-tools/build/data/patient-at
 const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
 const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
 const { getResourceReference } = require('./referenceUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Wrapper function to get patient data and data

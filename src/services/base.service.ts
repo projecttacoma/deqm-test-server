@@ -19,7 +19,7 @@ const {
   checkExpectedResource,
   createPaginationLinks
 } = require('../util/baseUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Query Builder Parameter Definitions for all resources

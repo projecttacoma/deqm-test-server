@@ -5,7 +5,7 @@ const Queue = require('bee-queue');
 const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const ndjsonQueue = require('../queue/ndjsonProcessQueue');
-const logger = require('./logger');
+import logger from './logger';
 
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {

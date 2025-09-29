@@ -3,7 +3,7 @@ const { NotFoundError } = require('../util/errorUtils');
 const fs = require('fs');
 const path = require('path');
 
-const logger = require('../server/logger');
+import logger from '../server/logger';
 /**
  * Finds and responds with requested file for some client id
  * @param {Object} req The express request object passed in by the user

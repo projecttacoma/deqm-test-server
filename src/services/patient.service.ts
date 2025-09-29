@@ -5,7 +5,7 @@ const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = requi
 const { mapArrayToSearchSetBundle } = require('../util/bundleUtils');
 const { getPatientData, getPatientDataSearchSetBundle } = require('../util/patientUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Patient

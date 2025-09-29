@@ -6,7 +6,7 @@ const axios = require('axios');
 const { updateResource, pushBulkFailedOutcomes, pushNdjsonFailedOutcomes } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
-const logger = require('./logger');
+import logger from './logger';
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
