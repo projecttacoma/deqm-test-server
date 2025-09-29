@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const URN_REPLACE_REFERENCES_ENTRIES = [
   {
     fullUrl: 'urn:uuid:61ebe359-bfdc-4613-8bf2-c5e300945f0a',

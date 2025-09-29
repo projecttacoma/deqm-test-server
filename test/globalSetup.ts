@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 // Turns off the loggers for running tests
 const logger = require('../src/server/logger');
 

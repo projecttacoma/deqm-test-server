@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { createTransactionBundleClass } = require('../../src/resources/transactionBundle');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const queue = require('../../src/queue/importQueue');

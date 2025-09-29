@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 require('../../src/config/envConfig');
 const supertest = require('supertest');
 const { buildConfig } = require('../../src/config/profileConfig');

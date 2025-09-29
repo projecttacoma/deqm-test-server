@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { getResourceReference } = require('../../src/util/referenceUtils');
 
 describe('getResourceReference', () => {

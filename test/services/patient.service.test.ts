@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 require('../../src/config/envConfig');
 const supertest = require('supertest');
 const { testSetup, cleanUpTest } = require('../populateTestData');

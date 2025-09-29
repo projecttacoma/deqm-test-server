@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const supertest = require('supertest');
 const { client } = require('../../src/database/connection');
 const { getPatientDataCollectionBundle } = require('../../src/util/patientUtils');

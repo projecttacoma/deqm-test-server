@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const DELEGATOR_WHO = {
   reference: 'Practitioner/456',
   type: 'Practitioner'

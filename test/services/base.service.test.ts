@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 require('../../src/config/envConfig');
 const supertest = require('supertest');
 const testMeasure = require('../fixtures/fhir-resources/testMeasure.json');

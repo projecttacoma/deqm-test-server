@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const supertest = require('supertest');
 const { clientFileSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');

@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 require('../../src/config/envConfig');
 const testBundle = require('../fixtures/fhir-resources/testBundle.json');
 const testMeasureBundle = require('../fixtures/fhir-resources/testMeasureBundle.json');
