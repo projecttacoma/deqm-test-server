@@ -2,7 +2,7 @@
   "name": "deqm-test-server",
   "version": "1.0.0",
   "description": "A test server for quality measure operations",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "tsc",
     "lint": "eslint",
