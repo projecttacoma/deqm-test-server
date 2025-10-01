@@ -27,7 +27,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
 
 ### Prerequisites
 
-- [Node.js >=16.0.0](https://nodejs.org/en/)
+- [Node.js >=20.0.0](https://nodejs.org/en/)
 - [MongoDB >= 6.0](https://www.mongodb.com)
 - [Git](https://git-scm.com/)
 - [Docker](https://docs.docker.com/get-docker/)
@@ -45,6 +45,12 @@ Install dependencies:
 
 ```bash
 npm install
+```
+
+Build:
+
+```bash
+npm run build
 ```
 
 ### Testing
@@ -91,6 +97,8 @@ Debugging with terminal input can be facilitated with `stdin_open: true` and `tt
 ## Usage
 
 Once MongoDB is running on your machine, run the `npm start` command to start up the FHIR server at `localhost:3000`. The server can also be run in "watch" mode with `npm run start:watch` and in "debug" mode by running `NODE_ENV=development npm start`.
+
+The built version of the server can be run by executing `node build/index.js`.
 
 DEQM test server offers optional FHIR resource validation using the Inferno FHIR Validator. The FHIR Validator acts as middleware on all `PUT` and `POST` requests that attempt to write data to the server. To set this up locally, pull and run the Inferno FHIR Validator docker image using `docker run -p 4567:4567 infernocommunity/fhir-validator-service`. Then start up the test server using `VALIDATE=true VALIDATOR_HOST=localhost VALIDATOR_PORT=4567 npm run start`. These environment variables can be changed in the .env file as well to prevent lengthy start-up commands.
 
@@ -145,45 +153,45 @@ Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters. Example `Parameters` object for `$evaluate`:
+
 ```json
 {
-  "resourceType" : "Parameters",
-  "parameter" : [
-  {
-    "name" : "measureId",
-    "valueString" : "BreastCancerScreeningsFHIR"
-  },
-  {
-    "name" : "measureId",
-    "valueString" : "CervicalCancerScreeningFHIR"
-  },
-  {
-    "name" : "periodEnd",
-    "valueString" : "2022-12-31"
-  },
-  {
-    "name" : "periodStart",
-    "valueString" : "2022-01-01"
-  },
-  {
-    "name" : "reportType",
-    "valueString" : "population"
-  }
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "measureId",
+      "valueString": "BreastCancerScreeningsFHIR"
+    },
+    {
+      "name": "measureId",
+      "valueString": "CervicalCancerScreeningFHIR"
+    },
+    {
+      "name": "periodEnd",
+      "valueString": "2022-12-31"
+    },
+    {
+      "name": "periodStart",
+      "valueString": "2022-01-01"
+    },
+    {
+      "name": "reportType",
+      "valueString": "population"
+    }
   ]
 }
 ```
-
 
 This operation will execute in a multi-process manner by chunking up the patients to smaller groups and executing across 5 processes if there are more than 100 calculations to execute. The settings for this multi-process "Scaled" calculation can be configured in the `.env` file:
 
 | ENV Variable              | Description                                                                 | Default Value |
 | ------------------------- | --------------------------------------------------------------------------- | ------------- |
 | `EXEC_WORKERS`            | Number of worker processes. 0 will disable multi-process calculation.       | 5             |
-| `SCALED_EXEC_THRESHOLD`   | Calculation count threshold to execute in worker processes.                     | 100           |
+| `SCALED_EXEC_THRESHOLD`   | Calculation count threshold to execute in worker processes.                 | 100           |
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-This operation returns a Parameters object with 0..* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
+This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
 
 #### `$care-gaps`
 
@@ -234,7 +242,7 @@ Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measu
 
 #### `$submit-data`
 
-This operation takes 1..* bundles. Each transaction bundle should be for a single subject and contain 1..* `MeasureReport`(s), one for each measure, along with a set of required data with which to calculate the measures. The server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data`.
+This operation takes 1..\* bundles. Each transaction bundle should be for a single subject and contain 1..\* `MeasureReport`(s), one for each measure, along with a set of required data with which to calculate the measures. The server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data`.
 
 Check out the [deqm $submit-data operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-submit-data.html) for more information.
 

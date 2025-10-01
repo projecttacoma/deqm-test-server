@@ -2,20 +2,21 @@
   "name": "deqm-test-server",
   "version": "1.0.0",
   "description": "A test server for quality measure operations",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
-    "lint": "eslint \"**/*.js\"",
-    "lint:fix": "eslint \"**/*.js\" --fix",
-    "prettier": "prettier --check \"**/*.js\"",
-    "prettier:fix": "prettier --write \"**/*.js\"",
+    "build": "tsc",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "prettier": "prettier --check \"**/*.ts\"",
+    "prettier:fix": "prettier --write \"**/*.ts\"",
     "check": "npm run test && npm run lint && npm run prettier",
-    "start": "node src/index.js",
-    "start:watch": "nodemon src/index.js",
-    "db:setup": "node src/scripts/createCollections.js",
-    "db:delete": "node src/scripts/deleteCollections.js",
+    "start": "ts-node src/index.ts",
+    "start:watch": "nodemon src/index.ts",
+    "db:setup": "ts-node src/scripts/createCollections.ts",
+    "db:delete": "ts-node src/scripts/deleteCollections.ts",
     "db:reset": "npm run db:delete && npm run db:setup",
-    "upload-bundles": "node src/scripts/uploadPremadeBundles.js",
-    "upload-bundles-test": "node src/scripts/uploadPremadeBundles.js --test",
+    "upload-bundles": "ts-node src/scripts/uploadPremadeBundles.ts",
+    "upload-bundles-test": "ts-node src/scripts/uploadPremadeBundles.ts --test",
     "test": "jest --runInBand",
     "test:coverage": "jest --collectCoverage --runInBand",
     "test:watch": "jest --watchAll --runInBand",
@@ -42,16 +43,27 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
+    "eslint": "^9.36.0",
     "eslint-config-prettier": "^8.3.0",
     "jest": "^30.0.0",
     "nodemon": "^2.0.19",
-    "prettier": "^2.4.1",
-    "supertest": "^6.1.6"
+    "prettier": "^3.3.1",
+    "supertest": "^6.1.6",
+    "ts-jest": "^29.4.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0"
   },
   "jest": {
     "setupFiles": [
-      "./test/globalSetup.js"
+      "./test/globalSetup.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "node_modules",
+      "src/scripts"
     ]
   }
 }
