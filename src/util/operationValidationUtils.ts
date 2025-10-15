@@ -1,5 +1,7 @@
-//@ts-nocheck
-const { BadRequestError, NotImplementedError } = require('./errorUtils');
+import { BadRequestError, NotImplementedError } from './errorUtils';
+
+type QueryValue = string | fhir4.FhirResource | undefined;
+type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
 /**
  * Checks that the parameters input to $evaluate are valid. Throws an error
@@ -8,7 +10,7 @@ const { BadRequestError, NotImplementedError } = require('./errorUtils');
  * @param {Object} query query from http request object
  * @param {string} expectedId an id passed from the url arguments
  */
-function validateEvalMeasureParams(query, expectedId) {
+function validateEvalMeasureParams(query: QueryObject, expectedId: string) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   // currently only supports measureId as the identifier
   const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measureUrl', 'measure', 'measureResource'];
@@ -27,7 +29,7 @@ function validateEvalMeasureParams(query, expectedId) {
   }
 
   // returns unsupported report type that is included in the http request
-  if (!['subject', 'population', 'subject-list', undefined].includes(query.reportType)) {
+  if (!['subject', 'population', 'subject-list', undefined].includes(query.reportType as string)) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate`);
   }
 
@@ -37,7 +39,7 @@ function validateEvalMeasureParams(query, expectedId) {
   }
 
   if (query.reportType === 'population') {
-    if (query.subject) {
+    if (query.subject && typeof query.subject === 'string') {
       const subjectReference = query.subject.split('/');
       if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
         throw new BadRequestError(
@@ -49,7 +51,11 @@ function validateEvalMeasureParams(query, expectedId) {
     // check subjectGroup resource if specified
     if (query.subjectGroup) {
       // ensure it is a group resource
-      if (query.subjectGroup.resourceType !== 'Group') {
+      if (
+        Array.isArray(query.subjectGroup) ||
+        typeof query.subjectGroup === 'string' ||
+        query.subjectGroup.resourceType !== 'Group'
+      ) {
         throw new BadRequestError("'subjectGroup' must be an embedded Group resource.");
       }
       // ensure it has members
@@ -85,7 +91,7 @@ function validateEvalMeasureParams(query, expectedId) {
       );
     }
 
-    if (query.subject) {
+    if (query.subject && typeof query.subject === 'string') {
       const subjectReference = query.subject.split('/');
       if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
         throw new NotImplementedError(
@@ -99,7 +105,7 @@ function validateEvalMeasureParams(query, expectedId) {
     }
   }
 
-  if (query.practitioner) {
+  if (query.practitioner && typeof query.practitioner === 'string') {
     const practitionerReference = query.practitioner.split('/');
     if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
       throw new BadRequestError(`practitioner may only be a Practitioner resource of format "Practitioner/{id}".`);
@@ -112,7 +118,7 @@ function validateEvalMeasureParams(query, expectedId) {
  * @param {Object} query query from the request passed in by the client
  * @returns void but throws a detailed error if it finds an issue
  */
-const validateCareGapsParams = query => {
+export function validateCareGapsParams(query: QueryObject) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'status'];
   // These params are not supported. We should throw an error if we receive them
   const UNSUPPORTED_PARAMS = ['topic'];
@@ -126,11 +132,11 @@ const validateCareGapsParams = query => {
 
   if (!query.subject && !query.organization) {
     throw new BadRequestError(`$care-gaps requests must identify either a subject or an organization.`);
-  } else if (query.organization) {
-    if (query.subject) {
+  } else if (query.organization && typeof query.organization === 'string') {
+    if (query.subject && typeof query.subject === 'string') {
       // Cannot provide both a subject and organization
       throw new BadRequestError('Must provide either subject or organization. Received both');
-    } else if (query.practitioner) {
+    } else if (query.practitioner && typeof query.practitioner === 'string') {
       const pracReference = query.practitioner.split('/');
       if (pracReference[0] !== 'Practitioner') {
         throw new BadRequestError(
@@ -144,7 +150,7 @@ const validateCareGapsParams = query => {
         `Organization may only be an Organization resource of format "Organization/{id}". Received: ${query.organization}`
       );
     }
-  } else if (query.subject) {
+  } else if (query.subject && typeof query.subject === 'string') {
     if (query.practitioner) {
       throw new BadRequestError('Cannot provide both a subject and practitioner');
     }
@@ -164,7 +170,7 @@ const validateCareGapsParams = query => {
       'Simultaneous measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
     );
   }
-};
+}
 
 /**
  * Dynamic function for checking the presence of required params for all validation functions
@@ -173,13 +179,13 @@ const validateCareGapsParams = query => {
  * @param {string} operationName name of FHIR operation being checked, used for error message
  * @returns void, but throws a detailed error when necessary
  */
-const checkRequiredParams = (query, requiredParams, operationName) => {
+export function checkRequiredParams(query: Record<string, unknown>, requiredParams: string[], operationName: string) {
   // Returns a list of all required params which are undefined on req.query
   const missingParams = requiredParams.filter(key => !query[key]);
   if (missingParams.length > 0) {
     throw new BadRequestError(`Missing required parameters for ${operationName}: ${missingParams.join(', ')}.`);
   }
-};
+}
 
 /**
  * Dynamic function for checking presence of unsupported params for the given function
@@ -187,7 +193,11 @@ const checkRequiredParams = (query, requiredParams, operationName) => {
  * @param {Array} unsupportedParams an array of strings for params currently unsupported by the server
  * @param {string} operationName name of FHIR operation being checked, used for error message
  */
-const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
+export function checkNoUnsupportedParams(
+  query: Record<string, unknown>,
+  unsupportedParams: string[],
+  operationName: string
+) {
   const includedUnsupportedParams = unsupportedParams.filter(key => query[key]);
   // returns all unsupported params that are included in the http request
   if (includedUnsupportedParams.length > 0) {
@@ -197,7 +207,7 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
       )}`
     );
   }
-};
+}
 
 /**
  * Pulls query parameters from both the url query and request body and creates a new parameters map
@@ -205,8 +215,8 @@ const checkNoUnsupportedParams = (query, unsupportedParams, operationName) => {
  * @param {Object} body http request body
  * @returns {Object} an object containing a combination of request parameters from both sources
  */
-const gatherParams = (query, body) => {
-  const params = { ...query };
+export function gatherParams(query: Record<string, string>, body: fhir4.Parameters): QueryObject {
+  const params: QueryObject = { ...query };
 
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
@@ -214,9 +224,9 @@ const gatherParams = (query, body) => {
       if (acc[e.name] !== undefined) {
         // add to existing parameter values
         if (Array.isArray(acc[e.name])) {
-          acc[e.name].push(value);
+          (acc[e.name] as QueryValue[]).push(value);
         } else {
-          acc[e.name] = [acc[e.name], value];
+          acc[e.name] = [acc[e.name] as QueryValue, value];
         }
       } else {
         acc[e.name] = value;
@@ -225,14 +235,14 @@ const gatherParams = (query, body) => {
     }, params);
   }
   return params;
-};
+}
 
 /**
  * Checks that $submit-data/$bulk-submit-data request body contains
  * a Parameters resource and the appropriate parameters.
  * @param {Object} body HTTP request body
  */
-const checkSubmitDataBody = body => {
+export function checkSubmitDataBody(body: fhir4.FhirResource) {
   if (body.resourceType !== 'Parameters') {
     throw new BadRequestError(`Expected 'resourceType: Parameters'. Received 'type: ${body.resourceType}'.`);
   }
@@ -250,7 +260,7 @@ const checkSubmitDataBody = body => {
   if (bundleParams.length < 1) {
     throw new BadRequestError(`Expected 1..* bundles. Received: ${bundleParams.length}`);
   }
-};
+}
 
 module.exports = {
   validateEvalMeasureParams,

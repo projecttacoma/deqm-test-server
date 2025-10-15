@@ -1,5 +1,4 @@
-//@ts-nocheck
-const supportedResources = require('../server/supportedResources');
+import supportedResources from '../server/supportedResources';
 
 /**
  * Turn a property on FHIR resource of type Reference into a proper Mongo query
@@ -8,7 +7,7 @@ const supportedResources = require('../server/supportedResources');
  * @param {string} desiredValue the value of the Reference (either resourceType/id or identifier.value)
  * @return {Object} Mongo query digging into the proper reference
  */
-const getResourceReference = (propName, desiredValue) => {
+export function getResourceReference(propName: string, desiredValue: string) {
   let queryProp;
   if (desiredValue.includes('/')) {
     const [resourceType] = desiredValue.split('/');
@@ -27,6 +26,4 @@ const getResourceReference = (propName, desiredValue) => {
   return {
     [queryProp]: desiredValue
   };
-};
-
-module.exports = { getResourceReference };
+}

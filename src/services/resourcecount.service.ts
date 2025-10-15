@@ -1,6 +1,6 @@
 //@ts-nocheck
-const { getCountOfCollection } = require('../database/dbOperations');
-const supportedResources = require('../server/supportedResources');
+import { getCountOfCollection } from '../database/dbOperations';
+import supportedResources from '../server/supportedResources';
 
 /**
  * retrieves counts for each resourceType and then formats and returns all counts as resourceType:count key:value pairs

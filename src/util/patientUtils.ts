@@ -1,12 +1,12 @@
-//@ts-nocheck
-const { ResourceNotFoundError } = require('./errorUtils');
-const _ = require('lodash');
-const supportedResources = require('../server/supportedResources');
-const { patientAttributePaths } = require('fhir-spec-tools/build/data/patient-attribute-paths');
-const { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } = require('../database/dbOperations');
-const { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } = require('./bundleUtils');
+import { ResourceNotFoundError } from './errorUtils';
+import _ from 'lodash';
+import supportedResources from '../server/supportedResources';
+import { patientAttributePaths } from 'fhir-spec-tools/build/data/patient-attribute-paths';
+import { findResourceById, findResourcesWithQuery, findOneResourceWithQuery } from '../database/dbOperations';
+import { mapResourcesToCollectionBundle, mapArrayToSearchSetBundle } from './bundleUtils';
 const { getResourceReference } = require('./referenceUtils');
 import logger from '../server/logger';
+import { Document, Filter } from 'mongodb';
 
 /**
  * Wrapper function to get patient data and data
@@ -15,7 +15,10 @@ import logger from '../server/logger';
  * @param {Array} dataRequirements data requirements array obtained from fqm execution
  * @returns {Object} patient bundle as a collection bundle
  */
-async function getPatientDataCollectionBundle(patientReference, dataRequirements) {
+export async function getPatientDataCollectionBundle(
+  patientReference: string,
+  dataRequirements: fhir4.DataRequirement[]
+) {
   // PatientReference can be of the form {PatientId} or Patient/{PatientId} this extracts just the PatientId in both cases
   const splitRef = patientReference.split('/');
   const patientId = splitRef[splitRef.length - 1];
@@ -32,7 +35,7 @@ async function getPatientDataCollectionBundle(patientReference, dataRequirements
  * @param {string} host host specified in request headers
  * @returns {Object} patient bundle as a searchset bundle
  */
-async function getPatientDataSearchSetBundle(patientId, base_version, host) {
+export async function getPatientDataSearchSetBundle(patientId: string, base_version: string, host: string) {
   const data = await getPatientData(patientId);
   return mapArrayToSearchSetBundle(_.flattenDeep(data), base_version, host);
 }
@@ -44,7 +47,10 @@ async function getPatientDataSearchSetBundle(patientId, base_version, host) {
  * used when we are concerned with a specific measure. Otherwise, undefined.
  * @returns {Array} array of resources
  */
-async function getPatientData(patientId, dataRequirements) {
+export async function getPatientData(
+  patientId: string,
+  dataRequirements?: fhir4.DataRequirement[]
+): Promise<fhir4.FhirResource[]> {
   const patient = await findResourceById(patientId, 'Patient');
   if (!patient) {
     throw new ResourceNotFoundError(`Patient with id ${patientId} does not exist in the server`);
@@ -57,19 +63,19 @@ async function getPatientData(patientId, dataRequirements) {
     requiredTypes = supportedResources.filter(type => patientAttributePaths[type]);
   }
   const queries = requiredTypes.map(async type => {
-    const allQueries = [];
+    const allQueries: Filter<Document>[] = [];
     // for each resourceType, go through all keys that can reference patient
     patientAttributePaths[type].forEach(refKey => {
-      const query = {};
+      const query: Filter<Document> = {};
       query[`${refKey}.reference`] = `Patient/${patientId}`;
       allQueries.push(query);
     });
     return findResourcesWithQuery({ $or: allQueries }, type);
   });
-  const data = await Promise.all(queries);
+  const data = _.flattenDeep(await Promise.all(queries));
   data.push(patient);
 
-  return data;
+  return data as unknown as fhir4.FhirResource[];
 }
 
 /**
@@ -82,7 +88,8 @@ async function getPatientData(patientId, dataRequirements) {
  * as their generalPractitioner will be selected for gaps calculation run on them
  * @returns {Array} an array of patient ids
  */
-const retrievePatientIds = async ({ subject, organization, practitioner }) => {
+export async function retrievePatientIds(query: { subject: string; organization: string; practitioner: string }) {
+  const { subject, organization, practitioner } = query;
   let referencedObject;
   const reference = (subject || organization).split('/');
   if (reference[0] !== 'Patient') {
@@ -93,7 +100,7 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
   }
 
   if (reference[0] === 'Group') {
-    return referencedObject.member.map(m => m.entity.reference.split('/')[1]);
+    return (referencedObject as unknown as fhir4.Group).member?.map(m => m.entity.reference?.split('/')[1]);
   } else if (reference[0] === 'Patient') {
     return [subject.split('/')[1]];
   } else {
@@ -113,7 +120,7 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
     );
     return patients.map(e => e.id);
   }
-};
+}
 
 /**
  * Takes in a Group resource and practitioner from an evaluate query and filters the
@@ -123,25 +130,18 @@ const retrievePatientIds = async ({ subject, organization, practitioner }) => {
  * as their generalPractitioner will be selected for gaps calculation run on them
  * @returns array of patient IDs
  */
-const filterPatientIdsFromGroup = async (group, practitioner) => {
-  const patientPromises = group.member.map(async m => {
-    const query = {
-      id: m.entity.reference.split('/')[1],
-      ...getResourceReference('generalPractitioner', practitioner)
-    };
+export async function filterPatientIdsFromGroup(group: fhir4.Group, practitioner: string) {
+  const patientPromises =
+    group.member?.map(async m => {
+      const query = {
+        id: m.entity.reference?.split('/')[1],
+        ...getResourceReference('generalPractitioner', practitioner)
+      };
 
-    return findOneResourceWithQuery(query, 'Patient');
-  });
+      return findOneResourceWithQuery(query, 'Patient') as unknown as fhir4.Patient;
+    }) || [];
 
   // Consolidate results to only patients that satisfy above query
   const patients = (await Promise.all(patientPromises)).filter(a => a != null);
   return patients;
-};
-
-module.exports = {
-  getPatientDataCollectionBundle,
-  getPatientDataSearchSetBundle,
-  getPatientData,
-  retrievePatientIds,
-  filterPatientIdsFromGroup
-};
+}

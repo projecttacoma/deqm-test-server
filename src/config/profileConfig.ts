@@ -1,7 +1,7 @@
 //@ts-nocheck
 const { constants } = require('@projecttacoma/node-fhir-server-core');
 const path = require('path');
-const supportedResources = require('../server/supportedResources');
+import supportedResources from '../server/supportedResources';
 const { buildServiceModule } = require('../services/base.service');
 
 const { VERSIONS } = constants;

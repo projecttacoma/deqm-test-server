@@ -59,6 +59,7 @@
   },
   "jest": {
     "preset": "ts-jest",
+    "testEnvironment": "node",
     "setupFiles": [
       "./test/globalSetup.ts"
     ],
