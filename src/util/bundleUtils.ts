@@ -5,6 +5,7 @@ import url from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findOneResourceWithQuery } from '../database/dbOperations';
 import logger from '../server/logger';
+import { Document, Filter } from 'mongodb';
 
 /*
  Some connectathon bundles currently contain incorrect url references from the main library
@@ -65,7 +66,7 @@ export function mapResourcesToCollectionBundle(resources: fhir4.FhirResource[]):
  * @param {string} s the string to check
  * @returns {boolean} true if the string is a url, false otherwise
  */
-function isCanonicalUrl(s: string) {
+function isCanonicalUrl(s: string): boolean {
   const urlRegex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return urlRegex.test(s);
 }
@@ -75,8 +76,7 @@ function isCanonicalUrl(s: string) {
  * @param {Object} lib FHIR Library resource to check dependencies of
  * @returns {boolean} true if there are any other Library/ValueSet resources that this library depends on, false otherwise
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function hasNoDependencies(lib: any) {
+function hasNoDependencies(lib: fhir4.Library): boolean {
   return !lib.relatedArtifact || (Array.isArray(lib.relatedArtifact) && lib.relatedArtifact.length === 0);
 }
 
@@ -85,7 +85,7 @@ function hasNoDependencies(lib: any) {
  * @param {string} reference either a canonical or resourceType/id reference
  * @returns {Object} mongo query to pass in to mongo controller to search for the referenced resource
  */
-export function getQueryFromReference(reference: string) {
+export function getQueryFromReference(reference: string): Filter<Document> {
   // References could be canonical or resourceType/id
   if (isCanonicalUrl(reference)) {
     if (reference.includes('|')) {
@@ -164,10 +164,10 @@ async function getDependentValueSets(lib: fhir4.Library): Promise<fhir4.ValueSet
 
 /**
  * Iterate through relatedArtifact of library and return list of all dependent libraries used
- * @param {Object} lib FHIR library resources to traverse dependencies from
- * @returns {Array} array of all libraries
+ * @param {fhir4.Library} lib FHIR library resources to traverse dependencies from
+ * @returns {fhir4.Library | fhir4.ValueSet)[]} array of all libraries and valuesets
  */
-export async function getAllDependentLibraries(lib: fhir4.Library) {
+export async function getAllDependentLibraries(lib: fhir4.Library): Promise<(fhir4.Library | fhir4.ValueSet)[]> {
   logger.debug(`Retrieving all dependent libraries for library: ${lib.id}`);
 
   // Kick off function with current library and any ValueSets it uses
