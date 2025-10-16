@@ -43,9 +43,9 @@ export async function getPatientDataSearchSetBundle(patientId: string, base_vers
 /**
  * Assemble the patient bundle to be used in our operations from fqm execution
  * @param {string} patientId patient ID of interest
- * @param {Array} dataRequirements data requirements array obtained from fqm execution,
+ * @param {fhir4.DataRequirement[]} dataRequirements data requirements array obtained from fqm execution,
  * used when we are concerned with a specific measure. Otherwise, undefined.
- * @returns {Array} array of resources
+ * @returns {fhir4.FhirResource[]} array of resources
  */
 export async function getPatientData(
   patientId: string,
@@ -86,9 +86,13 @@ export async function getPatientData(
  * as their managingOrganization will be selected for gaps calculation run on them
  * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
  * as their generalPractitioner will be selected for gaps calculation run on them
- * @returns {Array} an array of patient ids
+ * @returns {string[]} an array of patient ids
  */
-export async function retrievePatientIds(query: { subject: string; organization: string; practitioner: string }) {
+export async function retrievePatientIds(query: {
+  subject: string;
+  organization: string;
+  practitioner: string;
+}): Promise<string[]> {
   const { subject, organization, practitioner } = query;
   let referencedObject;
   const reference = (subject || organization).split('/');
@@ -100,7 +104,11 @@ export async function retrievePatientIds(query: { subject: string; organization:
   }
 
   if (reference[0] === 'Group') {
-    return (referencedObject as unknown as fhir4.Group).member?.map(m => m.entity.reference?.split('/')[1]);
+    return (
+      (referencedObject as unknown as fhir4.Group).member
+        ?.filter(m => m.entity.reference != null)
+        .map(m => (m.entity.reference as string).split('/')[1]) || []
+    );
   } else if (reference[0] === 'Patient') {
     return [subject.split('/')[1]];
   } else {
@@ -125,12 +133,15 @@ export async function retrievePatientIds(query: { subject: string; organization:
 /**
  * Takes in a Group resource and practitioner from an evaluate query and filters the
  * patients from the Group to those which reference the Practitioner resource
- * @param {Object} group A Group Resource
+ * @param {fhir4.Group} group A Group Resource
  * @param {string} practitioner A reference to a FHIR Practitioner. All patients which list the referenced practitioner
  * as their generalPractitioner will be selected for gaps calculation run on them
- * @returns array of patient IDs
+ * @returns array of patients
  */
-export async function filterPatientIdsFromGroup(group: fhir4.Group, practitioner: string) {
+export async function filterPatientByPractitionerFromGroup(
+  group: fhir4.Group,
+  practitioner: string
+): Promise<fhir4.Patient[]> {
   const patientPromises =
     group.member?.map(async m => {
       const query = {
