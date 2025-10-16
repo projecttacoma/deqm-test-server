@@ -10,7 +10,7 @@ type QueryObject = Record<string, QueryValue | QueryValue[]>;
  * @param {Object} query query from http request object
  * @param {string} expectedId an id passed from the url arguments
  */
-function validateEvalMeasureParams(query: QueryObject, expectedId: string) {
+export function validateEvalMeasureParams(query: QueryObject, expectedId: string) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   // currently only supports measureId as the identifier
   const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measureUrl', 'measure', 'measureResource'];
@@ -261,11 +261,3 @@ export function checkSubmitDataBody(body: fhir4.FhirResource) {
     throw new BadRequestError(`Expected 1..* bundles. Received: ${bundleParams.length}`);
   }
 }
-
-module.exports = {
-  validateEvalMeasureParams,
-  validateCareGapsParams,
-  checkRequiredParams,
-  gatherParams,
-  checkSubmitDataBody
-};
