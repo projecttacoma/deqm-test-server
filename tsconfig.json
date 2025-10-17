@@ -5,7 +5,7 @@
     "resolveJsonModule": true,
     "target": "ES2017",
     "lib": ["ESNext"],
-    "module": "CommonJS",
+    "module": "nodenext",
     "allowJs": true,
     "outDir": "./build",
     "rootDir": "./src",
@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "nodenext"
   },
   "ts-node": {
     "files": true

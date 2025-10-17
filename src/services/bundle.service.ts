@@ -8,7 +8,7 @@ const { checkProvenanceHeader, populateProvenanceTarget } = require('../util/pro
 const { createResource, pushToResource, updateResource } = require('../database/dbOperations');
 const { createAuditEventFromProvenance } = require('../util/provenanceUtils');
 const { checkSupportedResource, checkContentTypeHeader } = require('../util/baseUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Creates transaction-response Bundle

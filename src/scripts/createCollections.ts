@@ -1,6 +1,6 @@
 //@ts-nocheck
-const mongoUtil = require('../database/connection');
-const supportedResources = require('../server/supportedResources');
+import mongoUtil from '../database/connection';
+import supportedResources from '../server/supportedResources';
 
 /**
  * Adds an empty collection to the mongo db for each supported resource

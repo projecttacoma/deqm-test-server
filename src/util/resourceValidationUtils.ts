@@ -2,7 +2,7 @@
 const { resolveSchema } = require('@projecttacoma/node-fhir-server-core');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Checks body of request by querying a FHIR validation server. Updates the submitted resource to

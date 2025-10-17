@@ -9,7 +9,7 @@ const testPatient = require('../fixtures/fhir-resources/testPatient.json');
 const testPatient2 = require('../fixtures/fhir-resources/testPatient2.json');
 const { testSetup, cleanUpTest } = require('../populateTestData');
 const { client } = require('../../src/database/connection');
-const supportedResources = require('../../src/server/supportedResources');
+import supportedResources from '../../src/server/supportedResources';
 
 let server;
 

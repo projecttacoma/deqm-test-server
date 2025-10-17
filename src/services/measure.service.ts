@@ -14,7 +14,7 @@ const { getMeasureBundleFromId, assembleCollectionBundleFromMeasure } = require(
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
-  filterPatientIdsFromGroup
+  filterPatientByPractitionerFromGroup
 } = require('../util/patientUtils');
 const {
   addPendingBulkImportRequest,
@@ -25,7 +25,7 @@ const {
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
 const { retrieveInputUrls } = require('../util/exportUtils');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 const { ScaledCalculation } = require('../queue/execQueue');
 
 /**
@@ -238,7 +238,7 @@ const evaluateMeasureForPopulation = async (args, query) => {
       }
     }
     if (query.practitioner) {
-      const patients = await filterPatientIdsFromGroup(group, query.practitioner);
+      const patients = await filterPatientByPractitionerFromGroup(group, query.practitioner);
       if (patients.length === 0) {
         throw new BadRequestError(
           `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.practitioner}`

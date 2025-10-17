@@ -3,7 +3,7 @@ const { addPendingBulkImportRequest, failBulkImportRequest } = require('../datab
 const { retrieveInputUrls } = require('../util/exportUtils');
 const { checkContentTypeHeader } = require('../util/baseUtils');
 const importQueue = require('../queue/importQueue');
-const logger = require('../server/logger');
+import logger from '../server/logger';
 
 /**
  * Executes an import of all the resources on the passed in server.

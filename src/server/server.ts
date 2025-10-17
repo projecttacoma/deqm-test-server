@@ -7,7 +7,7 @@ const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
 const configResourceCount = require('../controllers/resourcecount.controller');
 const { validateFhir } = require('../util/resourceValidationUtils');
-const logger = require('./logger');
+import logger from './logger';
 /**
  * Server used for deqm routes
  */
