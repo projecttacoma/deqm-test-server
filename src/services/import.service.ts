@@ -1,7 +1,7 @@
 //@ts-nocheck
 const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
-const { retrieveInputUrls } = require('../util/exportUtils');
 const { checkContentTypeHeader } = require('../util/baseUtils');
+const axios = require('axios');
 const importQueue = require('../queue/importQueue');
 import logger from '../server/logger';
 
@@ -18,11 +18,23 @@ async function bulkImport(req, res) {
 
   checkContentTypeHeader(req.headers);
 
+
+  // const submitter = req.body.parameter.find(p => p.name === 'submitter').valueIdentifier; //TODO: check identifier typing
+  // const submissionId = req.body.parameter.find(p => p.name === 'submissionId').valueString;
+  // const manifestId = req.body.parameter.find(p => p.name === 'manifestId').valueString;
+  const manifestUrl = req.body.parameter.find(p => p.name === 'manifestUrl').valueString;
+  console.log('manifestUrl: ', manifestUrl);
+  // const baseUrl = req.body.parameter.find(p => p.name === 'FHIRBaseUrl').valueString;
+  
+  // TODO: handle fetch error
+  const manifest = (await axios.get(manifestUrl)).data;
+  console.log('Found manifest:', manifest);
+
   // ID assigned to the requesting client
-  const clientEntry = await addPendingBulkImportRequest(req.body);
+  const clientEntry = await addPendingBulkImportRequest(manifest);
 
   try {
-    const inputUrls = retrieveInputUrls(req.body.parameter);
+    const inputUrls = manifest.output.map(o => o.url);
 
     const jobData = {
       clientEntry,
