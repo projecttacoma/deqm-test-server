@@ -127,7 +127,7 @@ async function checkBulkStatus(req, res) {
             const inputResult = {
               name: 'outcome',
               part: [
-                { name: 'associatedInputUrl', valueUrl: url},
+                { name: 'associatedInputUrl', valueUrl: url },
                 {
                   name: 'operationOutcome',
                   resource: {
@@ -162,7 +162,6 @@ async function checkBulkStatus(req, res) {
             response.entry[0].resource.parameter.push(successCountResult);
           }
         }
-        
       }
     } else {
       response.entry[0].resource.parameter.push({

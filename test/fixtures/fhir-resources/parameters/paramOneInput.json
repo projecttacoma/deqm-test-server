@@ -2,13 +2,26 @@
   "resourceType": "Parameters",
   "parameter": [
     {
-      "name": "input",
-      "part": [
-        {
-          "name": "url",
-          "valueUrl": "http://example.com/Example1.ndjson"
-        }
-      ]
+      "name": "manifestUrl",
+			"valueString": "http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773"
+    },
+		{
+      "name": "submitter",
+			"valueIdentifier": {
+				"value": "ExampleSubmitterValue"
+			}
+    },
+		{
+      "name": "submissionId",
+			"valueString": "Submission1"
+    },
+		{
+      "name": "manifestId",
+			"valueString": "Expect1Manifest"
+    },
+		{
+      "name": "FHIRBaseUrl",
+			"valueString": "http://www.exampleFHIRServer.com"
     }
   ]
 }

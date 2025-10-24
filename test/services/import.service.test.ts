@@ -3,7 +3,6 @@ const supertest = require('supertest');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const paramOneInput = require('../fixtures/fhir-resources/parameters/paramOneInput.json');
-const paramTwoInputs = require('../fixtures/fhir-resources/parameters/paramTwoInputs.json');
 const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
 const paramNoInputValueUrl = require('../fixtures/fhir-resources/parameters/paramNoInputValueUrl.json');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');

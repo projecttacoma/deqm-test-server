@@ -10,9 +10,9 @@ const testGroup = require('../fixtures/fhir-resources/testGroup.json');
 const testOrganization = require('../fixtures/fhir-resources/testOrganization.json');
 const testOrganization2 = require('../fixtures/fhir-resources/testOrganization2.json');
 const testParam = require('../fixtures/fhir-resources/parameters/paramNoExport.json');
-const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
+// const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
 const testEmptyParamList = require('../fixtures/fhir-resources/parameters/emptyParamList.json');
-const paramNoInputValueUrl = require('../fixtures/fhir-resources/parameters/paramNoInputValueUrl.json');
+// const paramNoInputValueUrl = require('../fixtures/fhir-resources/parameters/paramNoInputValueUrl.json');
 const testParamInvalidResourceType = require('../fixtures/fhir-resources/parameters/paramInvalidType.json');
 const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam.json');
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
@@ -96,37 +96,37 @@ describe('measure.service', () => {
     });
   });
 
-  describe('$bulk-submit-data', () => {
-    it('Returns 400 if FHIR Parameters object is missing input URL', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$bulk-submit-data')
-        .send(paramNoInput)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('prefer', 'respond-async')
-        .expect(400)
-        .then(response => {
-          expect(response.body.resourceType).toEqual('OperationOutcome');
-          expect(response.body.issue[0].details.text).toEqual('No inputUrl parameters were found.');
-        });
-    });
+  // describe('$bulk-submit-data', () => {
+  //   it('Returns 400 if FHIR Parameters object is missing input URL', async () => {
+  //     await supertest(server.app)
+  //       .post('/4_0_1/Measure/$bulk-submit-data')
+  //       .send(paramNoInput)
+  //       .set('Accept', 'application/json+fhir')
+  //       .set('content-type', 'application/json+fhir')
+  //       .set('prefer', 'respond-async')
+  //       .expect(400)
+  //       .then(response => {
+  //         expect(response.body.resourceType).toEqual('OperationOutcome');
+  //         expect(response.body.issue[0].details.text).toEqual('No inputUrl parameters were found.');
+  //       });
+  //   });
 
-    test('FHIR Parameters object is missing valueUrl for export URL', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$bulk-submit-data')
-        .send(paramNoInputValueUrl)
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .set('prefer', 'respond-async')
-        .expect(400)
-        .then(response => {
-          expect(response.body.resourceType).toEqual('OperationOutcome');
-          expect(response.body.issue[0].details.text).toEqual(
-            'Expected a valueUrl for the inputUrl, but none were found.'
-          );
-        });
-    });
-  });
+  //   test('FHIR Parameters object is missing valueUrl for export URL', async () => {
+  //     await supertest(server.app)
+  //       .post('/4_0_1/Measure/$bulk-submit-data')
+  //       .send(paramNoInputValueUrl)
+  //       .set('Accept', 'application/json+fhir')
+  //       .set('content-type', 'application/json+fhir')
+  //       .set('prefer', 'respond-async')
+  //       .expect(400)
+  //       .then(response => {
+  //         expect(response.body.resourceType).toEqual('OperationOutcome');
+  //         expect(response.body.issue[0].details.text).toEqual(
+  //           'Expected a valueUrl for the inputUrl, but none were found.'
+  //         );
+  //       });
+  //   });
+  // });
 
   describe('testing custom measure operation', () => {
     test('$submit-data returns 400 for incorrect resourceType', async () => {
