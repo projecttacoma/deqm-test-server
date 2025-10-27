@@ -256,57 +256,86 @@ Check out the [Patient-everything operation spec](https://www.hl7.org/fhir/opera
 
 ### Bulk Import
 
-The server contains functionality for the bulk $import operation using some parts of the Import Manifest approach defined by the [smart-on-fhir's Bulk Data Import Proposal](https://github.com/smart-on-fhir/bulk-import/blob/master/import-manifest.md).
+The server contains functionality for Bulk Import workflow capabilities as defined by the [Draft Bulk Submit IG](https://hackmd.io/@argonaut/rJoqHZrPle#Draft-Bulk-Submit-IG). This functionality works with a Bulk Export server, see the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) repository for an example.
 
-The first step in the bulk $import operation work flow is to gather data for submission and organize that data into a set of inputs that this server will retrieve. Inputs can be gathered using the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation.
+#### `$bulk-submit`
 
-To kickoff a bulk data import operation, POST a valid Import Manifest object to `http://localhost:3000/$import`. In contrast to the Bulk Data Import Proposal, this server accepts a FHIR Parameters resource Import Manifest as input for the $import operation. Example Import Manifest:
+The first step in the $bulk-submit operation workflow is to gather data for submission and retrieve an endpoint from a Bulk Export Server that returns a Bulk Export Manifest with a pre-coordinated FHIR data set. The manifest URL can be obtained with the [bulk-export-server](https://github.com/projecttacoma/bulk-export-server) $export operation. The export manifest URL can be found at the $export response Content-Location.
+
+To kickoff a bulk submit operation, POST a valid FHIR Parameters resource to `http://localhost:3000/4_0_1/$bulk-submit` with the following required parameters:
+
+- `submitter` (Identifier): identifier that must match a system and code specified by the Data Recipient
+- `submissionId` (string): ID of the submission, must be unique for the `submitter`
+- `FHIRBaseUrl` (string): base url to be used by the Data Recipient when resolving relative references in the submitted resources
+
+The server supports the following optional parameters:
+
+- `manifestUrl` (string): URL pointing to a Bulk Export Manifest with a pre-coordinated FHIR data set, MAY be omitted when the operation is being called to set the submissionStatus to `complete` or `aborted`
+
+Example request body for a POST to `http://localhost:3000/4_0_1/$bulk-submit`:
 
 ```json
 {
   "resourceType": "Parameters",
   "parameter": [
     {
-      "name": "input",
-      "part": [
-        {
-          "name": "url",
-          "valueUrl": "http://localhost:3001/ccdc6013-4a14-4bc5-8348-8c4b17a437f7/Coverage.ndjson"
-        },
-        {
-          "name": "inputDetails",
-          "part": [
-            {
-              "name": "resourceType",
-              "valueCode": "Coverage"
-            }
-          ]
-        }
-      ]
+      "name": "manifestUrl",
+      "valueString": "http://localhost:3001/bulkstatus/d1551f79-6afa-40c4-95a1-e92b3394d415"
     },
     {
-      "name": "input",
-      "part": [
-        {
-          "name": "url",
-          "valueUrl": "http://localhost:3001/ccdc6013-4a14-4bc5-8348-8c4b17a437f7/Condition.ndjson"
-        },
-        {
-          "name": "inputDetails",
-          "part": [
-            {
-              "name": "resourceType",
-              "valueCode": "Condition"
-            }
-          ]
-        }
-      ]
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "Submission2"
+    },
+    {
+      "name": "FHIRBaseUrl",
+      "valueString": "http://localhost:3001"
     }
   ]
 }
 ```
 
-The user can check the status of an $import or $bulk-submit-data request by copying the content-location header in the response, and sending a GET request to `http://localhost:3000/<content-location-header>`.
+#### `$bulk-submit-status`
+
+The server supports the `$bulk-submit-status` endpoint for when a Data Provider wishes to receive updates on the status of a submission after it has kicked off a Bulk Submit operation.
+
+In order to retrieve submission status resources, send a POST request to `http://localhost:3000/4_0_1/$bulk-submit-status` with a FHIR Parameters resource with the following required parameters:
+
+- `submitter` (Identifier)
+- `submissionId` (string)
+
+Example request body for a POST to `http://localhost:3000/4_0_1/$bulk-submit-status`:
+
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "Submission2"
+    }
+  ]
+}
+```
+
+If successful, the operation will respond with a `Content-Location` header with the absolute URL of an endpoint for subsequent status requests (polling location).
+
+#### Bulk Data Status Polling Request
+
+The server follows a FHIR Asynchronous Request Pattern as defined by the [Bulk Submit Draft IG](https://hackmd.io/@argonaut/rJoqHZrPle#Bulk-Data-Status-Polling-Request) for request and response flows following a Bulk Status request.
+
+The server's current implementation returns a partial export manifest and 202
 
 ## License
 

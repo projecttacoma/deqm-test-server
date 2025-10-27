@@ -62,7 +62,7 @@ async function bulkImport(req: any, res: any) {
 
   // ID assigned to the requesting client
   const clientEntry = `${submitter.value}-${submissionId}`;
-  await addPendingBulkImportRequest(manifest, clientEntry, baseUrl);
+  await addPendingBulkImportRequest(manifest, clientEntry, manifestUrl, baseUrl);
 
   try {
     const inputUrls = manifest.output.map(o => o.url);
