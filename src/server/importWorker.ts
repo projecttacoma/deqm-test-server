@@ -40,7 +40,7 @@ const executeImportWorkflow = async (clientEntryId, inputUrls) => {
     await ndjsonQueue.saveAll(
       inputUrls.map(url =>
         ndjsonQueue.createJob({
-          fileUrl: url.url,
+          fileUrl: url,
           clientId: clientEntryId,
           resourceCount: -1
         })
