@@ -227,7 +227,6 @@ export async function getAllDependentLibraries(lib: fhir4.Library): Promise<(fhi
  * @param {Array} entries array of bundle entries
  * @returns {Array} new array of entries with replaced references
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function replaceReferences(entries: any[]) {
   // Add metadata for old IDs and newly created ones of POST entries
   entries.forEach(e => {
@@ -257,7 +256,6 @@ export function replaceReferences(entries: any[]) {
   });
 
   // Remove metadata and modify request type/resource id
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const newEntries = JSON.parse(entriesStr).map((e: any) => {
     if (e.isPost) {
       logger.debug(`Removing metadata and changing request type to PUT for entry: ${JSON.stringify(e)}`);

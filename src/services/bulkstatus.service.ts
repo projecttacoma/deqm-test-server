@@ -189,7 +189,7 @@ export async function checkBulkStatus(req: any, res: any) {
 }
 
 const writeToFile = function (doc: any, clientId: string, success: boolean) {
-  let dirpath = './tmp/' + clientId;
+  const dirpath = './tmp/' + clientId;
   fs.mkdirSync(dirpath, { recursive: true });
   const filename = success ? path.join(dirpath, 'output.ndjson') : path.join(dirpath, 'errors.ndjson');
 

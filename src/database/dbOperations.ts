@@ -130,7 +130,6 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
  * which can be queried to get updates on the status of the bulk import
  * @returns {string} the id of the inserted client
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function addPendingBulkImportRequest(body: any, clientId: string, manifestUrl: string, baseUrl: string) {
   const collection = db.collection('bulkImportStatuses');
 

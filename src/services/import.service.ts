@@ -1,6 +1,5 @@
 //@ts-nocheck
 const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
-const { retrieveInputUrls } = require('../util/exportUtils');
 const { checkContentTypeHeader } = require('../util/baseUtils');
 const importQueue = require('../queue/importQueue');
 import logger from '../server/logger';
