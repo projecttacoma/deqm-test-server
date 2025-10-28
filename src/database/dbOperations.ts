@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { db } from './connection';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';

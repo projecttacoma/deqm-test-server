@@ -16,8 +16,8 @@ interface ErrorFileItem {
 }
 
 interface CountSeverity {
-  success: Number;
-  error: Number;
+  success: number;
+  error: number;
 }
 
 interface ErrorManifestUrlExtension extends ManifestUrlExtension {
