@@ -1,10 +1,9 @@
-//@ts-nocheck
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
-const Queue = require('bee-queue');
-const { failBulkImportRequest, initializeBulkFileCount } = require('../database/dbOperations');
-const mongoUtil = require('../database/connection');
-const ndjsonQueue = require('../queue/ndjsonProcessQueue');
+import Queue from 'bee-queue';
+import { failBulkImportRequest, initializeBulkFileCount } from '../database/dbOperations';
+import { client } from '../database/connection';
+import ndjsonQueue from '../queue/ndjsonProcessQueue';
 import logger from './logger';
 
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
@@ -16,12 +15,14 @@ const importQueue = new Queue('import', {
   removeOnSuccess: true
 });
 
-importQueue.process(async job => {
+// TODO: Update using bee-queue types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+importQueue.process(async (job: any) => {
   // Payload of createJob exists on job.data
   const { clientEntry, inputUrls } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
 
-  await mongoUtil.client.connect();
+  await client.connect();
   // Call function to get the ndjson files
   const result = await executeImportWorkflow(clientEntry, inputUrls);
   if (result) {
@@ -29,10 +30,10 @@ importQueue.process(async job => {
   } else {
     logger.info(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
   }
-  await mongoUtil.client.close();
+  await client.close();
 });
 
-const executeImportWorkflow = async (clientEntryId, inputUrls) => {
+const executeImportWorkflow = async (clientEntryId: string, inputUrls: string[]) => {
   try {
     await initializeBulkFileCount(clientEntryId, inputUrls.length, -1);
 
@@ -48,8 +49,10 @@ const executeImportWorkflow = async (clientEntryId, inputUrls) => {
     );
     return true;
   } catch (e) {
-    await failBulkImportRequest(clientEntryId, e);
-    return false;
+    if (e instanceof Error) {
+      await failBulkImportRequest(clientEntryId, e);
+      return false;
+    }
   }
 };
 

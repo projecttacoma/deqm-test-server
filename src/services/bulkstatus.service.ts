@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 import logger from '../server/logger';
+import { ExportManifest } from './import.service';
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
@@ -17,7 +18,7 @@ import logger from '../server/logger';
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
-  const bulkStatus = await getBulkImportStatus(clientId);
+  const bulkStatus: ExportManifest = await getBulkImportStatus(clientId);
   let response;
 
   if (!bulkStatus) {
@@ -106,12 +107,6 @@ async function checkBulkStatus(req, res) {
         }
       ]
     };
-
-    // if (bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')) {
-    //   response.entry[0].resource.parameter.push(
-    //     bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')
-    //   );
-    // }
 
     // check if there were any errors with the ndjson files
     if (bulkStatus.failedOutcomes.length > 0) {

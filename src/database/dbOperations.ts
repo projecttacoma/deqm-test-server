@@ -2,6 +2,44 @@ import { db } from './connection';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
 
+// Created from bulk export output manifest description:
+// https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
+
+export interface ExportManifest {
+  transactionTime: string;
+  request: string;
+  requiresAccessToken: boolean;
+  outputOrganizedBy: string;
+  output: FileItem[];
+  deleted?: FileItem[];
+  error: FileItem[];
+  link?: [{ relation: 'next'; url: string }];
+  extension?: object;
+}
+
+export interface FileItem {
+  url: string;
+  type?: string; // may not be present when using organizeOutputBy
+  continuesInFile?: string;
+  count?: number;
+}
+
+export interface BulkImportStatus {
+  id: string;
+  status: 'In Progress' | 'Failed' | 'Completed';
+  error: {
+    code: number | null;
+    message: string | null;
+  };
+  exportedFileCount: number;
+  totalFileCount: number;
+  exportedResourceCount: number;
+  totalResourceCount: number;
+  failedOutcomes: string[];
+  importManifest: ExportManifest;
+  baseUrl: string;
+}
+
 /**
  * creates a new document in the specified collection
  * @param {Object} data the data of the document to be created
@@ -130,10 +168,9 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
  * which can be queried to get updates on the status of the bulk import
  * @returns {string} the id of the inserted client
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function addPendingBulkImportRequest(body: any, clientId: string, manifestId: string, baseUrl: string) {
+export async function addPendingBulkImportRequest(manifest: ExportManifest, clientId: string, baseUrl: string) {
   const collection = db.collection('bulkImportStatuses');
-  const bulkImportClient = {
+  const bulkImportStatus: BulkImportStatus = {
     id: clientId,
     status: 'In Progress',
     error: {
@@ -146,12 +183,11 @@ export async function addPendingBulkImportRequest(body: any, clientId: string, m
     exportedResourceCount: -1,
     totalResourceCount: -1,
     failedOutcomes: [],
-    importManifest: body,
-    manifestId: manifestId,
+    importManifest: manifest,
     baseUrl: baseUrl
   };
   logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
-  await collection.insertOne(bulkImportClient);
+  await collection.insertOne(bulkImportStatus);
   return clientId;
 }
 
@@ -238,9 +274,9 @@ export async function getNdjsonFileStatus(clientId: string, fileUrl: string) {
  * @param {string} clientId The id signifying the bulk status request
  * @returns {Object} The bulkstatus entry for the passed in clientId
  */
-export async function getBulkImportStatus(clientId: string) {
+export async function getBulkImportStatus(clientId: string): Promise<BulkImportStatus> {
   logger.debug(`Retrieving bulkImportStatus with clientId: ${clientId}`);
-  const status = await findResourceById(clientId, 'bulkImportStatuses');
+  const status = (await findResourceById(clientId, 'bulkImportStatuses')) as unknown as BulkImportStatus;
   return status;
 }
 

@@ -1,38 +1,20 @@
-//@ts-nocheck
-const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
-const { checkContentTypeHeader } = require('../util/baseUtils');
-const axios = require('axios');
-const importQueue = require('../queue/importQueue');
+import { addPendingBulkImportRequest, failBulkImportRequest } from '../database/dbOperations';
+import { checkContentTypeHeader } from '../util/baseUtils';
+import axios from 'axios';
+import importQueue from '../queue/importQueue';
+import { AxiosError } from 'axios';
 import logger from '../server/logger';
-
-// Created from bulk export output manifest description:
-// https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
-
-export interface ExportManifest {
-  transactionTime: string;
-  request: string;
-  requiresAccessToken: boolean;
-  outputOrganizedBy: string;
-  output: FileItem[];
-  deleted?: FileItem[];
-  error: FileItem[];
-  link?: [{ relation: 'next'; url: string }];
-  extension?: object;
-}
-
-export interface FileItem {
-  url: string;
-  type?: string; // may not be present when using organizeOutputBy
-  continuesInFile?: string;
-  count?: number;
-}
+import { ExportManifest } from '../database/dbOperations';
+import { BadRequestError, ResourceNotFoundError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
  * @param {Object} req The request object passed in by the client
  * @param {Object} res The response object returned to the client by the server
  */
-async function bulkImport(req, res) {
+// TODO: update with relevant types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function bulkImport(req: any, res: any) {
   logger.info('Base >>> Import');
   logger.debug(`Request headers: ${JSON.stringify(req.headers)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
@@ -40,19 +22,47 @@ async function bulkImport(req, res) {
 
   checkContentTypeHeader(req.headers);
 
-  const submitter = req.body.parameter.find(p => p.name === 'submitter').valueIdentifier as fhir4.Identifier;
-  const submissionId = req.body.parameter.find(p => p.name === 'submissionId').valueString;
-  const manifestId = req.body.parameter.find(p => p.name === 'manifestId').valueString;
-  const manifestUrl = req.body.parameter.find(p => p.name === 'manifestUrl').valueString;
-  const baseUrl = req.body.parameter.find(p => p.name === 'FHIRBaseUrl').valueString;
+  if (!req.body || req.body.resourceType !== 'Parameters') {
+    throw new BadRequestError('Did not receive "Parameters" object as part of request body');
+  }
+  const parameters = req.body as fhir4.Parameters;
+  const submitter = parameters.parameter?.find(p => p.name === 'submitter')?.valueIdentifier as
+    | fhir4.Identifier
+    | undefined;
+  const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
+  const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
+  const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
+  if (!submitter) {
+    throw new BadRequestError('Request must include a submitter parameter.');
+  }
+  if (!submissionId) {
+    throw new BadRequestError('Request must include a submissionId parameter.');
+  }
+  if (!manifestUrl) {
+    throw new BadRequestError('Request must include a manifestUrl parameter.');
+  }
+  if (!baseUrl) {
+    throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
+  }
 
-  // TODO: handle fetch error
-  const manifest = (await axios.get(manifestUrl)).data;
-  console.log('Found manifest:', manifest);
+  let manifest: ExportManifest;
+  try {
+    manifest = (await axios.get(manifestUrl))?.data;
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      const error = e as AxiosError;
+      throw new ResourceNotFoundError(
+        `Was unable to resolve manifest url ${manifestUrl}. Received error: ${error.message}`
+      );
+    } else {
+      // Unexpected error
+      throw e;
+    }
+  }
 
   // ID assigned to the requesting client
   const clientEntry = `${submitter.value}-${submissionId}`;
-  await addPendingBulkImportRequest(manifest, clientEntry, manifestId, baseUrl);
+  await addPendingBulkImportRequest(manifest, clientEntry, baseUrl);
 
   try {
     const inputUrls = manifest.output.map(o => o.url);
@@ -63,7 +73,9 @@ async function bulkImport(req, res) {
     };
     await importQueue.createJob(jobData).save();
   } catch (e) {
-    await failBulkImportRequest(clientEntry, e);
+    if (e instanceof Error) {
+      await failBulkImportRequest(clientEntry, e);
+    }
   }
 
   res.status(202);
