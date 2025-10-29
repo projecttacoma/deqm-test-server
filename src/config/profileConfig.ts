@@ -60,18 +60,6 @@ const buildConfig = () => {
               method: 'POST',
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-submit-data'
             },
-            // {
-            //   name: 'bulkSubmitData',
-            //   route: '/$bulk-submit-data',
-            //   method: 'POST',
-            //   reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
-            // },
-            // {
-            //   name: 'bulkSubmitData',
-            //   route: '/:id/$bulk-submit-data',
-            //   method: 'POST',
-            //   reference: 'http://hl7.org/fhir/us/davinci-deqm/OperationDefinition/bulk-submit-data'
-            // },
             {
               name: 'dataRequirements',
               route: '/:id/$data-requirements',

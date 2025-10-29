@@ -16,10 +16,6 @@
 			"valueString": "Submission1"
     },
 		{
-      "name": "manifestId",
-			"valueString": "Expect1Manifest"
-    },
-		{
       "name": "FHIRBaseUrl",
 			"valueString": "http://www.exampleFHIRServer.com"
     }
