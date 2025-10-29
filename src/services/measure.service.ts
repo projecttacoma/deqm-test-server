@@ -3,7 +3,6 @@ const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils')
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
-// const importQueue = require('../queue/importQueue');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
@@ -560,7 +559,6 @@ module.exports = {
   update,
   search,
   submitData,
-  // bulkSubmitData,
   dataRequirements,
   evaluateMeasure,
   careGaps
