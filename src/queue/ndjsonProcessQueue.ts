@@ -15,4 +15,4 @@ ndjsonQueue.on('error', err => {
   console.log('queue error: ', err);
 });
 
-module.exports = ndjsonQueue;
+export = ndjsonQueue;

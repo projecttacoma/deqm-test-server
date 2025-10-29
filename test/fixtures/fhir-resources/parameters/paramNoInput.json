@@ -2,12 +2,18 @@
   "resourceType": "Parameters",
   "parameter": [
     {
-      "name": "measureReport",
-      "resource": {
-        "resourceType": "MeasureReport",
-        "id": "measurereport-testMeasure",
-        "measure": "Measure/testMeasure"
-      }
+      "name": "submitter",
+			"valueIdentifier": {
+				"value": "ExampleSubmitterValue"
+			}
+    },
+		{
+      "name": "submissionId",
+			"valueString": "Submission2"
+    },
+		{
+      "name": "FHIRBaseUrl",
+			"valueString": "http://www.exampleFHIRServer.com"
     }
   ]
 }

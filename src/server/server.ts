@@ -22,7 +22,7 @@ class DEQMServer extends Server {
     return this;
   }
   enableImportRoute() {
-    this.app.post('/:base_version/([$])import/', configBulkImport.bulkImport);
+    this.app.post('/:base_version/([$])bulk-submit/', configBulkImport.bulkImport);
     return this;
   }
   enableClientFileRoute() {
