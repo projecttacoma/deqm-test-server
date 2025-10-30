@@ -4,14 +4,21 @@
     "status": "In Progress",
     "error": { "code": null, "message": null },
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "PENDING_REQUEST_WITH_FILE_COUNT",
@@ -23,14 +30,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
@@ -42,14 +56,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
@@ -61,14 +82,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST",
@@ -76,14 +104,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
@@ -91,32 +126,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": ["Test error message"],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
         },
         {
-          "name": "input",
-          "part": [
-            {
-              "name": "url",
-              "valueUrl": "http://localhost:3001/Condition.ndjson"
-            },
-            {
-              "name": "inputDetails",
-              "part": [
-                {
-                  "name": "resourceType",
-                  "valueCode": "Condition"
-                }
-              ]
-            }
-          ]
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "ERROR_REQUEST",
@@ -124,14 +148,21 @@
     "error": { "code": "ErrorCode", "message": "Error Occurred!" },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
@@ -144,13 +175,20 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "resourceType": "Parameters",
-      "parameter": [
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "requiresAccessToken": false,
+      "output": [
         {
-          "name": "requestIdentity",
-          "valueString": "request-identity-example"
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
         }
       ]
-    }
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   }
 ]

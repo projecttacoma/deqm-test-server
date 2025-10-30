@@ -1,5 +1,5 @@
 //@ts-nocheck
-import mongoUtil from '../database/connection';
+const mongoUtil = require('../database/connection');
 import supportedResources from '../server/supportedResources';
 
 /**

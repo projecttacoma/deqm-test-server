@@ -1,6 +1,5 @@
 //@ts-nocheck
 const { addPendingBulkImportRequest, failBulkImportRequest } = require('../database/dbOperations');
-const { retrieveInputUrls } = require('../util/exportUtils');
 const { checkContentTypeHeader } = require('../util/baseUtils');
 const importQueue = require('../queue/importQueue');
 import logger from '../server/logger';
@@ -18,11 +17,37 @@ async function bulkImport(req, res) {
 
   checkContentTypeHeader(req.headers);
 
+  const submitter = req.body.parameter.find(p => p.name === 'submitter').valueIdentifier as fhir4.Identifier;
+  const submissionId = req.body.parameter.find(p => p.name === 'submissionId').valueString;
+  const manifestUrl = req.body.parameter.find(p => p.name === 'manifestUrl').valueString;
+  const baseUrl = req.body.parameter.find(p => p.name === 'FHIRBaseUrl').valueString;
+
+  // TODO: handle fetch error
+  // const manifest = (await axios.get(manifestUrl)).data;
+  // console.log('Found manifest:', manifest);
+
+  // for testing
+  const manifest = {
+    transactionTime: '2025-10-21T22:15:16.502Z',
+    requiresAccessToken: false,
+    output: [
+      {
+        type: 'Condition',
+        url: 'http://localhost:3001/01e63f57-ee47-4429-8ae1-49d8a1befb30/Condition.ndjson'
+      },
+      {
+        type: 'Coverage',
+        url: 'http://localhost:3001/01e63f57-ee47-4429-8ae1-49d8a1befb30/Coverage.ndjson'
+      }
+    ]
+  };
+
   // ID assigned to the requesting client
-  const clientEntry = await addPendingBulkImportRequest(req.body);
+  const clientEntry = `${submitter.value}-${submissionId}`;
+  await addPendingBulkImportRequest(manifest, clientEntry, manifestUrl, baseUrl);
 
   try {
-    const inputUrls = retrieveInputUrls(req.body.parameter);
+    const inputUrls = manifest.output.map(o => o.url);
 
     const jobData = {
       clientEntry,

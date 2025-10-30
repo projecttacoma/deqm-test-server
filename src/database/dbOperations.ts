@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { db } from './connection';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
@@ -131,10 +130,9 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
  * which can be queried to get updates on the status of the bulk import
  * @returns {string} the id of the inserted client
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function addPendingBulkImportRequest(body: any) {
+export async function addPendingBulkImportRequest(body: any, clientId: string, manifestUrl: string, baseUrl: string) {
   const collection = db.collection('bulkImportStatuses');
-  const clientId = uuidv4();
+
   const bulkImportClient = {
     id: clientId,
     status: 'In Progress',
@@ -148,7 +146,9 @@ export async function addPendingBulkImportRequest(body: any) {
     exportedResourceCount: -1,
     totalResourceCount: -1,
     failedOutcomes: [],
-    importManifest: body
+    importManifest: body,
+    manifestUrl: manifestUrl,
+    baseUrl: baseUrl
   };
   logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
   await collection.insertOne(bulkImportClient);
