@@ -188,15 +188,17 @@ export async function checkBulkStatus(req: any, res: any) {
   }
 }
 
-const writeToFile = function (doc: any, clientId: string, success: boolean) {
+const writeToFile = function (operationOutcomes: fhir4.OperationOutcome[], clientId: string, success: boolean) {
   const dirpath = './tmp/' + clientId;
   fs.mkdirSync(dirpath, { recursive: true });
   const filename = success ? path.join(dirpath, 'output.ndjson') : path.join(dirpath, 'errors.ndjson');
 
   let lineCount = 0;
-  if (Object.keys(doc).length > 0) {
+  if (operationOutcomes.length > 0) {
     const stream = fs.createWriteStream(filename, { flags: 'a' });
-    stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(doc));
+    operationOutcomes.forEach(oo => {
+      stream.write((++lineCount === 1 ? '' : '\r\n') + JSON.stringify(oo));
+    });
     stream.end();
   } else return;
 };
