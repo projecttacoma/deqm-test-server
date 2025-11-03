@@ -6,7 +6,6 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 import logger from '../server/logger';
-import { ExportManifest } from './import.service';
 
 /**
  * Searches for the bulkStatus entry with the passed in client id and interprets and
@@ -18,7 +17,7 @@ import { ExportManifest } from './import.service';
 async function checkBulkStatus(req, res) {
   const clientId = req.params.client_id;
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
-  const bulkStatus: ExportManifest = await getBulkImportStatus(clientId);
+  const bulkStatus = await getBulkImportStatus(clientId);
   let response;
 
   if (!bulkStatus) {

@@ -9,7 +9,7 @@ export interface ExportManifest {
   transactionTime: string;
   request: string;
   requiresAccessToken: boolean;
-  outputOrganizedBy: string;
+  outputOrganizedBy?: string;
   output: FileItem[];
   deleted?: FileItem[];
   error: FileItem[];
