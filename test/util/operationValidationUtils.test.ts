@@ -6,7 +6,7 @@ const {
   gatherParams,
   checkSubmitDataBody
 } = require('../../src/util/operationValidationUtils');
-const queue = require('../../src/queue/importQueue');
+import { importQueue } from '../../src/queue/importQueue';
 
 const VALID_SUBJECT_QUERY = {
   periodStart: '2019-01-01',
@@ -748,7 +748,7 @@ describe('validateCareGapsParams', () => {
     expect(gatherParams(SPLIT_REQ.query, SPLIT_REQ.body)).toEqual(doubleMeasureQuery);
   });
 
-  afterAll(async () => await queue.close());
+  afterAll(async () => await importQueue.close());
 });
 
 describe('checkSubmitDataBody', () => {

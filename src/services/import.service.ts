@@ -1,7 +1,7 @@
 import { addPendingBulkImportRequest, failBulkImportRequest } from '../database/dbOperations';
 import { checkContentTypeHeader } from '../util/baseUtils';
 import axios from 'axios';
-import importQueue from '../queue/importQueue';
+import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
 import { ExportManifest } from '../database/dbOperations';

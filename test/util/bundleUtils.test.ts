@@ -1,7 +1,7 @@
 //@ts-nocheck
 const { replaceReferences, getQueryFromReference } = require('../../src/util/bundleUtils');
 const { client } = require('../../src/database/connection');
-const queue = require('../../src/queue/importQueue');
+import { importQueue } from '../../src/queue/importQueue';
 const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
@@ -51,7 +51,7 @@ describe('Testing functionality of all functions which run uuidv4', () => {
     });
   });
   afterAll(async () => {
-    await queue.close();
+    await importQueue.close();
   });
 });
 
@@ -69,7 +69,7 @@ describe('Testing getQueryFromReference', () => {
     });
   });
   afterAll(async () => {
-    await queue.close();
+    await importQueue.close();
   });
 });
 

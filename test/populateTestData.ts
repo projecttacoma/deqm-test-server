@@ -3,7 +3,7 @@ const { db, client } = require('../src/database/connection');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
-const importQueue = require('../src/queue/importQueue');
+import { importQueue } from '../src/queue/importQueue';
 const { execQueue } = require('../src/queue/execQueue');
 const fs = require('fs');
 

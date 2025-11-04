@@ -1,10 +1,9 @@
-//@ts-nocheck
 // Setup for import queue which pushes jobs to Redis
 
-const Queue = require('bee-queue');
+import Queue from 'bee-queue';
 
 // Create a new queue to establish new Redis connection
-const importQueue = new Queue('import', {
+export const importQueue = new Queue('import', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379
@@ -13,8 +12,7 @@ const importQueue = new Queue('import', {
   isWorker: false
 });
 
-importQueue.on('error', err => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+importQueue.on('error', (err: any) => {
   console.log('queue error: ', err);
 });
-
-export = importQueue;
