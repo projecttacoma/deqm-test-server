@@ -10,6 +10,7 @@ export async function checkBulkStatus(req: any, res: any) {
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
   const bulkStatus = await getBulkImportStatus(clientId);
   const submissionId = clientId.split('-')[1];
+  const urlBase = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/`;
 
   if (!bulkStatus) {
     // we want to throw an error that it would not find the bulk import request with id
@@ -71,7 +72,7 @@ export async function checkBulkStatus(req: any, res: any) {
       extension: {
         manifestUrl: bulkStatus.manifestUrl
       },
-      url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/errors.ndjson`
+      url: `${urlBase}errors.ndjson`
     });
 
     return exportManifest;
@@ -115,7 +116,7 @@ export async function checkBulkStatus(req: any, res: any) {
         extension: {
           manifestUrl: bulkStatus.manifestUrl
         },
-        url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/errors.ndjson`
+        url: `${urlBase}errors.ndjson`
       });
     } else {
       // From the Bulk Submit Draft IG: "If there are resources to return,
@@ -144,7 +145,7 @@ export async function checkBulkStatus(req: any, res: any) {
         extension: {
           manifestUrl: bulkStatus.manifestUrl
         },
-        url: `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/output.ndjson`
+        url: `${urlBase}output.ndjson`
       });
     }
 
