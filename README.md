@@ -335,7 +335,7 @@ If successful, the operation will respond with a `Content-Location` header with 
 
 The server follows a FHIR Asynchronous Request Pattern as defined by the [Bulk Submit Draft IG](https://hackmd.io/@argonaut/rJoqHZrPle#Bulk-Data-Status-Polling-Request) for request and response flows following a Bulk Status request.
 
-The server's current implementation returns a partial export manifest and 202
+The server's current implementation returns a partial export manifest and 202 while the submission is incomplete or is being processed. When complete, it returns an export manifest and 200 status.
 
 ## License
 
