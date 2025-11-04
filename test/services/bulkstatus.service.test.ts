@@ -28,10 +28,10 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.entry[0].response.status).toEqual('200');
-      expect(response.body.entry[0].resource.parameter[1].part[0].resource.issue[0].details.text).toEqual('All OK');
+      expect(response.body.entry[0].resource.parameter[0].part[0].resource.issue[0].details.text).toEqual('All OK');
     });
 
-    it('returns 200 status and a batch-response bundle with 400 status when $import failed', async () => {
+    it('returns 200 status and a batch-response bundle with 400 status when $bulk-submit failed', async () => {
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/ERROR_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
@@ -46,10 +46,10 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.entry[0].response.status).toEqual('200');
-      expect(response.body.entry[0].resource.parameter[1].part[1].resource.issue[0].details.text).toEqual(
+      expect(response.body.entry[0].resource.parameter[0].part[1].resource.issue[0].details.text).toEqual(
         'Test error message'
       );
-      expect(response.body.entry[0].resource.parameter[2].part[1].resource.issue[0].details.text).toEqual(
+      expect(response.body.entry[0].resource.parameter[1].part[1].resource.issue[0].details.text).toEqual(
         'Successfully processed 3 rows.'
       );
     });

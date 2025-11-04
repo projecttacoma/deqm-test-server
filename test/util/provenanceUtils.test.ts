@@ -12,7 +12,7 @@ const {
   AMENDING_AUDIT
 } = require('../fixtures/provenanceFixtures');
 const { v4: uuidv4 } = require('uuid');
-const queue = require('../../src/queue/importQueue');
+import { importQueue } from '../../src/queue/importQueue';
 
 jest.mock('uuid', () => {
   return {
@@ -53,5 +53,5 @@ describe('provenanceUtils tests', () => {
     );
   });
 
-  afterAll(async () => await queue.close());
+  afterAll(async () => await importQueue.close());
 });

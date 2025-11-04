@@ -1,7 +1,7 @@
 //@ts-nocheck
 const { createTransactionBundleClass } = require('../../src/resources/transactionBundle');
 const testPatient = require('../fixtures/fhir-resources/testPatient.json');
-const queue = require('../../src/queue/importQueue');
+import { importQueue } from '../../src/queue/importQueue';
 
 describe('Test functionality for adding resource entry to the bundle', () => {
   let tb;
@@ -43,5 +43,5 @@ describe('Test functionality for adding resource entry to the bundle', () => {
     }
   });
 
-  afterAll(async () => await queue.close());
+  afterAll(async () => await importQueue.close());
 });

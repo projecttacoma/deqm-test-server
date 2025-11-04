@@ -75,7 +75,7 @@ async function checkBulkStatus(req, res) {
                   severity: 'fatal',
                   code: 'transient',
                   details: {
-                    text: bulkStatus.error.message ?? "Internal System Error: '$import' request not processed."
+                    text: bulkStatus.error.message ?? "Internal System Error: '$bulk-submit' request not processed."
                   }
                 }
               ]
@@ -107,84 +107,33 @@ async function checkBulkStatus(req, res) {
       ]
     };
 
-    if (bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')) {
-      response.entry[0].resource.parameter.push(
-        bulkStatus.importManifest.parameter.find(p => p.name === 'requestIdentity')
-      );
-    }
-
     // check if there were any errors with the ndjson files
     if (bulkStatus.failedOutcomes.length > 0) {
       logger.debug('bulkStatus entry contains failed outcomes');
 
       // Go through all of the failed outcomes and add them as
       // outcomes on the Parameters resource
-
-      for (const parameter of bulkStatus.importManifest.parameter) {
-        if (parameter.name === 'input') {
-          const url = parameter.part.find(p => p.name === 'url');
-          const ndjsonStatus = await getNdjsonFileStatus(clientId, url.valueUrl);
-          if (ndjsonStatus) {
-            ndjsonStatus.failedOutcomes.forEach(fail => {
-              const inputResult = {
-                name: 'outcome',
-                part: [
-                  { name: 'associatedInputUrl', valueUrl: url.valueUrl },
-                  {
-                    name: 'operationOutcome',
-                    resource: {
-                      resourceType: 'OperationOutcome',
-                      issue: [{ severity: 'error', code: 'processing', details: { text: fail } }]
-                    }
+      for (const output of bulkStatus.importManifest.output) {
+        const url = output.url;
+        const ndjsonStatus = await getNdjsonFileStatus(clientId, url);
+        if (ndjsonStatus) {
+          ndjsonStatus.failedOutcomes.forEach(fail => {
+            const inputResult = {
+              name: 'outcome',
+              part: [
+                { name: 'associatedInputUrl', valueUrl: url },
+                {
+                  name: 'operationOutcome',
+                  resource: {
+                    resourceType: 'OperationOutcome',
+                    issue: [{ severity: 'error', code: 'processing', details: { text: fail } }]
                   }
-                ]
-              };
-              response.entry[0].resource.parameter.push(inputResult);
-            });
-            if (ndjsonStatus.successCount) {
-              const successCountResult = {
-                name: 'outcome',
-                part: [
-                  { name: 'associatedInputUrl', valueUrl: url.valueUrl },
-                  {
-                    name: 'operationOutcome',
-                    resource: {
-                      resourceType: 'OperationOutcome',
-                      issue: [
-                        {
-                          severity: 'information',
-                          code: 'informational',
-                          details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              };
-              response.entry[0].resource.parameter.push(successCountResult);
-            }
-          }
-        }
-      }
-    } else {
-      response.entry[0].resource.parameter.push({
-        name: 'outcome',
-        part: [
-          {
-            name: 'operationOutcome',
-            resource: {
-              resourceType: 'OperationOutcome',
-              issue: [{ severity: 'information', code: 'informational', details: { text: 'All OK' } }]
-            }
-          }
-        ]
-      });
-      // create success counts for every file
-      for (const parameter of bulkStatus.importManifest.parameter) {
-        if (parameter.name === 'input') {
-          const url = parameter.part.find(p => p.name === 'url');
-          const ndjsonStatus = await getNdjsonFileStatus(clientId, url.valueUrl);
-          if (ndjsonStatus?.successCount) {
+                }
+              ]
+            };
+            response.entry[0].resource.parameter.push(inputResult);
+          });
+          if (ndjsonStatus.successCount) {
             const successCountResult = {
               name: 'outcome',
               part: [
@@ -206,6 +155,46 @@ async function checkBulkStatus(req, res) {
             };
             response.entry[0].resource.parameter.push(successCountResult);
           }
+        }
+      }
+    } else {
+      response.entry[0].resource.parameter.push({
+        name: 'outcome',
+        part: [
+          {
+            name: 'operationOutcome',
+            resource: {
+              resourceType: 'OperationOutcome',
+              issue: [{ severity: 'information', code: 'informational', details: { text: 'All OK' } }]
+            }
+          }
+        ]
+      });
+      // create success counts for every file
+      for (const output of bulkStatus.importManifest.output) {
+        const url = output.url;
+        const ndjsonStatus = await getNdjsonFileStatus(clientId, url);
+        if (ndjsonStatus?.successCount) {
+          const successCountResult = {
+            name: 'outcome',
+            part: [
+              { name: 'associatedInputUrl', valueUrl: url },
+              {
+                name: 'operationOutcome',
+                resource: {
+                  resourceType: 'OperationOutcome',
+                  issue: [
+                    {
+                      severity: 'information',
+                      code: 'informational',
+                      details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+                    }
+                  ]
+                }
+              }
+            ]
+          };
+          response.entry[0].resource.parameter.push(successCountResult);
         }
       }
     }

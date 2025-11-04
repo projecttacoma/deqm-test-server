@@ -1,6 +1,6 @@
 //@ts-nocheck
 const { checkSupportedResource, checkContentTypeHeader } = require('../../src/util/baseUtils');
-const queue = require('../../src/queue/importQueue');
+import { importQueue } from '../../src/queue/importQueue';
 
 describe('Testing checkSupportedResource', () => {
   test('Does not throw error for supported resource', () => {
@@ -25,7 +25,7 @@ describe('Testing checkSupportedResource', () => {
     }
   });
   afterAll(async () => {
-    await queue.close();
+    await importQueue.close();
   });
 });
 

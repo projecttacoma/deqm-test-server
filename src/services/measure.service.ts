@@ -3,7 +3,6 @@ const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils')
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
-const importQueue = require('../queue/importQueue');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
@@ -17,14 +16,12 @@ const {
   filterPatientByPractitionerFromGroup
 } = require('../util/patientUtils');
 const {
-  addPendingBulkImportRequest,
   findOneResourceWithQuery,
   findResourcesWithQuery,
   findResourceIdsWithQuery,
   findResourceById
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
-const { retrieveInputUrls } = require('../util/exportUtils');
 import logger from '../server/logger';
 const { ScaledCalculation } = require('../queue/execQueue');
 
@@ -119,35 +116,6 @@ const submitData = async (args, { req }) => {
     parameter: parameterEntries
   };
   return responseParams;
-};
-
-/**
- * $bulk-submit-data follows the same workflow as bulk import
- * @param {Object} args the args object passed in by the user
- * @param {Object} req the request object passed in by the user
- */
-const bulkSubmitData = async (args, { req }) => {
-  logger.info('Measure >>> $bulk-submit-data');
-  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
-  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
-
-  // id of inserted client
-  const clientEntry = await addPendingBulkImportRequest(req.body);
-  const res = req.res;
-
-  // retrieve data requirements
-  const inputUrls = retrieveInputUrls(req.body.parameter);
-
-  const jobData = {
-    clientEntry,
-    inputUrls
-  };
-  await importQueue.createJob(jobData).save();
-  res.status(202);
-  res.setHeader(
-    'Content-Location',
-    `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
-  );
 };
 
 /**
@@ -591,7 +559,6 @@ module.exports = {
   update,
   search,
   submitData,
-  bulkSubmitData,
   dataRequirements,
   evaluateMeasure,
   careGaps

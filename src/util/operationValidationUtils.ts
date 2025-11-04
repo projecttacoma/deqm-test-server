@@ -238,7 +238,7 @@ export function gatherParams(query: Record<string, string>, body: fhir4.Paramete
 }
 
 /**
- * Checks that $submit-data/$bulk-submit-data request body contains
+ * Checks that $submit-data request body contains
  * a Parameters resource and the appropriate parameters.
  * @param {Object} body HTTP request body
  */
