@@ -13,7 +13,7 @@ export async function checkBulkStatus(req: any, res: any) {
 
   if (!bulkStatus) {
     // we want to throw an error that it would not find the bulk import request with id
-    throw new NotFoundError(`Could not find bulk import request with id: ${clientId}`);
+    throw new NotFoundError(`Could not find $bulk-submit request with id: ${clientId}`);
   }
 
   // We need to build the export manifest with a TS type that we define since it is not a
