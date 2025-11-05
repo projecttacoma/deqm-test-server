@@ -22,11 +22,13 @@ describe('bulkstatus.service', () => {
         });
     });
 
-    it('returns 200 status for completed request', async () => {
+    it('returns 200 status for completed request and populated output.ndjson', async () => {
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.output[0].url).toBeDefined();
+      const ndjsonResponse = await supertest(server.app).get('/4_0_1/file/COMPLETED_REQUEST/output.ndjson').expect(200);
+      expect(ndjsonResponse.text.includes('informational')).toBeTruthy();
     });
 
     it('returns 200 status and populated errors.ndjson when $bulk-submit failed', async () => {
@@ -34,6 +36,8 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.error[0].url).toBeDefined();
+      const ndjsonResponse = await supertest(server.app).get('/4_0_1/file/ERROR_REQUEST/errors.ndjson').expect(200);
+      expect(ndjsonResponse.text.includes('fatal')).toBeTruthy();
     });
 
     it('returns 200 status for completed request but with one failed outcome', async () => {
@@ -43,6 +47,10 @@ describe('bulkstatus.service', () => {
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.error[0].url).toBeDefined();
+      const ndjsonResponse = await supertest(server.app)
+        .get('/4_0_1/file/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS/errors.ndjson')
+        .expect(200);
+      expect(ndjsonResponse.text.includes('error')).toBeTruthy();
     });
 
     it('returns 404 status for request with unknown ID', async () => {

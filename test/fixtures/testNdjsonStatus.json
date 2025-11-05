@@ -1,7 +1,22 @@
 [
   {
-    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORShttp://localhost:3001/Condition.ndjson",
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORShttp://example.com/Condition",
     "failedOutcomes": ["Test error message"],
+    "successCount": 3
+  },
+  {
+    "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORShttp://example.com/Coverage",
+    "failedOutcomes": [],
+    "successCount": 3
+  },
+  {
+    "id": "COMPLETED_REQUESThttp://example.com/Condition",
+    "failedOutcomes": [],
+    "successCount": 3
+  },
+  {
+    "id": "COMPLETED_REQUESThttp://example.com/Coverage",
+    "failedOutcomes": [],
     "successCount": 3
   }
 ]

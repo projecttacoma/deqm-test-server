@@ -21,8 +21,8 @@ export async function checkBulkStatus(req: any, res: any) {
   // FHIR resource. See https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
   const exportManifest: ExportManifest = {
     transactionTime: new Date() as unknown as string,
-    request: '', // what should I put here?
-    requiresAccessToken: false, // what should I put here?
+    request: bulkStatus.importManifest.request,
+    requiresAccessToken: bulkStatus.importManifest.requiresAccessToken,
     extension: { submissionId: submissionId },
     output: [],
     error: []
@@ -103,6 +103,15 @@ export async function checkBulkStatus(req: any, res: any) {
                   code: 'processing',
                   details: { text: fail }
                 }
+              ],
+              extension: [
+                {
+                  url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
+                  valueRelatedArtifact: {
+                    type: 'documentation',
+                    url: output.url
+                  }
+                }
               ]
             });
           });
@@ -133,6 +142,15 @@ export async function checkBulkStatus(req: any, res: any) {
                 severity: 'information',
                 code: 'informational',
                 details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+              }
+            ],
+            extension: [
+              {
+                url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
+                valueRelatedArtifact: {
+                  type: 'documentation',
+                  url: output.url
+                }
               }
             ]
           });
