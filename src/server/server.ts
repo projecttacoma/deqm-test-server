@@ -6,6 +6,7 @@ const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
 const configResourceCount = require('../controllers/resourcecount.controller');
+import { bulkSubmitStatusController } from '../controllers/bulksubmitstatus.controller';
 const { validateFhir } = require('../util/resourceValidationUtils');
 import logger from './logger';
 /**
@@ -23,6 +24,10 @@ class DEQMServer extends Server {
   }
   enableImportRoute() {
     this.app.post('/:base_version/([$])bulk-submit/', configBulkImport.bulkImport);
+    return this;
+  }
+  enableBulkSubmitStatusRoute() {
+    this.app.post('/:base_version/([$])bulk-submit-status', bulkSubmitStatusController);
     return this;
   }
   enableClientFileRoute() {
@@ -65,6 +70,7 @@ function initialize(config, app) {
     .configurePassport()
     .setPublicDirectory()
     .enableTransactionRoute()
+    .enableBulkSubmitStatusRoute()
     .enableBulkStatusRoute()
     .enableImportRoute()
     .enableClientFileRoute()

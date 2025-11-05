@@ -4,11 +4,22 @@
     "status": "In Progress",
     "error": { "code": null, "message": null },
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output" : []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "PENDING_REQUEST_WITH_FILE_COUNT",
@@ -20,11 +31,22 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output" : []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
@@ -36,12 +58,22 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
@@ -53,12 +85,22 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST",
@@ -66,12 +108,22 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
@@ -79,15 +131,22 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": ["Test error message"],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [{
-        "type" : "Condition",
-        "url" : "http://localhost:3001/Condition.ndjson"
-      }],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "ERROR_REQUEST",
@@ -95,12 +154,22 @@
     "error": { "code": "ErrorCode", "message": "Error Occurred!" },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
@@ -113,11 +182,21 @@
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
-      "transactionTime": "2025-01-01T00:00:00Z",
-      "request" : "https://example.com/$export?_type=Condition",
-      "requiresAccessToken" : false,
-      "output": [],
-      "error": []
-    }
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   }
 ]

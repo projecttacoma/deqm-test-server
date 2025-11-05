@@ -1,0 +1,15 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "example"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "id1"
+    }
+  ]
+}

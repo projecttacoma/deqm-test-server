@@ -19,6 +19,7 @@ export interface ExportManifest {
 
 export interface FileItem {
   url: string;
+  extension?: object;
   type?: string; // may not be present when using organizeOutputBy
   continuesInFile?: string;
   count?: number;
@@ -37,6 +38,7 @@ export interface BulkImportStatus {
   totalResourceCount: number;
   failedOutcomes: string[];
   importManifest: ExportManifest;
+  manifestUrl: string;
   baseUrl: string;
 }
 
@@ -168,8 +170,14 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
  * which can be queried to get updates on the status of the bulk import
  * @returns {string} the id of the inserted client
  */
-export async function addPendingBulkImportRequest(manifest: ExportManifest, clientId: string, baseUrl: string) {
+export async function addPendingBulkImportRequest(
+  manifest: ExportManifest,
+  clientId: string,
+  manifestUrl: string,
+  baseUrl: string
+) {
   const collection = db.collection('bulkImportStatuses');
+
   const bulkImportStatus: BulkImportStatus = {
     id: clientId,
     status: 'In Progress',
@@ -184,6 +192,7 @@ export async function addPendingBulkImportRequest(manifest: ExportManifest, clie
     totalResourceCount: -1,
     failedOutcomes: [],
     importManifest: manifest,
+    manifestUrl: manifestUrl,
     baseUrl: baseUrl
   };
   logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
