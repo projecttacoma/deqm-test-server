@@ -7,7 +7,7 @@ import { Document, Filter } from 'mongodb';
 
 export interface ExportManifest {
   transactionTime: string;
-  request: string;
+  request?: string;
   requiresAccessToken: boolean;
   outputOrganizedBy?: string;
   output: FileItem[];

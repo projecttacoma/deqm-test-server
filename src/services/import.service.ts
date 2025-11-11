@@ -5,7 +5,7 @@ import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
 import { ExportManifest } from '../database/dbOperations';
-import { BadRequestError, ResourceNotFoundError } from '../util/errorUtils';
+import { BadRequestError, InternalError, NotImplementedError, ResourceNotFoundError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -39,7 +39,16 @@ async function bulkImport(req: any, res: any) {
     throw new BadRequestError('Request must include a submissionId parameter.');
   }
   if (!manifestUrl) {
-    throw new BadRequestError('Request must include a manifestUrl parameter.');
+    const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding as
+      | fhir4.Coding
+      | undefined;
+    if (submissionStatus?.code && ['complete', 'aborted'].includes(submissionStatus.code)) {
+      throw new NotImplementedError(
+        'Server does not yet support omission of the manifest url in the case of submission status update.'
+      );
+    } else {
+      throw new BadRequestError('Request must include a manifestUrl parameter or appropriate submission status.');
+    }
   }
   if (!baseUrl) {
     throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
@@ -54,8 +63,12 @@ async function bulkImport(req: any, res: any) {
       throw new ResourceNotFoundError(
         `Was unable to resolve manifest url ${manifestUrl}. Received error: ${error.message}`
       );
-    } else {
+    } else if (e instanceof Error) {
       // Unexpected error
+      throw new InternalError(
+        `Unexpected failed retrieval of manifest at ${manifestUrl} with error message: ${e.message}`
+      );
+    } else {
       throw e;
     }
   }
@@ -74,15 +87,15 @@ async function bulkImport(req: any, res: any) {
     await importQueue.createJob(jobData).save();
   } catch (e) {
     if (e instanceof Error) {
+      // This creates a failed status -> should we return a 500 here instead/as well?
       await failBulkImportRequest(clientEntry, e);
+      throw new InternalError(`Failed job creation for clientEntry ${clientEntry} with error message: ${e.message}`);
+    } else {
+      throw e;
     }
   }
 
-  res.status(202);
-  res.setHeader(
-    'Content-Location',
-    `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/bulkstatus/${clientEntry}`
-  );
+  res.status(200);
   return;
 }
 

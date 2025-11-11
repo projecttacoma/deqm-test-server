@@ -20,7 +20,7 @@ describe('Testing $bulk-submit', () => {
     await client.connect();
   });
 
-  it('Returns 202 on Valid Request with one input', async () => {
+  it('Returns 200 on Valid Request with one input', async () => {
     const mockManifest = {
       transactionTime: '2025-10-29T13:03:52.312Z',
       requiresAccessToken: false,
@@ -44,12 +44,11 @@ describe('Testing $bulk-submit', () => {
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(202)
-      .then(response => {
+      .expect(200)
+      .then(() => {
         expect(axios.get).toHaveBeenCalledWith(
           'http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773'
         );
-        expect(response.headers['content-location']).toBeDefined();
       });
   });
 
@@ -63,7 +62,9 @@ describe('Testing $bulk-submit', () => {
       .expect(400)
       .then(response => {
         expect(response.body.resourceType).toEqual('OperationOutcome');
-        expect(response.body.issue[0].details.text).toEqual('Request must include a manifestUrl parameter.');
+        expect(response.body.issue[0].details.text).toEqual(
+          'Request must include a manifestUrl parameter or appropriate submission status.'
+        );
       });
   });
 
