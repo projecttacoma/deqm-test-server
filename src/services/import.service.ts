@@ -5,7 +5,7 @@ import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
 import { ExportManifest } from '../database/dbOperations';
-import { BadRequestError, NotImplementedError, ResourceNotFoundError } from '../util/errorUtils';
+import { BadRequestError, InternalError, NotImplementedError, ResourceNotFoundError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -63,8 +63,12 @@ async function bulkImport(req: any, res: any) {
       throw new ResourceNotFoundError(
         `Was unable to resolve manifest url ${manifestUrl}. Received error: ${error.message}`
       );
-    } else {
+    } else if (e instanceof Error) {
       // Unexpected error
+      throw new InternalError(
+        `Unexpected failed retrieval of manifest at ${manifestUrl} with error message: ${e.message}`
+      );
+    } else {
       throw e;
     }
   }
@@ -85,6 +89,9 @@ async function bulkImport(req: any, res: any) {
     if (e instanceof Error) {
       // This creates a failed status -> should we return a 500 here instead/as well?
       await failBulkImportRequest(clientEntry, e);
+      throw new InternalError(`Failed job creation for clientEntry ${clientEntry} with error message: ${e.message}`);
+    } else {
+      throw e;
     }
   }
 
