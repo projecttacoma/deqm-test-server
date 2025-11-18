@@ -5,7 +5,7 @@ import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
 import { ExportManifest } from '../database/dbOperations';
-import { BadRequestError, InternalError, NotImplementedError, ResourceNotFoundError } from '../util/errorUtils';
+import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -32,6 +32,7 @@ async function bulkImport(req: any, res: any) {
   const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
   const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
+  const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
   if (!submitter) {
     throw new BadRequestError('Request must include a submitter parameter.');
   }
@@ -39,13 +40,11 @@ async function bulkImport(req: any, res: any) {
     throw new BadRequestError('Request must include a submissionId parameter.');
   }
   if (!manifestUrl) {
-    const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding as
-      | fhir4.Coding
-      | undefined;
-    if (submissionStatus?.code && ['complete', 'aborted'].includes(submissionStatus.code)) {
-      throw new NotImplementedError(
-        'Server does not yet support omission of the manifest url in the case of submission status update.'
-      );
+    if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+      updateStatus(submitter, submissionId, submissionStatus.code);
+      res.status(200);
+      // exit early because there is no manifest to process
+      return;
     } else {
       throw new BadRequestError('Request must include a manifestUrl parameter or appropriate submission status.');
     }
@@ -75,6 +74,9 @@ async function bulkImport(req: any, res: any) {
 
   // ID assigned to the requesting client
   const clientEntry = `${submitter.value}-${submissionId}`;
+  // TODO: May be an existing (must be in progress) clientEntry 
+  // -> if so, update to add new manifest or replace existing manifest
+  // If existing completed/aborted clientEntry, do not update (BadRequest response to the user with existing status)
   await addPendingBulkImportRequest(manifest, clientEntry, manifestUrl, baseUrl);
 
   try {
@@ -95,8 +97,16 @@ async function bulkImport(req: any, res: any) {
     }
   }
 
+  if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+    updateStatus(submitter, submissionId, submissionStatus.code);
+  }
   res.status(200);
   return;
+}
+
+async function updateStatus(submitter: fhir4.Identifier, submissionId: string, code: 'complete'|'aborted'){
+  console.log(`Updating status to "${code}" for ${submitter}-${submissionId}`);
+  // TODO: implement
 }
 
 module.exports = { bulkImport };
