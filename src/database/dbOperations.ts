@@ -42,6 +42,44 @@ export interface BulkImportStatus {
   baseUrl: string;
 }
 
+export interface BulkSubmissionStatus {
+  id: string;
+  status: string;
+  manifestStatuses: BulkImportStatus[]
+}
+
+// Halts all further incoming requests and signals that all requests have been received (so that status responses can finish)
+export async function updateSubmissionStatus(submitter: fhir4.Identifier, submissionId: string, code: 'complete'|'aborted'){
+  const id = `${submitter.value}-${submissionId}`;
+  logger.debug(`Updating status to "${code}" for ${id}`);
+  const collection = db.collection('bulkSubmissionStatuses');
+  const update = {
+    status: code
+  };
+  await collection.findOneAndUpdate({ id: id }, { $set: update });
+}
+
+// Gets existing submission status
+export async function getBulkSubmissionStatus(submitter: fhir4.Identifier, submissionId: string): Promise<BulkSubmissionStatus|undefined>{
+  const id = `${submitter.value}-${submissionId}`;
+  logger.debug(`Searching database for bulkSubmissionStatus ${id}`);
+  const collection = db.collection('bulkSubmissionStatuses');
+  return (await collection.findOne({ id: id })) as unknown as BulkSubmissionStatus;
+}
+
+// Create new bulk submission status
+export async function createBulkSubmissionStatus(submitter: fhir4.Identifier, submissionId: string, submissionStatus?: fhir4.Coding): Promise<BulkSubmissionStatus>{
+  const data: BulkSubmissionStatus = {
+    id: `${submitter.value}-${submissionId}`,
+    status: submissionStatus?.code ?? 'in-progress',
+    manifestStatuses: []
+  };
+  const collection = db.collection('bulkSubmissionStatuses');
+  logger.debug(`Inserting bulkSubmissionStatus ${data.id} into database`);
+  await collection.insertOne(data as Document);
+  return data;
+}
+
 /**
  * creates a new document in the specified collection
  * @param {Object} data the data of the document to be created

@@ -1,5 +1,5 @@
-import { addPendingBulkImportRequest, failBulkImportRequest } from '../database/dbOperations';
-import { checkContentTypeHeader } from '../util/baseUtils';
+import { addPendingBulkImportRequest, createBulkSubmissionStatus, failBulkImportRequest, getBulkSubmissionStatus, updateSubmissionStatus } from '../database/dbOperations';
+import { checkContentTypeHeader, createManifestHash } from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
@@ -41,9 +41,10 @@ async function bulkImport(req: any, res: any) {
   }
   if (!manifestUrl) {
     if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
-      updateStatus(submitter, submissionId, submissionStatus.code);
-      res.status(200);
+      updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
+      
       // exit early because there is no manifest to process
+      res.status(200);
       return;
     } else {
       throw new BadRequestError('Request must include a manifestUrl parameter or appropriate submission status.');
@@ -51,6 +52,17 @@ async function bulkImport(req: any, res: any) {
   }
   if (!baseUrl) {
     throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
+  }
+
+  const bulkSubmissionStatus = await getBulkSubmissionStatus(submitter, submissionId);
+  if(bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete'){
+    throw new BadRequestError(`Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`)
+  }
+  if(!bulkSubmissionStatus){
+    await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
+  } else if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+    // Update submission status to prevent any further incoming requests
+    await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
   }
 
   let manifest: ExportManifest;
@@ -73,40 +85,32 @@ async function bulkImport(req: any, res: any) {
   }
 
   // ID assigned to the requesting client
-  const clientEntry = `${submitter.value}-${submissionId}`;
+  const manifestEntry = createManifestHash(submitter, submissionId, manifestUrl);
   // TODO: May be an existing (must be in progress) clientEntry 
   // -> if so, update to add new manifest or replace existing manifest
   // If existing completed/aborted clientEntry, do not update (BadRequest response to the user with existing status)
-  await addPendingBulkImportRequest(manifest, clientEntry, manifestUrl, baseUrl);
+  await addPendingBulkImportRequest(manifest, manifestEntry, manifestUrl, baseUrl);
 
   try {
     const inputUrls = manifest.output.map(o => o.url);
 
     const jobData = {
-      clientEntry,
+      manifestEntry,
       inputUrls
     };
     await importQueue.createJob(jobData).save();
   } catch (e) {
     if (e instanceof Error) {
       // This creates a failed status -> should we return a 500 here instead/as well?
-      await failBulkImportRequest(clientEntry, e);
-      throw new InternalError(`Failed job creation for clientEntry ${clientEntry} with error message: ${e.message}`);
+      await failBulkImportRequest(manifestEntry, e);
+      throw new InternalError(`Failed job creation for clientEntry ${submitter.value}-${submissionId} using manifest url ${manifestUrl} with error message: ${e.message}`);
     } else {
       throw e;
     }
   }
 
-  if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
-    updateStatus(submitter, submissionId, submissionStatus.code);
-  }
   res.status(200);
   return;
-}
-
-async function updateStatus(submitter: fhir4.Identifier, submissionId: string, code: 'complete'|'aborted'){
-  console.log(`Updating status to "${code}" for ${submitter}-${submissionId}`);
-  // TODO: implement
 }
 
 module.exports = { bulkImport };

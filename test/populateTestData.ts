@@ -43,6 +43,7 @@ const testSetup = async testfixtureList => {
 };
 const bulkStatusSetup = async () => {
   await client.connect();
+  // TODO: Create bulkSubmissionStatuses test resources
   const promises = testStatuses.map(async status => {
     await createTestResource(status, 'bulkImportStatuses');
   });

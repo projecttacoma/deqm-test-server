@@ -31,6 +31,7 @@ export async function bulkSubmitStatus(req: any, res: any) {
 
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
 
+  // TODO: Update what this function does to get a client status
   const bulkStatus = getBulkImportStatus(clientId);
 
   if (!bulkStatus) {
