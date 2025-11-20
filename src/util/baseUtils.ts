@@ -54,9 +54,9 @@ export function getCurrentInstant() {
  * Creates a hash hex value from submitter/submissionId/manifestUrl
  * @returns {string} hash hex that can be used to uniquely identify a manifest for import
  */
-export function createManifestHash(submitter: fhir4.Identifier, submissionId: string, manifestUrl: string) {
+export function createManifestHash(clientId: string, manifestUrl: string) {
   const hash = crypto.createHash('sha256');
-  hash.update(`${submitter.value}${submissionId}${manifestUrl}`, 'utf8');
+  hash.update(`${clientId}${manifestUrl}`, 'utf8');
   return hash.digest('hex');
 }
 

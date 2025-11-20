@@ -1,6 +1,7 @@
 import { db } from './connection';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
+import { createManifestHash } from '../util/baseUtils';
 
 // Created from bulk export output manifest description:
 // https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
@@ -27,6 +28,7 @@ export interface FileItem {
 
 export interface BulkImportStatus {
   id: string;
+  clientId: string;
   status: 'In Progress' | 'Failed' | 'Completed';
   error: {
     code: number | null;
@@ -45,7 +47,6 @@ export interface BulkImportStatus {
 export interface BulkSubmissionStatus {
   id: string;
   status: string;
-  manifestStatuses: BulkImportStatus[]
 }
 
 // Halts all further incoming requests and signals that all requests have been received (so that status responses can finish)
@@ -71,8 +72,7 @@ export async function getBulkSubmissionStatus(submitter: fhir4.Identifier, submi
 export async function createBulkSubmissionStatus(submitter: fhir4.Identifier, submissionId: string, submissionStatus?: fhir4.Coding): Promise<BulkSubmissionStatus>{
   const data: BulkSubmissionStatus = {
     id: `${submitter.value}-${submissionId}`,
-    status: submissionStatus?.code ?? 'in-progress',
-    manifestStatuses: []
+    status: submissionStatus?.code ?? 'in-progress'
   };
   const collection = db.collection('bulkSubmissionStatuses');
   logger.debug(`Inserting bulkSubmissionStatus ${data.id} into database`);
@@ -214,10 +214,15 @@ export async function addPendingBulkImportRequest(
   manifestUrl: string,
   baseUrl: string
 ) {
+  // Reproducible ID assigned for this manifest for the requesting client
+  // TODO: catch error for when this already exists in the db (bad request)
+  const manifestId = createManifestHash(clientId, manifestUrl);
+
   const collection = db.collection('bulkImportStatuses');
 
   const bulkImportStatus: BulkImportStatus = {
-    id: clientId,
+    id: manifestId,
+    clientId: clientId,
     status: 'In Progress',
     error: {
       code: null,
@@ -233,29 +238,29 @@ export async function addPendingBulkImportRequest(
     manifestUrl: manifestUrl,
     baseUrl: baseUrl
   };
-  logger.debug(`Adding a bulkImportStatus for clientId: ${clientId}`);
+  logger.debug(`Adding a bulkImportStatus for clientId ${clientId} with manifestId: ${manifestId}`);
   await collection.insertOne(bulkImportStatus);
-  return clientId;
+  return manifestId;
 }
 
 /**
  * Updates the bulk import status entry for a successful import
- * @param {string} clientId The ID for the bulkImportStatus entry
+ * @param {string} manifestId The ID for the bulkImportStatus entry
  */
-export async function completeBulkImportRequest(clientId: string) {
+export async function completeBulkImportRequest(manifestId: string) {
   const collection = db.collection('bulkImportStatuses');
   const update = {
     status: 'Completed'
   };
-  logger.debug(`Completing bulkImportStatus for clientId: ${clientId}`);
-  await collection.findOneAndUpdate({ id: clientId }, { $set: update });
+  logger.debug(`Completing bulkImportStatus for manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $set: update });
 }
 
 /**
  * Updates the bulk import status entry for a successful import
- * @param {string} clientId The ID for the bulkImportStatus entry
+ * @param {string} manifestId The ID for the bulkImportStatus entry
  */
-export async function failBulkImportRequest(clientId: string, error: Error) {
+export async function failBulkImportRequest(manifestId: string, error: Error) {
   const collection = db.collection('bulkImportStatuses');
   const update = {
     status: 'Failed',
@@ -264,21 +269,21 @@ export async function failBulkImportRequest(clientId: string, error: Error) {
       message: error.message
     }
   };
-  logger.debug(`Failing bulkImportStatus for clientId: ${clientId}`);
-  await collection.findOneAndUpdate({ id: clientId }, { $set: update });
+  logger.debug(`Failing bulkImportStatus for manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $set: update });
 }
 
 /**
  * Pushes an array of error messages to a bulkstatus entry to later be converted to
  * OperationOutcomes and made accessible via ndjson file to requestor
- * @param {String} clientId The id associated with the bulkImport request
+ * @param {String} manifestId The id associated with the bulkImport request
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
  */
-export async function pushBulkFailedOutcomes(clientId: string, failedOutcomes: string[]) {
+export async function pushBulkFailedOutcomes(manifestId: string, failedOutcomes: string[]) {
   const collection = db.collection('bulkImportStatuses');
-  logger.debug(`Pushing failed outcomes to bulkImportStatus with clientId: ${clientId}`);
+  logger.debug(`Pushing failed outcomes to bulkImportStatus with manifestId: ${manifestId}`);
   await collection.findOneAndUpdate(
-    { id: clientId },
+    { id: manifestId },
     { $push: { failedOutcomes: { $each: failedOutcomes } } as Document }
   );
 }
@@ -286,57 +291,57 @@ export async function pushBulkFailedOutcomes(clientId: string, failedOutcomes: s
 /**
  * Pushes an array of error messages to a ndjson status entry to later be converted to
  * OperationOutcomes and made accessible via ndjson file to requestor
- * @param {String} clientId The id associated with the bulkImport request
+ * @param {String} manifestId The id associated with the bulkImport request
  * @param {String} fileUrl The url for the resource ndjson
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
  */
 export async function pushNdjsonFailedOutcomes(
-  clientId: string,
+  manifestId: string,
   fileUrl: string,
   failedOutcomes: string[],
   successCount: number
 ) {
   const collection = db.collection('ndjsonStatuses');
   await collection.insertOne({
-    id: clientId + fileUrl,
+    id: manifestId + fileUrl,
     failedOutcomes: failedOutcomes,
     successCount: successCount
   });
-  return clientId;
+  return manifestId;
 }
 
 /**
  * Wrapper for the findResourceById function that only searches ndjsonStatuses db
- * @param {string} clientId The id signifying the bulk status request
+ * @param {string} manifestId The id signifying the bulk status request
  * @param {string} fileUrl The ndjson fileUrl
  * @returns {Object} The ndjson status entry for the passed in clientId and fileUrl
  */
-export async function getNdjsonFileStatus(clientId: string, fileUrl: string) {
-  const status = await findResourceById(clientId + fileUrl, 'ndjsonStatuses');
+export async function getNdjsonFileStatus(manifestId: string, fileUrl: string) {
+  const status = await findResourceById(manifestId + fileUrl, 'ndjsonStatuses');
   return status;
 }
 
 /**
  * Wrapper for the findResourceById function that only searches bulkImportStatuses db
- * @param {string} clientId The id signifying the bulk status request
+ * @param {string} manifestId The id signifying the bulk status request
  * @returns {Object} The bulkstatus entry for the passed in clientId
  */
-export async function getBulkImportStatus(clientId: string): Promise<BulkImportStatus> {
-  logger.debug(`Retrieving bulkImportStatus with clientId: ${clientId}`);
-  const status = (await findResourceById(clientId, 'bulkImportStatuses')) as unknown as BulkImportStatus;
+export async function getBulkImportStatus(manifestId: string): Promise<BulkImportStatus> {
+  logger.debug(`Retrieving bulkImportStatus with manifestId: ${manifestId}`);
+  const status = (await findResourceById(manifestId, 'bulkImportStatuses')) as unknown as BulkImportStatus;
   return status;
 }
 
 /**
  * Sets the total number of files returned by the export flow to be parsed by the server
- * @param {string} clientId The id signifying the bulk status request
+ * @param {string} manifestId The id signifying the bulk status request
  * @param {number} fileCount The number of output ndjson URLs returned by the export server
  */
-export async function initializeBulkFileCount(clientId: string, fileCount: number, resourceCount: number) {
+export async function initializeBulkFileCount(manifestId: string, fileCount: number, resourceCount: number) {
   const collection = db.collection('bulkImportStatuses');
-  logger.debug(`Initializing bulk file count for bulkImportStatus with clientId: ${clientId}`);
+  logger.debug(`Initializing bulk file count for bulkImportStatus with manifestId: ${manifestId}`);
   await collection.findOneAndUpdate(
-    { id: clientId },
+    { id: manifestId },
     // Set initial exported file/resource counts to their respective totals
     {
       $set: {
@@ -352,30 +357,30 @@ export async function initializeBulkFileCount(clientId: string, fileCount: numbe
 
 /**
  * Decrements the total number of files to process. Occurs after successful uploading of all of one ndjson file
- * @param {string} clientId The id signifying the bulk status request
+ * @param {string} manifestId The id signifying the bulk status request
  * @param {number} resourceCount The number of resources to be subtracted from the exported resource count
  */
-export async function decrementBulkFileCount(clientId: string, resourceCount: number) {
+export async function decrementBulkFileCount(manifestId: string, resourceCount: number) {
   const collection = db.collection('bulkImportStatuses');
   let value;
   if (resourceCount !== -1) {
     // Update both the exported file count and exported resource count
     logger.debug(
-      `Decrementing exportedFileCount and exportedResourceCount for bulkImportStatus with clientId: ${clientId}`
+      `Decrementing exportedFileCount and exportedResourceCount for bulkImportStatus with manifestId: ${manifestId}`
     );
     value = (
       await collection.findOneAndUpdate(
-        { id: clientId },
+        { id: manifestId },
         { $inc: { exportedFileCount: -1, exportedResourceCount: -resourceCount } },
         { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
       )
     ).value;
   } else {
-    logger.debug(`Decrementing exportedFileCount for bulkImportStatus with clientId: ${clientId}`);
+    logger.debug(`Decrementing exportedFileCount for bulkImportStatus with manifestId: ${manifestId}`);
 
     value = (
       await collection.findOneAndUpdate(
-        { id: clientId },
+        { id: manifestId },
         { $inc: { exportedFileCount: -1 } },
         { returnDocument: 'after', projection: { exportedFileCount: true, _id: 0 } }
       )
@@ -384,30 +389,30 @@ export async function decrementBulkFileCount(clientId: string, resourceCount: nu
 
   // Complete import request when file count reaches 0
   if (value?.exportedFileCount === 0) {
-    logger.info(`Completed Import Request for: ${clientId}`);
-    await completeBulkImportRequest(clientId);
+    logger.info(`Completed Import Request for: ${manifestId}`);
+    await completeBulkImportRequest(manifestId);
   }
 }
 
 /**
  * Stores the total number of files successfully processed.
- * @param {string} clientId The id signifying the bulk status request
+ * @param {string} manifestId The id signifying the bulk status request
  * @param {number} resourceCount The number of successfully imported resources
  */
-export async function updateSuccessfulImportCount(clientId: string, count: number) {
+export async function updateSuccessfulImportCount(manifestId: string, count: number) {
   const collection = db.collection('bulkImportStatuses');
-  logger.debug(`Incrementing successCount by ${count} for bulkImportStatus with clientId: ${clientId}`);
+  logger.debug(`Incrementing successCount by ${count} for bulkImportStatus with manifestId: ${manifestId}`);
   await collection.findOneAndUpdate(
-    { id: clientId },
+    { id: manifestId },
     { $inc: { successCount: count } },
     { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
   );
 }
 
-export async function getCurrentSuccessfulImportCount(clientId: string) {
+export async function getCurrentSuccessfulImportCount(manifestId: string) {
   const collection = db.collection('bulkImportStatuses');
-  logger.debug(`Retrieving successCount for bulkImportStatus with clientId: ${clientId}`);
-  const bulkStatus = await collection.findOne({ id: clientId });
+  logger.debug(`Retrieving successCount for bulkImportStatus with manifestId: ${manifestId}`);
+  const bulkStatus = await collection.findOne({ id: manifestId });
   return bulkStatus?.successCount;
 }
 

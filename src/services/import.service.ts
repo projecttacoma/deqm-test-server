@@ -1,5 +1,5 @@
 import { addPendingBulkImportRequest, createBulkSubmissionStatus, failBulkImportRequest, getBulkSubmissionStatus, updateSubmissionStatus } from '../database/dbOperations';
-import { checkContentTypeHeader, createManifestHash } from '../util/baseUtils';
+import { checkContentTypeHeader} from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
@@ -54,13 +54,13 @@ async function bulkImport(req: any, res: any) {
     throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
   }
 
-  const bulkSubmissionStatus = await getBulkSubmissionStatus(submitter, submissionId);
+  let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter, submissionId);
   if(bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete'){
     throw new BadRequestError(`Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`)
   }
   if(!bulkSubmissionStatus){
-    await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
-  } else if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+    bulkSubmissionStatus = await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
+  } else if (submissionStatus?.code === 'complete' || submissionStatus?.code === 'aborted') {
     // Update submission status to prevent any further incoming requests
     await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
   }
@@ -84,13 +84,8 @@ async function bulkImport(req: any, res: any) {
     }
   }
 
-  // ID assigned to the requesting client
-  const manifestEntry = createManifestHash(submitter, submissionId, manifestUrl);
-  // TODO: May be an existing (must be in progress) clientEntry 
-  // -> if so, update to add new manifest or replace existing manifest
-  // If existing completed/aborted clientEntry, do not update (BadRequest response to the user with existing status)
-  await addPendingBulkImportRequest(manifest, manifestEntry, manifestUrl, baseUrl);
-
+  
+  const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
   try {
     const inputUrls = manifest.output.map(o => o.url);
 
