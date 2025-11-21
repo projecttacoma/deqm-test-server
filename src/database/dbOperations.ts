@@ -50,7 +50,11 @@ export interface BulkSubmissionStatus {
 }
 
 // Halts all further incoming requests and signals that all requests have been received (so that status responses can finish)
-export async function updateSubmissionStatus(submitter: fhir4.Identifier, submissionId: string, code: 'complete'|'aborted'){
+export async function updateSubmissionStatus(
+  submitter: fhir4.Identifier,
+  submissionId: string,
+  code: 'complete' | 'aborted'
+) {
   const id = `${submitter.value}-${submissionId}`;
   logger.debug(`Updating status to "${code}" for ${id}`);
   const collection = db.collection('bulkSubmissionStatuses');
@@ -61,15 +65,22 @@ export async function updateSubmissionStatus(submitter: fhir4.Identifier, submis
 }
 
 // Gets existing submission status
-export async function getBulkSubmissionStatus(submitter: fhir4.Identifier, submissionId: string): Promise<BulkSubmissionStatus|undefined>{
-  const id = `${submitter.value}-${submissionId}`;
+export async function getBulkSubmissionStatus(
+  submitterValue: string,
+  submissionId: string
+): Promise<BulkSubmissionStatus | undefined> {
+  const id = `${submitterValue}-${submissionId}`;
   logger.debug(`Searching database for bulkSubmissionStatus ${id}`);
   const collection = db.collection('bulkSubmissionStatuses');
   return (await collection.findOne({ id: id })) as unknown as BulkSubmissionStatus;
 }
 
 // Create new bulk submission status
-export async function createBulkSubmissionStatus(submitter: fhir4.Identifier, submissionId: string, submissionStatus?: fhir4.Coding): Promise<BulkSubmissionStatus>{
+export async function createBulkSubmissionStatus(
+  submitter: fhir4.Identifier,
+  submissionId: string,
+  submissionStatus?: fhir4.Coding
+): Promise<BulkSubmissionStatus> {
   const data: BulkSubmissionStatus = {
     id: `${submitter.value}-${submissionId}`,
     status: submissionStatus?.code ?? 'in-progress'
@@ -322,14 +333,15 @@ export async function getNdjsonFileStatus(manifestId: string, fileUrl: string) {
 }
 
 /**
- * Wrapper for the findResourceById function that only searches bulkImportStatuses db
- * @param {string} manifestId The id signifying the bulk status request
- * @returns {Object} The bulkstatus entry for the passed in clientId
+ * Searches bulkImportStatuses db for all import statuses associated with this submission clientId
+ * @param {string} clientId The id signifying the submitter/submissionId for the bulk submission request
+ * @returns {BulkImportStatus[]} All bulkstatus entries for the passed in clientId
  */
-export async function getBulkImportStatus(manifestId: string): Promise<BulkImportStatus> {
-  logger.debug(`Retrieving bulkImportStatus with manifestId: ${manifestId}`);
-  const status = (await findResourceById(manifestId, 'bulkImportStatuses')) as unknown as BulkImportStatus;
-  return status;
+export async function getBulkImportStatuses(clientId: string): Promise<BulkImportStatus[]> {
+  logger.debug(`Retrieving all bulkImportStatuses with clientId: ${clientId}`);
+  // Find all bulkImportStatuses with matching clientId
+  const collection = db.collection('bulkImportStatuses');
+  return (await collection.find({ clientId: clientId }).toArray()) as unknown as BulkImportStatus[];
 }
 
 /**

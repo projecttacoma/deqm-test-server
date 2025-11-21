@@ -30,7 +30,7 @@ export async function bulkSubmitStatus(req: any, res: any) {
   const clientId = `${submitter.value}-${submissionId}`;
 
   logger.debug(`Retrieving submission status entry for client: ${clientId}`);
-  const submissionStatus = getBulkSubmissionStatus(submitter, submissionId);
+  const submissionStatus = getBulkSubmissionStatus(submitter.value, submissionId);
 
   if (!submissionStatus) {
     logger.debug(`Writing unable to find bulk import request OperationOutcome to file for client: ${clientId}`);

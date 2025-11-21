@@ -1,5 +1,11 @@
-import { addPendingBulkImportRequest, createBulkSubmissionStatus, failBulkImportRequest, getBulkSubmissionStatus, updateSubmissionStatus } from '../database/dbOperations';
-import { checkContentTypeHeader} from '../util/baseUtils';
+import {
+  addPendingBulkImportRequest,
+  createBulkSubmissionStatus,
+  failBulkImportRequest,
+  getBulkSubmissionStatus,
+  updateSubmissionStatus
+} from '../database/dbOperations';
+import { checkContentTypeHeader } from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
@@ -33,8 +39,8 @@ async function bulkImport(req: any, res: any) {
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
   const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
   const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
-  if (!submitter) {
-    throw new BadRequestError('Request must include a submitter parameter.');
+  if (!submitter?.value) {
+    throw new BadRequestError('Request must include a submitter parameter with a value.');
   }
   if (!submissionId) {
     throw new BadRequestError('Request must include a submissionId parameter.');
@@ -42,7 +48,7 @@ async function bulkImport(req: any, res: any) {
   if (!manifestUrl) {
     if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
       updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
-      
+
       // exit early because there is no manifest to process
       res.status(200);
       return;
@@ -54,11 +60,13 @@ async function bulkImport(req: any, res: any) {
     throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
   }
 
-  let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter, submissionId);
-  if(bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete'){
-    throw new BadRequestError(`Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`)
+  let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter.value, submissionId);
+  if (bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete') {
+    throw new BadRequestError(
+      `Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`
+    );
   }
-  if(!bulkSubmissionStatus){
+  if (!bulkSubmissionStatus) {
     bulkSubmissionStatus = await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
   } else if (submissionStatus?.code === 'complete' || submissionStatus?.code === 'aborted') {
     // Update submission status to prevent any further incoming requests
@@ -84,7 +92,6 @@ async function bulkImport(req: any, res: any) {
     }
   }
 
-  
   const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
   try {
     const inputUrls = manifest.output.map(o => o.url);
@@ -98,7 +105,9 @@ async function bulkImport(req: any, res: any) {
     if (e instanceof Error) {
       // This creates a failed status -> should we return a 500 here instead/as well?
       await failBulkImportRequest(manifestEntry, e);
-      throw new InternalError(`Failed job creation for clientEntry ${submitter.value}-${submissionId} using manifest url ${manifestUrl} with error message: ${e.message}`);
+      throw new InternalError(
+        `Failed job creation for clientEntry ${submitter.value}-${submissionId} using manifest url ${manifestUrl} with error message: ${e.message}`
+      );
     } else {
       throw e;
     }

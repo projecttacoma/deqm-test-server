@@ -1,4 +1,9 @@
-import { ExportManifest, getBulkImportStatus, getNdjsonFileStatus } from '../database/dbOperations';
+import {
+  ExportManifest,
+  getBulkImportStatuses,
+  getBulkSubmissionStatus,
+  getNdjsonFileStatus
+} from '../database/dbOperations';
 import logger from '../server/logger';
 import { NotFoundError } from '../util/errorUtils';
 const fs = require('fs');
@@ -8,166 +13,192 @@ const path = require('path');
 export async function checkBulkStatus(req: any, res: any) {
   const clientId: string = req.params.client_id;
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
-  const bulkStatus = await getBulkImportStatus(clientId);
-  const submissionId = clientId.split('-')[1];
-  const urlBase = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${clientId}/`;
 
-  if (!bulkStatus) {
+  const bulkStatuses = await getBulkImportStatuses(clientId);
+  const [submitterValue, submissionId] = clientId.split('-');
+  const submissionStatus = await getBulkSubmissionStatus(submitterValue, submissionId);
+
+  if (!bulkStatuses || bulkStatuses.length === 0) {
     // we want to throw an error that it would not find the bulk import request with id
-    throw new NotFoundError(`Could not find $bulk-submit request with id: ${clientId}`);
+    throw new NotFoundError(`Could not find any import manifests for submission with id: ${clientId}`);
   }
 
-  // We need to build the export manifest with a TS type that we define since it is not a
-  // FHIR resource. See https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
-  const exportManifest: ExportManifest = {
-    transactionTime: new Date() as unknown as string,
-    request: bulkStatus.importManifest.request,
-    requiresAccessToken: bulkStatus.importManifest.requiresAccessToken,
-    extension: { submissionId: submissionId },
-    output: [],
-    error: []
-  };
-
-  if (bulkStatus.status === 'In Progress') {
-    logger.debug(`bulkStatus entry is in progress`);
-    // Bulk Submit Draft IG: "The Data Recipient MAY return a partial export manifest and a
-    // HTTP status of 202 while the submission is incomplete or being processed"
-    res.status(202);
-    // Compute percent of files or resources exported
-    logger.debug(`Calculating bulkStatus percent complete for clientId: ${clientId}`);
-    let percentComplete;
-    // Use file counts for percentage if export server does not record resource counts
-    if (bulkStatus.exportedResourceCount === -1) {
-      percentComplete = (bulkStatus.totalFileCount - bulkStatus.exportedFileCount) / bulkStatus.totalFileCount;
-    } else {
-      percentComplete =
-        (bulkStatus.totalResourceCount - bulkStatus.exportedResourceCount) / bulkStatus.totalResourceCount;
-    }
-    res.set('X-Progress', `${(percentComplete * 100).toFixed(2)}% Done`);
-    res.set('Retry-After', 120);
-  } else if (bulkStatus.status === 'Failed') {
-    // Not sure what the response should be - adding an OperationOutcome to an errors.ndjson
-    // file for now
-    logger.debug(`bulkStatus entry is failed`);
-    res.status(200);
-
-    const operationOutcomeOutput: fhir4.OperationOutcome[] = [
-      {
-        resourceType: 'OperationOutcome',
-        issue: [
-          {
-            severity: 'fatal',
-            code: 'transient',
-            details: {
-              text: bulkStatus.error.message ?? "Internal System Error: '$bulk-submit' request not processed."
-            }
-          }
-        ]
-      }
-    ];
-
-    writeToFile(operationOutcomeOutput, clientId, false);
-
-    exportManifest.error.push({
-      extension: {
-        manifestUrl: bulkStatus.manifestUrl
-      },
-      url: `${urlBase}errors.ndjson`
-    });
-
-    return exportManifest;
-  } else if (bulkStatus.status === 'Completed') {
+  // For submission to finish, it must be marked as complete/aborted and no outstanding in progress imports
+  if (
+    (submissionStatus?.status === 'complete' || submissionStatus?.status === 'aborted') &&
+    !bulkStatuses.some(bs => bs.status === 'In Progress')
+  ) {
+    // We need to build the export manifest with a TS type that we define since it is not a
+    // FHIR resource. See https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
+    const exportManifest: ExportManifest = {
+      transactionTime: new Date() as unknown as string,
+      request: `${req.protocol}://${req.hostname}${req.originalUrl}`,
+      requiresAccessToken: false,
+      extension: { submissionId: submissionId },
+      output: [],
+      error: []
+    };
     // Bulk Submit Draft IG - "the Data Recipient SHALL return an export manifest and
     // a HTTP status of 200"
-    logger.debug(`bulkStatus entry is completed`);
     res.status(200);
+    await bulkStatuses.forEach(async bulkStatus => {
+      const urlBase = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${bulkStatus.id}/`;
+      if (bulkStatus.status === 'Failed') {
+        // Not sure what the response should be - adding an OperationOutcome to an errors.ndjson
+        // file for now
+        logger.debug(`bulkStatus ${bulkStatus.id} entry is failed`);
 
-    // need to look at errors
-    if (bulkStatus.failedOutcomes.length > 0) {
-      logger.debug('bulkStatus entry contains failed outcomes');
-      // We will want to write this errors to an OperationOutcome
-      // ndjson file and then add them to the errors section of
-      // the manifest according to the Bulk Submit Draft IG
-      const operationOutcomesOutput: fhir4.OperationOutcome[] = [];
-      // here we want to write the OperationOutcomes to an ndjson file
-      for (const output of bulkStatus.importManifest.output) {
-        const ndjsonStatus = await getNdjsonFileStatus(clientId, output.url);
-        if (ndjsonStatus) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ndjsonStatus.failedOutcomes.forEach((fail: any) => {
-            operationOutcomesOutput.push({
-              resourceType: 'OperationOutcome',
-              issue: [
-                {
-                  severity: 'error',
-                  code: 'processing',
-                  details: { text: fail }
-                }
-              ],
-              extension: [
-                {
-                  url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
-                  valueRelatedArtifact: {
-                    type: 'documentation',
-                    url: output.url
-                  }
-                }
-              ]
-            });
-          });
-        }
-      }
-      // write array of OperationOutcomes to an ndjson file
-      writeToFile(operationOutcomesOutput, clientId, false);
-
-      // here we want to add an entry to the error array on the export manifest
-      exportManifest.error.push({
-        extension: {
-          manifestUrl: bulkStatus.manifestUrl
-        },
-        url: `${urlBase}errors.ndjson`
-      });
-    } else {
-      // From the Bulk Submit Draft IG: "If there are resources to return,
-      // the Data Recipient SHALL populate the `output` section of the
-      // manifest with one or more files that contain FHIR resources."
-      const operationOutcomesOutput: fhir4.OperationOutcome[] = [];
-      for (const output of bulkStatus.importManifest.output) {
-        const ndjsonStatus = await getNdjsonFileStatus(clientId, output.url);
-        if (ndjsonStatus?.successCount) {
-          operationOutcomesOutput.push({
+        const operationOutcomeOutput: fhir4.OperationOutcome[] = [
+          {
             resourceType: 'OperationOutcome',
             issue: [
               {
-                severity: 'information',
-                code: 'informational',
-                details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
-              }
-            ],
-            extension: [
-              {
-                url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
-                valueRelatedArtifact: {
-                  type: 'documentation',
-                  url: output.url
+                severity: 'fatal',
+                code: 'transient',
+                details: {
+                  text: bulkStatus.error.message ?? "Internal System Error: '$bulk-submit' request not processed."
                 }
               }
             ]
+          }
+        ];
+
+        writeToFile(operationOutcomeOutput, bulkStatus.id, false);
+        exportManifest.error.push({
+          extension: {
+            manifestUrl: bulkStatus.manifestUrl
+          },
+          url: `${urlBase}errors.ndjson`
+        });
+      } else if (bulkStatus.status === 'Completed') {
+        logger.debug(`bulkStatus entry ${bulkStatus.id} is completed`);
+
+        // need to look at errors
+        if (bulkStatus.failedOutcomes.length > 0) {
+          logger.debug('bulkStatus entry contains failed outcomes');
+          // We will want to write this errors to an OperationOutcome
+          // ndjson file and then add them to the errors section of
+          // the manifest according to the Bulk Submit Draft IG
+          const operationOutcomesOutput: fhir4.OperationOutcome[] = [];
+          // here we want to write the OperationOutcomes to an ndjson file
+          for (const output of bulkStatus.importManifest.output) {
+            const ndjsonStatus = await getNdjsonFileStatus(bulkStatus.id, output.url);
+            if (ndjsonStatus) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ndjsonStatus.failedOutcomes.forEach((fail: any) => {
+                operationOutcomesOutput.push({
+                  resourceType: 'OperationOutcome',
+                  issue: [
+                    {
+                      severity: 'error',
+                      code: 'processing',
+                      details: { text: fail }
+                    }
+                  ],
+                  extension: [
+                    {
+                      url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
+                      valueRelatedArtifact: {
+                        type: 'documentation',
+                        url: output.url
+                      }
+                    }
+                  ]
+                });
+              });
+            }
+          }
+          // write array of OperationOutcomes to an ndjson file
+          writeToFile(operationOutcomesOutput, bulkStatus.id, false);
+
+          // here we want to add an entry to the error array on the export manifest
+          exportManifest.error.push({
+            extension: {
+              manifestUrl: bulkStatus.manifestUrl
+            },
+            url: `${urlBase}errors.ndjson`
+          });
+        } else {
+          // TODO: this only triggers if there are no failed outcomes.
+          // Shouldn't we also be adding these informational outcomes for partial success (some failed outcomes, some not)?
+
+          // From the Bulk Submit Draft IG: "If there are resources to return,
+          // the Data Recipient SHALL populate the `output` section of the
+          // manifest with one or more files that contain FHIR resources."
+          const operationOutcomesOutput: fhir4.OperationOutcome[] = [];
+          for (const output of bulkStatus.importManifest.output) {
+            const ndjsonStatus = await getNdjsonFileStatus(bulkStatus.id, output.url);
+            if (ndjsonStatus?.successCount) {
+              operationOutcomesOutput.push({
+                resourceType: 'OperationOutcome',
+                issue: [
+                  {
+                    severity: 'information',
+                    code: 'informational',
+                    details: { text: `Successfully processed ${ndjsonStatus.successCount} rows.` }
+                  }
+                ],
+                extension: [
+                  {
+                    url: 'http://hl7.org/fhir/StructureDefinition/artifact-relatedArtifact',
+                    valueRelatedArtifact: {
+                      type: 'documentation',
+                      url: output.url
+                    }
+                  }
+                ]
+              });
+            }
+          }
+
+          writeToFile(operationOutcomesOutput, bulkStatus.id, true);
+
+          exportManifest.output.push({
+            extension: {
+              manifestUrl: bulkStatus.manifestUrl
+            },
+            url: `${urlBase}output.ndjson`
           });
         }
       }
-
-      writeToFile(operationOutcomesOutput, clientId, true);
-
-      exportManifest.output.push({
-        extension: {
-          manifestUrl: bulkStatus.manifestUrl
-        },
-        url: `${urlBase}output.ndjson`
-      });
-    }
+    });
 
     return exportManifest;
+  } else {
+    // Bulk Submit Draft IG: "The Data Recipient MAY return a partial export manifest and a
+    // HTTP status of 202 while the submission is incomplete or being processed"
+    // future TODO: create partial manifest
+    res.status(202);
+
+    const useFileCount = bulkStatuses.some(bs => bs.exportedResourceCount === -1);
+    let total = 0;
+    let complete = 0;
+    bulkStatuses.forEach(bulkStatus => {
+      if (bulkStatus.status === 'In Progress') {
+        logger.debug(`bulkStatus entry ${bulkStatus.id} is in progress`);
+      }
+      // Note: "exportedFileCount" is actually the number of files remaining to be exported
+      // TODO: rename "exportedFileCount" and "exportedResourceCount"??
+
+      // Use file counts for percentage if export server does not record resource counts
+      if (useFileCount) {
+        complete += bulkStatus.totalFileCount - bulkStatus.exportedFileCount;
+        total += bulkStatus.totalFileCount;
+        logger.debug(
+          `Percent complete for bulkStatus ${bulkStatus.id} is ${(bulkStatus.totalFileCount - bulkStatus.exportedFileCount) / bulkStatus.totalFileCount}`
+        );
+      } else {
+        complete += bulkStatus.totalResourceCount - bulkStatus.exportedResourceCount;
+        total += bulkStatus.totalResourceCount;
+        logger.debug(
+          `Percent complete for bulkStatus ${bulkStatus.id} is ${(bulkStatus.totalResourceCount - bulkStatus.exportedResourceCount) / bulkStatus.totalResourceCount}`
+        );
+      }
+    });
+
+    logger.debug(`Calculating submission percent complete for clientId: ${clientId}`);
+    res.set('X-Progress', `${((complete / total) * 100).toFixed(2)}% Done`);
+    res.set('Retry-After', 120);
   }
 }
 
