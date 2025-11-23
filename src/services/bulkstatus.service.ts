@@ -15,6 +15,7 @@ export async function checkBulkStatus(req: any, res: any) {
   logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
 
   const bulkStatuses = await getBulkImportStatuses(clientId);
+  // TODO: note that this approach does not allow for dashes in the submitter value or submission id
   const [submitterValue, submissionId] = clientId.split('-');
   const submissionStatus = await getBulkSubmissionStatus(submitterValue, submissionId);
 
@@ -41,7 +42,7 @@ export async function checkBulkStatus(req: any, res: any) {
     // Bulk Submit Draft IG - "the Data Recipient SHALL return an export manifest and
     // a HTTP status of 200"
     res.status(200);
-    await bulkStatuses.forEach(async bulkStatus => {
+    for (const bulkStatus of bulkStatuses) {
       const urlBase = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${bulkStatus.id}/`;
       if (bulkStatus.status === 'Failed') {
         // Not sure what the response should be - adding an OperationOutcome to an errors.ndjson
@@ -161,7 +162,7 @@ export async function checkBulkStatus(req: any, res: any) {
           });
         }
       }
-    });
+    }
 
     return exportManifest;
   } else {
