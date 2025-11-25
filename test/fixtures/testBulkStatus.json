@@ -1,6 +1,7 @@
 [
   {
     "id": "PENDING_REQUEST",
+    "clientId": "submitter-PENDING_REQUEST",
     "status": "In Progress",
     "error": { "code": null, "message": null },
     "importManifest": {
@@ -23,6 +24,7 @@
   },
   {
     "id": "PENDING_REQUEST_WITH_FILE_COUNT",
+    "clientId": "submitter-PENDING_REQUEST_WITH_FILE_COUNT",
     "status": "In Progress",
     "totalFileCount": 100,
     "exportedFileCount": 10,
@@ -50,6 +52,7 @@
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
+    "clientId": "submitter-PENDING_REQUEST_WITH_RESOURCE_COUNT",
     "status": "In Progress",
     "totalFileCount": 100,
     "exportedFileCount": 10,
@@ -77,6 +80,7 @@
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
+    "clientId": "submitter-ALMOST_COMPLETE_PENDING_REQUEST",
     "status": "In Progress",
     "totalFileCount": 100,
     "exportedFileCount": 1,
@@ -104,6 +108,7 @@
   },
   {
     "id": "COMPLETED_REQUEST",
+    "clientId": "submitter-COMPLETED_REQUEST",
     "status": "Completed",
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
@@ -127,6 +132,7 @@
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
+    "clientId": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
     "status": "Completed",
     "error": { "code": null, "message": null },
     "failedOutcomes": ["Test error message"],
@@ -150,6 +156,7 @@
   },
   {
     "id": "ERROR_REQUEST",
+    "clientId": "submitter-ERROR_REQUEST",
     "status": "Failed",
     "error": { "code": "ErrorCode", "message": "Error Occurred!" },
     "failedOutcomes": [],
@@ -173,6 +180,7 @@
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
+    "clientId": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
     "status": "Completed",
     "totalFileCount": 100,
     "exportedFileCount": 10,
