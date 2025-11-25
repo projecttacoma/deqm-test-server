@@ -1,5 +1,6 @@
 //@ts-nocheck
 const { db, client } = require('../src/database/connection');
+const testSubmissionStatuses = require('./fixtures/testSubmissionStatus.json');
 const testStatuses = require('./fixtures/testBulkStatus.json');
 const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
@@ -43,7 +44,10 @@ const testSetup = async testfixtureList => {
 };
 const bulkStatusSetup = async () => {
   await client.connect();
-  // TODO: Create bulkSubmissionStatuses test resources
+  const submissions = testSubmissionStatuses.map(async status => {
+    await createTestResource(status, 'bulkSubmissionStatuses');
+  });
+  await Promise.all(submissions);
   const promises = testStatuses.map(async status => {
     await createTestResource(status, 'bulkImportStatuses');
   });
