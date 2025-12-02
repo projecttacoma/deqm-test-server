@@ -9,7 +9,7 @@
 			} 
 		},
 		{
-      "name": "submitter",
+			"name": "submitter",
 			"valueIdentifier": {
 				"value": "ExampleSubmitterValue"
 			}

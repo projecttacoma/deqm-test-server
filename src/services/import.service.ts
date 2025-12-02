@@ -47,7 +47,7 @@ async function bulkImport(req: any, res: any) {
   }
   if (!manifestUrl) {
     if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
-      updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
+      await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
 
       // exit early because there is no manifest to process
       res.status(200);

@@ -2,6 +2,7 @@ import { db } from './connection';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
 import { createManifestHash } from '../util/baseUtils';
+import { BadRequestError } from '../util/errorUtils';
 
 // Created from bulk export output manifest description:
 // https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
@@ -34,9 +35,9 @@ export interface BulkImportStatus {
     code: number | null;
     message: string | null;
   };
-  exportedFileCount: number;
+  filesToExportCount: number;
   totalFileCount: number;
-  exportedResourceCount: number;
+  resourcesToExportCount: number;
   totalResourceCount: number;
   failedOutcomes: string[];
   importManifest: ExportManifest;
@@ -61,7 +62,7 @@ export async function updateSubmissionStatus(
   const update = {
     status: code
   };
-  await collection.findOneAndUpdate({ id: id }, { $set: update });
+  await collection.findOneAndUpdate({ id: id }, { $set: update }, { upsert: true });
 }
 
 // Gets existing submission status
@@ -217,7 +218,7 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
 /**
  * Called as a result of bulkImport request. Adds a new clientId to db
  * which can be queried to get updates on the status of the bulk import
- * @returns {string} the id of the inserted client
+ * @returns {string} the id of the manifest-specific bulk status
  */
 export async function addPendingBulkImportRequest(
   manifest: ExportManifest,
@@ -226,10 +227,16 @@ export async function addPendingBulkImportRequest(
   baseUrl: string
 ) {
   // Reproducible ID assigned for this manifest for the requesting client
-  // TODO: catch error for when this already exists in the db (bad request)
   const manifestId = createManifestHash(clientId, manifestUrl);
 
   const collection = db.collection('bulkImportStatuses');
+
+  const manifestMatches = (await collection.find({ id: manifestId }).toArray()).length;
+  if (manifestMatches > 0) {
+    throw new BadRequestError(
+      `Found an existing match for the passed clientId ${clientId} and manifest url ${manifestUrl}`
+    );
+  }
 
   const bulkImportStatus: BulkImportStatus = {
     id: manifestId,
@@ -240,9 +247,9 @@ export async function addPendingBulkImportRequest(
       message: null
     },
     // Counts for calculating percent of exported files/resources
-    exportedFileCount: -1,
+    filesToExportCount: -1,
     totalFileCount: -1,
-    exportedResourceCount: -1,
+    resourcesToExportCount: -1,
     totalResourceCount: -1,
     failedOutcomes: [],
     importManifest: manifest,
@@ -357,9 +364,9 @@ export async function initializeBulkFileCount(manifestId: string, fileCount: num
     // Set initial exported file/resource counts to their respective totals
     {
       $set: {
-        exportedFileCount: fileCount,
+        filesToExportCount: fileCount,
         totalFileCount: fileCount,
-        exportedResourceCount: resourceCount,
+        resourcesToExportCount: resourceCount,
         totalResourceCount: resourceCount,
         successCount: 0
       }
@@ -378,29 +385,29 @@ export async function decrementBulkFileCount(manifestId: string, resourceCount: 
   if (resourceCount !== -1) {
     // Update both the exported file count and exported resource count
     logger.debug(
-      `Decrementing exportedFileCount and exportedResourceCount for bulkImportStatus with manifestId: ${manifestId}`
+      `Decrementing filesToExportCount and resourcesToExportCount for bulkImportStatus with manifestId: ${manifestId}`
     );
     value = (
       await collection.findOneAndUpdate(
         { id: manifestId },
-        { $inc: { exportedFileCount: -1, exportedResourceCount: -resourceCount } },
-        { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
+        { $inc: { filesToExportCount: -1, resourcesToExportCount: -resourceCount } },
+        { returnDocument: 'after', projection: { filesToExportCount: true, resourcesToExportCount: true, _id: 0 } }
       )
     ).value;
   } else {
-    logger.debug(`Decrementing exportedFileCount for bulkImportStatus with manifestId: ${manifestId}`);
+    logger.debug(`Decrementing filesToExportCount for bulkImportStatus with manifestId: ${manifestId}`);
 
     value = (
       await collection.findOneAndUpdate(
         { id: manifestId },
-        { $inc: { exportedFileCount: -1 } },
-        { returnDocument: 'after', projection: { exportedFileCount: true, _id: 0 } }
+        { $inc: { filesToExportCount: -1 } },
+        { returnDocument: 'after', projection: { filesToExportCount: true, _id: 0 } }
       )
     ).value;
   }
 
   // Complete import request when file count reaches 0
-  if (value?.exportedFileCount === 0) {
+  if (value?.filesToExportCount === 0) {
     logger.info(`Completed Import Request for: ${manifestId}`);
     await completeBulkImportRequest(manifestId);
   }
@@ -417,7 +424,7 @@ export async function updateSuccessfulImportCount(manifestId: string, count: num
   await collection.findOneAndUpdate(
     { id: manifestId },
     { $inc: { successCount: count } },
-    { returnDocument: 'after', projection: { exportedFileCount: true, exportedResourceCount: true, _id: 0 } }
+    { returnDocument: 'after', projection: { filesToExportCount: true, resourcesToExportCount: true, _id: 0 } }
   );
 }
 
