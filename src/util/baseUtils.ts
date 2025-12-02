@@ -51,7 +51,7 @@ export function getCurrentInstant() {
 }
 
 /**
- * Creates a hash hex value from submitter/submissionId/manifestUrl
+ * Creates a hash hex value from clientId (submitter-submissionId) and manifestUrl
  * @returns {string} hash hex that can be used to uniquely identify a manifest for import
  */
 export function createManifestHash(clientId: string, manifestUrl: string) {

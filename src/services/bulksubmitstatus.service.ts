@@ -38,7 +38,9 @@ export async function bulkSubmitStatus(req: any, res: any) {
     throw new NotFoundError(`Could not find submission request with id: ${clientId}`);
   }
 
-  logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(submissionStatus)}`);
+  logger.debug(
+    `Retrieved the following submission status entry for client: ${clientId}. ${JSON.stringify(submissionStatus)}`
+  );
 
   res.status(202);
   res.setHeader(

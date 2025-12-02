@@ -20,7 +20,6 @@ export async function checkBulkStatus(req: any, res: any) {
   const submissionStatus = await getBulkSubmissionStatus(submitterValue, submissionId);
 
   if (!bulkStatuses || bulkStatuses.length === 0) {
-    // we want to throw an error that it would not find the bulk import request with id
     throw new NotFoundError(`Could not find any import manifests for submission with id: ${clientId}`);
   }
 
@@ -77,7 +76,7 @@ export async function checkBulkStatus(req: any, res: any) {
         // need to look at errors
         if (bulkStatus.failedOutcomes.length > 0) {
           logger.debug('bulkStatus entry contains failed outcomes');
-          // We will want to write this errors to an OperationOutcome
+          // We will want to write each error to an OperationOutcome
           // ndjson file and then add them to the errors section of
           // the manifest according to the Bulk Submit Draft IG
           const operationOutcomesOutput: fhir4.OperationOutcome[] = [];
