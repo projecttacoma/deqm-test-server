@@ -30,5 +30,9 @@
   {
     "id": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
     "status": "complete"
+  },
+  {
+    "id": "submitter-IN_PROGRESS",
+    "status": "in-progress"
   }
 ]

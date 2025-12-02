@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const paramOneInput = require('../fixtures/fhir-resources/parameters/paramOneInput.json');
+const paramStatus = require('../fixtures/fhir-resources/parameters/paramStatus.json');
 const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const { client } = require('../../src/database/connection');
@@ -50,6 +51,16 @@ describe('Testing $bulk-submit', () => {
           'http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773'
         );
       });
+  });
+
+  it('Returns 200 on submission status update', async () => {
+    await supertest(server.app)
+      .post('/4_0_1/$bulk-submit')
+      .send(paramStatus)
+      .set('Accept', 'application/json+fhir')
+      .set('content-type', 'application/json+fhir')
+      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
+      .expect(200);
   });
 
   it('Returns 400 on missing manifestUrl', async () => {

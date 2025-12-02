@@ -22,6 +22,15 @@ describe('bulkstatus.service', () => {
         });
     });
 
+    it('returns 202 status for in progress request', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/bulkstatus/submitter-IN_PROGRESS')
+        .expect(202)
+        .then(response => {
+          expect(response.headers['retry-after']).toEqual('120');
+        });
+    });
+
     it('returns 200 status for completed request and populated output.ndjson', async () => {
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/submitter-COMPLETED_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');

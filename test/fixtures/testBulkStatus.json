@@ -206,5 +206,29 @@
     },
     "manifestUrl": "http://example.com/manifest",
     "baseUrl": "http://example.com"
+  },
+  {
+    "id": "IN_PROGRESS",
+    "clientId": "submitter-IN_PROGRESS",
+    "status": "Completed",
+    "error": { "code": null, "message": null },
+    "failedOutcomes": [],
+    "importManifest": {
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
   }
 ]
