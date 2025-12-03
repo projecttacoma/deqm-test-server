@@ -1,0 +1,23 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "manifestUrl",
+      "valueString": "http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773"
+    },
+    {
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "Submission2"
+    },
+    {
+      "name": "FHIRBaseUrl",
+      "valueString": "http://www.exampleFHIRServer.com"
+    }
+  ]
+}

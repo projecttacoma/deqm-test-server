@@ -19,16 +19,16 @@ const importQueue = new Queue('import', {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 importQueue.process(async (job: any) => {
   // Payload of createJob exists on job.data
-  const { clientEntry, inputUrls } = job.data;
-  logger.info(`import-worker-${process.pid}: Processing Request: ${clientEntry}`);
+  const { manifestEntry, inputUrls } = job.data;
+  logger.info(`import-worker-${process.pid}: Processing Request: ${manifestEntry}`);
 
   await client.connect();
   // Call function to get the ndjson files
-  const result = await executeImportWorkflow(clientEntry, inputUrls);
+  const result = await executeImportWorkflow(manifestEntry, inputUrls);
   if (result) {
-    logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${clientEntry}`);
+    logger.info(`import-worker-${process.pid}: Enqueued jobs for: ${manifestEntry}`);
   } else {
-    logger.info(`import-worker-${process.pid}: Failed Import Request: ${clientEntry}`);
+    logger.info(`import-worker-${process.pid}: Failed Import Request: ${manifestEntry}`);
   }
   await client.close();
 });

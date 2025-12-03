@@ -15,7 +15,16 @@ describe('bulkstatus.service', () => {
   describe('checkBulkStatus logic', () => {
     it('returns 202 status for pending request', async () => {
       await supertest(server.app)
-        .get('/4_0_1/bulkstatus/PENDING_REQUEST')
+        .get('/4_0_1/bulkstatus/submitter-PENDING_REQUEST')
+        .expect(202)
+        .then(response => {
+          expect(response.headers['retry-after']).toEqual('120');
+        });
+    });
+
+    it('returns 202 status for in progress request', async () => {
+      await supertest(server.app)
+        .get('/4_0_1/bulkstatus/submitter-IN_PROGRESS')
         .expect(202)
         .then(response => {
           expect(response.headers['retry-after']).toEqual('120');
@@ -23,7 +32,7 @@ describe('bulkstatus.service', () => {
     });
 
     it('returns 200 status for completed request and populated output.ndjson', async () => {
-      const response = await supertest(server.app).get('/4_0_1/bulkstatus/COMPLETED_REQUEST').expect(200);
+      const response = await supertest(server.app).get('/4_0_1/bulkstatus/submitter-COMPLETED_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.output[0].url).toBeDefined();
@@ -32,7 +41,7 @@ describe('bulkstatus.service', () => {
     });
 
     it('returns 200 status and populated errors.ndjson when $bulk-submit failed', async () => {
-      const response = await supertest(server.app).get('/4_0_1/bulkstatus/ERROR_REQUEST').expect(200);
+      const response = await supertest(server.app).get('/4_0_1/bulkstatus/submitter-ERROR_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
       expect(response.body.error[0].url).toBeDefined();
@@ -42,7 +51,7 @@ describe('bulkstatus.service', () => {
 
     it('returns 200 status for completed request but with one failed outcome', async () => {
       const response = await supertest(server.app)
-        .get('/4_0_1/bulkstatus/COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
+        .get('/4_0_1/bulkstatus/submitter-COMPLETED_REQUEST_WITH_RESOURCE_ERRORS')
         .expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
@@ -55,12 +64,12 @@ describe('bulkstatus.service', () => {
 
     it('returns 404 status for request with unknown ID', async () => {
       await supertest(server.app)
-        .get('/4_0_1/bulkstatus/INVALID_ID')
+        .get('/4_0_1/bulkstatus/submitter-INVALID_ID')
         .expect(404)
         .then(response => {
           expect(response.body.issue[0].code).toEqual('NotFound');
           expect(response.body.issue[0].details.text).toEqual(
-            'Could not find $bulk-submit request with id: INVALID_ID'
+            'Could not find any import manifests for submission with id: submitter-INVALID_ID'
           );
         });
     });
@@ -69,7 +78,7 @@ describe('bulkstatus.service', () => {
   describe('Dynamic X-Progress logic', () => {
     test('check X-Progress header calculates percent complete when only file counts are available', async () => {
       await supertest(server.app)
-        .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_FILE_COUNT')
+        .get('/4_0_1/bulkstatus/submitter-PENDING_REQUEST_WITH_FILE_COUNT')
         .expect(202)
         .then(response => {
           // request contains total file count: 100 and exported file count: 10
@@ -79,7 +88,7 @@ describe('bulkstatus.service', () => {
 
     test('check X-Progress header calculates percent complete using resource count when available', async () => {
       await supertest(server.app)
-        .get('/4_0_1/bulkstatus/PENDING_REQUEST_WITH_RESOURCE_COUNT')
+        .get('/4_0_1/bulkstatus/submitter-PENDING_REQUEST_WITH_RESOURCE_COUNT')
         .expect(202)
         .then(response => {
           // request contains total resource count: 500 and exported resource count: 200

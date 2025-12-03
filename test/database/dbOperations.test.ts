@@ -20,9 +20,9 @@ describe('check bulk file count logic', () => {
     const RESOURCE_COUNT = 100;
     await initializeBulkFileCount(CLIENT_ID, FILE_COUNT, RESOURCE_COUNT);
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
-    expect(result.exportedFileCount).toEqual(FILE_COUNT);
+    expect(result.filesToExportCount).toEqual(FILE_COUNT);
     expect(result.totalFileCount).toEqual(FILE_COUNT);
-    expect(result.exportedResourceCount).toEqual(RESOURCE_COUNT);
+    expect(result.resourcesToExportCount).toEqual(RESOURCE_COUNT);
     expect(result.totalResourceCount).toEqual(RESOURCE_COUNT);
   });
 
@@ -34,8 +34,8 @@ describe('check bulk file count logic', () => {
     const EXPECTED_EXPORTED_RESOURCE_COUNT = -1;
     await decrementBulkFileCount(CLIENT_ID, -1);
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
-    expect(result.exportedFileCount).toEqual(EXPECTED_EXPORTED_FILE_COUNT);
-    expect(result.exportedResourceCount).toEqual(EXPECTED_EXPORTED_RESOURCE_COUNT);
+    expect(result.filesToExportCount).toEqual(EXPECTED_EXPORTED_FILE_COUNT);
+    expect(result.resourcesToExportCount).toEqual(EXPECTED_EXPORTED_RESOURCE_COUNT);
   });
 
   test('decrement bulk file count and resource count for a given client id', async () => {
@@ -48,8 +48,8 @@ describe('check bulk file count logic', () => {
     const EXPECTED_EXPORTED_RESOURCE_COUNT = 190;
     await decrementBulkFileCount(CLIENT_ID, NUM_DECREMENTED_RESOURCES);
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
-    expect(result.exportedFileCount).toEqual(EXPECTED_EXPORTED_FILE_COUNT);
-    expect(result.exportedResourceCount).toEqual(EXPECTED_EXPORTED_RESOURCE_COUNT);
+    expect(result.filesToExportCount).toEqual(EXPECTED_EXPORTED_FILE_COUNT);
+    expect(result.resourcesToExportCount).toEqual(EXPECTED_EXPORTED_RESOURCE_COUNT);
   });
 
   test('check bulk import request is completed once exported file count reaches zero', async () => {
@@ -59,8 +59,8 @@ describe('check bulk file count logic', () => {
     await decrementBulkFileCount(CLIENT_ID, NUM_DECREMENTED_RESOURCES);
     const result = await findResourceById(CLIENT_ID, 'bulkImportStatuses');
     expect(result.status).toEqual('Completed');
-    expect(result.exportedFileCount).toEqual(0);
-    expect(result.exportedResourceCount).toEqual(0);
+    expect(result.filesToExportCount).toEqual(0);
+    expect(result.resourcesToExportCount).toEqual(0);
   });
 
   afterAll(cleanUpTest);

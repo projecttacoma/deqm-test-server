@@ -1,11 +1,17 @@
-import { addPendingBulkImportRequest, failBulkImportRequest } from '../database/dbOperations';
+import {
+  addPendingBulkImportRequest,
+  createBulkSubmissionStatus,
+  failBulkImportRequest,
+  getBulkSubmissionStatus,
+  updateSubmissionStatus
+} from '../database/dbOperations';
 import { checkContentTypeHeader } from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
 import { ExportManifest } from '../database/dbOperations';
-import { BadRequestError, InternalError, NotImplementedError, ResourceNotFoundError } from '../util/errorUtils';
+import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -32,26 +38,39 @@ async function bulkImport(req: any, res: any) {
   const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
   const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
-  if (!submitter) {
-    throw new BadRequestError('Request must include a submitter parameter.');
+  const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
+  if (!submitter?.value) {
+    throw new BadRequestError('Request must include a submitter parameter with a value.');
   }
   if (!submissionId) {
     throw new BadRequestError('Request must include a submissionId parameter.');
   }
   if (!manifestUrl) {
-    const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding as
-      | fhir4.Coding
-      | undefined;
-    if (submissionStatus?.code && ['complete', 'aborted'].includes(submissionStatus.code)) {
-      throw new NotImplementedError(
-        'Server does not yet support omission of the manifest url in the case of submission status update.'
-      );
+    if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+      await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
+
+      // exit early because there is no manifest to process
+      res.status(200);
+      return;
     } else {
       throw new BadRequestError('Request must include a manifestUrl parameter or appropriate submission status.');
     }
   }
   if (!baseUrl) {
     throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
+  }
+
+  let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter.value, submissionId);
+  if (bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete') {
+    throw new BadRequestError(
+      `Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`
+    );
+  }
+  if (!bulkSubmissionStatus) {
+    bulkSubmissionStatus = await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
+  } else if (submissionStatus?.code === 'complete' || submissionStatus?.code === 'aborted') {
+    // Update submission status to prevent any further incoming requests
+    await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
   }
 
   let manifest: ExportManifest;
@@ -73,23 +92,22 @@ async function bulkImport(req: any, res: any) {
     }
   }
 
-  // ID assigned to the requesting client
-  const clientEntry = `${submitter.value}-${submissionId}`;
-  await addPendingBulkImportRequest(manifest, clientEntry, manifestUrl, baseUrl);
-
+  const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
   try {
     const inputUrls = manifest.output.map(o => o.url);
 
     const jobData = {
-      clientEntry,
+      manifestEntry,
       inputUrls
     };
     await importQueue.createJob(jobData).save();
   } catch (e) {
     if (e instanceof Error) {
       // This creates a failed status -> should we return a 500 here instead/as well?
-      await failBulkImportRequest(clientEntry, e);
-      throw new InternalError(`Failed job creation for clientEntry ${clientEntry} with error message: ${e.message}`);
+      await failBulkImportRequest(manifestEntry, e);
+      throw new InternalError(
+        `Failed job creation for clientEntry ${submitter.value}-${submissionId} using manifest url ${manifestUrl} with error message: ${e.message}`
+      );
     } else {
       throw e;
     }

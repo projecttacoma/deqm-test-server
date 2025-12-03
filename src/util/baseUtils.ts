@@ -1,6 +1,7 @@
 import { BadRequestError } from './errorUtils';
 import supportedResources from '../server/supportedResources';
 import url from 'url';
+import crypto from 'crypto';
 
 /**
  * Determines whether the passed in resourceType is one supported by our server.
@@ -47,6 +48,16 @@ export function checkContentTypeHeader(requestHeaders: Record<string, string>) {
 export function getCurrentInstant() {
   const event = new Date();
   return event.toISOString();
+}
+
+/**
+ * Creates a hash hex value from clientId (submitter-submissionId) and manifestUrl
+ * @returns {string} hash hex that can be used to uniquely identify a manifest for import
+ */
+export function createManifestHash(clientId: string, manifestUrl: string) {
+  const hash = crypto.createHash('sha256');
+  hash.update(`${clientId}${manifestUrl}`, 'utf8');
+  return hash.digest('hex');
 }
 
 /**

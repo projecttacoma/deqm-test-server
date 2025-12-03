@@ -1,0 +1,22 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "submissionStatus",
+      "valueCoding": {
+        "system": "http://hl7.org/fhir/uv/bulkdata/ValueSet/submission-status",
+        "code": "complete"
+      }
+    },
+    {
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "Submission2"
+    }
+  ]
+}

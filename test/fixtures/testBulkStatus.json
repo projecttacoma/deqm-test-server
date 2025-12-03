@@ -1,6 +1,7 @@
 [
   {
     "id": "PENDING_REQUEST",
+    "clientId": "submitter-PENDING_REQUEST",
     "status": "In Progress",
     "error": { "code": null, "message": null },
     "importManifest": {
@@ -23,11 +24,12 @@
   },
   {
     "id": "PENDING_REQUEST_WITH_FILE_COUNT",
+    "clientId": "submitter-PENDING_REQUEST_WITH_FILE_COUNT",
     "status": "In Progress",
     "totalFileCount": 100,
-    "exportedFileCount": 10,
+    "filesToExportCount": 10,
     "totalResourceCount": -1,
-    "exportedResourceCount": -1,
+    "resourcesToExportCount": -1,
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
@@ -50,11 +52,12 @@
   },
   {
     "id": "PENDING_REQUEST_WITH_RESOURCE_COUNT",
+    "clientId": "submitter-PENDING_REQUEST_WITH_RESOURCE_COUNT",
     "status": "In Progress",
     "totalFileCount": 100,
-    "exportedFileCount": 10,
+    "filesToExportCount": 10,
     "totalResourceCount": 500,
-    "exportedResourceCount": 200,
+    "resourcesToExportCount": 200,
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
@@ -77,11 +80,12 @@
   },
   {
     "id": "ALMOST_COMPLETE_PENDING_REQUEST",
+    "clientId": "submitter-ALMOST_COMPLETE_PENDING_REQUEST",
     "status": "In Progress",
     "totalFileCount": 100,
-    "exportedFileCount": 1,
+    "filesToExportCount": 1,
     "totalResourceCount": 500,
-    "exportedResourceCount": 10,
+    "resourcesToExportCount": 10,
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {
@@ -104,6 +108,7 @@
   },
   {
     "id": "COMPLETED_REQUEST",
+    "clientId": "submitter-COMPLETED_REQUEST",
     "status": "Completed",
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
@@ -127,6 +132,7 @@
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
+    "clientId": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
     "status": "Completed",
     "error": { "code": null, "message": null },
     "failedOutcomes": ["Test error message"],
@@ -150,6 +156,7 @@
   },
   {
     "id": "ERROR_REQUEST",
+    "clientId": "submitter-ERROR_REQUEST",
     "status": "Failed",
     "error": { "code": "ErrorCode", "message": "Error Occurred!" },
     "failedOutcomes": [],
@@ -173,12 +180,37 @@
   },
   {
     "id": "COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
+    "clientId": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
     "status": "Completed",
     "totalFileCount": 100,
-    "exportedFileCount": 10,
+    "filesToExportCount": 10,
     "totalResourceCount": 500,
-    "exportedResourceCount": 200,
+    "resourcesToExportCount": 200,
     "successCount": 200,
+    "error": { "code": null, "message": null },
+    "failedOutcomes": [],
+    "importManifest": {
+      "transactionTime": "2025-10-21T22:15:16.502Z",
+      "request": "https://example.com/$export",
+      "requiresAccessToken": false,
+      "output": [
+        {
+          "type": "Condition",
+          "url": "http://example.com/Condition"
+        },
+        {
+          "type": "Coverage",
+          "url": "http://example.com/Coverage"
+        }
+      ]
+    },
+    "manifestUrl": "http://example.com/manifest",
+    "baseUrl": "http://example.com"
+  },
+  {
+    "id": "IN_PROGRESS",
+    "clientId": "submitter-IN_PROGRESS",
+    "status": "Completed",
     "error": { "code": null, "message": null },
     "failedOutcomes": [],
     "importManifest": {

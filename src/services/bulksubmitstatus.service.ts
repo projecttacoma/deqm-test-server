@@ -1,4 +1,4 @@
-import { getBulkImportStatus } from '../database/dbOperations';
+import { getBulkSubmissionStatus } from '../database/dbOperations';
 import { BadRequestError, NotFoundError } from '../util/errorUtils';
 import logger from '../server/logger';
 
@@ -29,17 +29,18 @@ export async function bulkSubmitStatus(req: any, res: any) {
 
   const clientId = `${submitter.value}-${submissionId}`;
 
-  logger.debug(`Retrieving bulkStatus entry for client: ${clientId}`);
+  logger.debug(`Retrieving submission status entry for client: ${clientId}`);
+  const submissionStatus = getBulkSubmissionStatus(submitter.value, submissionId);
 
-  const bulkStatus = getBulkImportStatus(clientId);
-
-  if (!bulkStatus) {
+  if (!submissionStatus) {
     logger.debug(`Writing unable to find bulk import request OperationOutcome to file for client: ${clientId}`);
 
-    throw new NotFoundError(`Could not find bulk import request with id: ${clientId}`);
+    throw new NotFoundError(`Could not find submission request with id: ${clientId}`);
   }
 
-  logger.debug(`Retrieved the following bulkStatus entry for client: ${clientId}. ${JSON.stringify(bulkStatus)}`);
+  logger.debug(
+    `Retrieved the following submission status entry for client: ${clientId}. ${JSON.stringify(submissionStatus)}`
+  );
 
   res.status(202);
   res.setHeader(
