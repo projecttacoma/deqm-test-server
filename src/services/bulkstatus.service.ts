@@ -176,7 +176,6 @@ export async function checkBulkStatus(req: any, res: any) {
         logger.debug(`bulkStatus entry ${bulkStatus.id} is in progress`);
       }
 
-
       // Use file counts for percentage if export server does not record resource counts
       if (useFileCount) {
         complete += bulkStatus.totalFileCount - bulkStatus.filesToExportCount;
