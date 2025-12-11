@@ -352,6 +352,18 @@ export async function getBulkImportStatuses(clientId: string): Promise<BulkImpor
 }
 
 /**
+ * Searches bulkImportStatuses db for a single import status associated with one manifest
+ * @param {string} manifestId The id identifying a specific manifest for a submitter/submissionId
+ * @returns {BulkImportStatus} Single matching status (or null if not found)
+ */
+export async function getBulkImportStatus(manifestId: string): Promise<BulkImportStatus | null> {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Retrieving successCount for bulkImportStatus with manifestId: ${manifestId}`);
+  const bulkStatus = await collection.findOne({ id: manifestId });
+  return bulkStatus as unknown as BulkImportStatus | null;
+}
+
+/**
  * Sets the total number of files returned by the export flow to be parsed by the server
  * @param {string} manifestId The id signifying the bulk status request
  * @param {number} fileCount The number of output ndjson URLs returned by the export server
