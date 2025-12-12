@@ -46,7 +46,7 @@ export async function checkBulkStatus(req: any, res: any) {
     // a HTTP status of 200"
     res.status(200);
     for (const bulkStatus of bulkStatuses) {
-      const urlBase = `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/file/${bulkStatus.id}/`;
+      const urlBase = `${process.env.BASE_URL}/${req.params.base_version}/file/${bulkStatus.id}/`;
       if (bulkStatus.status === 'Failed') {
         // Not sure what the response should be - adding an OperationOutcome to an errors.ndjson
         // file for now
