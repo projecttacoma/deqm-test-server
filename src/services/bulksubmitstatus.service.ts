@@ -43,9 +43,6 @@ export async function bulkSubmitStatus(req: any, res: any) {
   );
 
   res.status(202);
-  res.setHeader(
-    'Content-Location',
-    `http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}/${req.params.base_version}/bulkstatus/${clientId}`
-  );
+  res.setHeader('Content-Location', `${process.env.BASE_URL}/${req.params.base_version}/bulkstatus/${clientId}`);
   return;
 }
