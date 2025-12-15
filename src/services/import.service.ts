@@ -1,5 +1,6 @@
 import {
   addPendingBulkImportRequest,
+  cancelBulkImport,
   createBulkSubmissionStatus,
   failBulkImportRequest,
   getBulkImportStatus,
@@ -100,6 +101,8 @@ async function bulkImport(req: any, res: any) {
     const existingBulkImportRequest = await getBulkImportStatus(manifestId);
     if (!existingBulkImportRequest) {
       throw new BadRequestError(`Unable to find status for manifest specified for replacement: ${replacesManifestUrl}`);
+    } else {
+      await cancelBulkImport(manifestId);
     }
     // TODO: continue implenting...
     // 1. Stop existing job ... (do we also need to stop the ndjson jobs?, could maybe wait for it to complete)
