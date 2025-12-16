@@ -4,6 +4,7 @@ const { bulkStatusSetup, cleanUpTest } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const bulkSubmitStatusInput = require('../fixtures/fhir-resources/parameters/bulkSubmitStatusInput.json');
+const bulkSubmitStatusMissingStatus = require('../fixtures/fhir-resources/parameters/bulkSubmitStatusMissingStatus.json');
 const bulkSubmitStatusInputMissingSubmitter = require('../fixtures/fhir-resources/parameters/bulkSubmitStatusInputMissingSubmitter.json');
 const bulkSubmitStatusInputMissingSubmissionId = require('../fixtures/fhir-resources/parameters/bulkSubmitStatusInputMissingSubmissionId.json');
 
@@ -26,6 +27,15 @@ describe('bulksubmitstatus.service', () => {
         .then(response => {
           expect(response.headers['content-location']).toBeDefined();
         });
+    });
+
+    it('returns 404 status on submitter/submissionId not in db', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/$bulk-submit-status')
+        .send(bulkSubmitStatusMissingStatus)
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(404);
     });
 
     it('returns 400 status on missing submissionId', async () => {

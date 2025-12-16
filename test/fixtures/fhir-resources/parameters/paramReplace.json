@@ -1,0 +1,27 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "manifestUrl",
+			"valueString": "http://www.exampleFHIRServer.com/bulkstatus/updated"
+    },
+		{
+      "name": "submitter",
+			"valueIdentifier": {
+				"value": "ExampleSubmitterValue"
+			}
+    },
+		{
+      "name": "submissionId",
+			"valueString": "Submission1"
+    },
+		{
+      "name": "FHIRBaseUrl",
+			"valueString": "http://www.exampleFHIRServer.com"
+    },
+    {
+			"name": "replacesManifestUrl",
+			"valueString": "http://www.exampleFHIRServer.com/bulkstatus/toReplace"
+		}
+  ]
+}

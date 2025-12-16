@@ -1,11 +1,13 @@
 import {
   addPendingBulkImportRequest,
+  cancelBulkImport,
   createBulkSubmissionStatus,
   failBulkImportRequest,
+  getBulkImportStatus,
   getBulkSubmissionStatus,
   updateSubmissionStatus
 } from '../database/dbOperations';
-import { checkContentTypeHeader } from '../util/baseUtils';
+import { checkContentTypeHeader, createManifestHash } from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
@@ -39,6 +41,7 @@ async function bulkImport(req: any, res: any) {
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
   const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
   const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
+  const replacesManifestUrl = parameters.parameter?.find(p => p.name === 'replacesManifestUrl')?.valueString;
   if (!submitter?.value) {
     throw new BadRequestError('Request must include a submitter parameter with a value.');
   }
@@ -90,6 +93,27 @@ async function bulkImport(req: any, res: any) {
     } else {
       throw e;
     }
+  }
+
+  // handle manifest url replacement
+  if (replacesManifestUrl) {
+    const manifestId = createManifestHash(bulkSubmissionStatus.id, replacesManifestUrl);
+    const existingBulkImportRequest = await getBulkImportStatus(manifestId);
+    if (!existingBulkImportRequest) {
+      throw new BadRequestError(`Unable to find status for manifest specified for replacement: ${replacesManifestUrl}`);
+    } else {
+      await cancelBulkImport(manifestId);
+    }
+    // TODO: continue implementing...
+    // 1. Stop existing job ... (do we also need to stop the ndjson jobs?, could maybe wait for it to complete but is inefficient)
+    // 2. Remove all resources from existing job
+    // => this is also resource intensive. We would need a job to clean this up
+    // 3. Delete existing bulkImport status?
+
+    // Problem: do we have a way of pulling out already imported ndjson files?
+    // For insert, we're doing a straight updateResource -> would have to find all of cancelled job's imported resource ids and delete
+    // Problem: no current way of looking up existing jobs, might need to store job id information for look up
+    // If we wait for job to finish, might need different handling for waiting vs when the job is already complete at request time
   }
 
   const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
