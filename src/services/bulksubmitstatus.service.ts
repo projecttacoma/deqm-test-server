@@ -33,7 +33,7 @@ export async function bulkSubmitStatus(req: any, res: any) {
   const submissionStatus = await getBulkSubmissionStatus(submitter.value, submissionId);
 
   if (!submissionStatus) {
-    logger.debug(`Unable to find submission status OperationOutcome for client: ${clientId}`);
+    logger.debug(`Unable to find submission status for client: ${clientId}`);
 
     throw new NotFoundError(`Could not find submission request with id: ${clientId}`);
   }
