@@ -12,8 +12,9 @@ const path = require('path');
 const ndjsonQueue = require('./queue/ndjsonProcessQueue');
 
 const app = express();
-app.use(express.json({ limit: '50mb', type: 'application/json+fhir' }));
-app.use(express.json({ limit: '50mb', type: 'application/fhir+json' }));
+app.use(express.json({ limit: '30mb', type: 'application/json' }));
+app.use(express.json({ limit: '30mb', type: 'application/fhir+json' }));
+app.use(express.json({ limit: '30mb', type: 'application/json+fhir' }));
 
 const config = buildConfig();
 const server = initialize(config, app);

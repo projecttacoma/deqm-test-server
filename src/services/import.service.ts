@@ -7,7 +7,7 @@ import {
   getBulkSubmissionStatus,
   updateSubmissionStatus
 } from '../database/dbOperations';
-import { checkContentTypeHeader, createManifestHash } from '../util/baseUtils';
+import { createManifestHash } from '../util/baseUtils';
 import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
@@ -28,8 +28,6 @@ async function bulkImport(req: any, res: any) {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   logger.debug(`Request params: ${JSON.stringify(req.params)}`);
 
-  checkContentTypeHeader(req.headers);
-
   if (!req.body || req.body.resourceType !== 'Parameters') {
     throw new BadRequestError('Did not receive "Parameters" object as part of request body');
   }
@@ -39,7 +37,7 @@ async function bulkImport(req: any, res: any) {
     | undefined;
   const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
-  const baseUrl = parameters.parameter?.find(p => p.name === 'FHIRBaseUrl')?.valueString;
+  const baseUrl = parameters.parameter?.find(p => p.name === 'fhirBaseUrl')?.valueString;
   const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
   const replacesManifestUrl = parameters.parameter?.find(p => p.name === 'replacesManifestUrl')?.valueString;
   if (!submitter?.value) {
@@ -60,7 +58,7 @@ async function bulkImport(req: any, res: any) {
     }
   }
   if (!baseUrl) {
-    throw new BadRequestError('Request must include a FHIRBaseUrl parameter.');
+    throw new BadRequestError('Request must include a fhirBaseUrl parameter.');
   }
 
   let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter.value, submissionId);

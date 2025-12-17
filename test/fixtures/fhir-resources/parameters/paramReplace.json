@@ -3,25 +3,25 @@
   "parameter": [
     {
       "name": "manifestUrl",
-			"valueString": "http://www.exampleFHIRServer.com/bulkstatus/updated"
-    },
-		{
-      "name": "submitter",
-			"valueIdentifier": {
-				"value": "ExampleSubmitterValue"
-			}
-    },
-		{
-      "name": "submissionId",
-			"valueString": "Submission1"
-    },
-		{
-      "name": "FHIRBaseUrl",
-			"valueString": "http://www.exampleFHIRServer.com"
+      "valueString": "http://www.exampleFHIRServer.com/bulkstatus/updated"
     },
     {
-			"name": "replacesManifestUrl",
-			"valueString": "http://www.exampleFHIRServer.com/bulkstatus/toReplace"
-		}
+      "name": "submitter",
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
+    },
+    {
+      "name": "submissionId",
+      "valueString": "Submission1"
+    },
+    {
+      "name": "fhirBaseUrl",
+      "valueString": "http://www.exampleFHIRServer.com"
+    },
+    {
+      "name": "replacesManifestUrl",
+      "valueString": "http://www.exampleFHIRServer.com/bulkstatus/toReplace"
+    }
   ]
 }
