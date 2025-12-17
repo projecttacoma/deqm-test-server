@@ -16,7 +16,7 @@
       "valueString": "Submission2"
     },
     {
-      "name": "FHIRBaseUrl",
+      "name": "fhirBaseUrl",
       "valueString": "http://www.exampleFHIRServer.com"
     }
   ]

@@ -3,17 +3,17 @@
   "parameter": [
     {
       "name": "submitter",
-			"valueIdentifier": {
-				"value": "ExampleSubmitterValue"
-			}
+      "valueIdentifier": {
+        "value": "ExampleSubmitterValue"
+      }
     },
-		{
+    {
       "name": "submissionId",
-			"valueString": "Submission2"
+      "valueString": "Submission2"
     },
-		{
-      "name": "FHIRBaseUrl",
-			"valueString": "http://www.exampleFHIRServer.com"
+    {
+      "name": "fhirBaseUrl",
+      "valueString": "http://www.exampleFHIRServer.com"
     }
   ]
 }

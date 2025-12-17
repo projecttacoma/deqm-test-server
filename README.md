@@ -266,7 +266,7 @@ To kickoff a bulk submit operation, POST a valid FHIR Parameters resource to `ht
 
 - `submitter` (Identifier): identifier that must match a system and code specified by the Data Recipient
 - `submissionId` (string): ID of the submission, must be unique for the `submitter`
-- `FHIRBaseUrl` (string): base url to be used by the Data Recipient when resolving relative references in the submitted resources
+- `fhirBaseUrl` (string): base url to be used by the Data Recipient when resolving relative references in the submitted resources
 
 The server supports the following optional parameters:
 
@@ -293,7 +293,7 @@ Example request body for a POST to `http://localhost:3000/4_0_1/$bulk-submit`:
       "valueString": "Submission2"
     },
     {
-      "name": "FHIRBaseUrl",
+      "name": "fhirBaseUrl",
       "valueString": "http://localhost:3001"
     }
   ]
