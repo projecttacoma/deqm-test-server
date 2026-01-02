@@ -5,6 +5,7 @@ const testStatuses = require('./fixtures/testBulkStatus.json');
 const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
 import { importQueue } from '../src/queue/importQueue';
+import { deleteQueue } from '../src/queue/deleteQueue';
 const { execQueue } = require('../src/queue/execQueue');
 const fs = require('fs');
 
@@ -32,6 +33,7 @@ async function cleanUpTest() {
   if (fs.existsSync('./tmp/UNKNOWN_ERROR_REQUEST')) fs.rmSync('./tmp/UNKNOWN_ERROR_REQUEST', { recursive: true });
   await importQueue.close();
   await execQueue.close();
+  await deleteQueue.close();
 }
 
 const testSetup = async testfixtureList => {

@@ -159,7 +159,7 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
         await job.remove();
         logger.info(`Import job ${jobId} was removed.`);
       } else {
-        logger.error(`Import job ${jobId} not found in the queue.`);
+        logger.info(`Import job ${jobId} not found in the queue (already removed).`);
       }
     })
   );
@@ -171,7 +171,7 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
         await job.remove();
         logger.info(`Ndjson job ${jobId} was removed.`);
       } else {
-        logger.error(`Ndjson job ${jobId} not found in the queue.`);
+        logger.info(`Ndjson job ${jobId} not found in the queue (already removed).`);
       }
     })
   );
