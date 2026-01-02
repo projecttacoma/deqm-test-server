@@ -44,6 +44,12 @@ export interface BulkImportStatus {
   manifestUrl: string;
   baseUrl: string;
   cancelled?: boolean;
+  successfulResources: {
+    resourceType: string;
+    resourceId: string;
+  }[];
+  importJobIds: string[];
+  ndjsonJobIds: string[];
 }
 
 export interface BulkSubmissionStatus {
@@ -255,7 +261,10 @@ export async function addPendingBulkImportRequest(
     failedOutcomes: [],
     importManifest: manifest,
     manifestUrl: manifestUrl,
-    baseUrl: baseUrl
+    baseUrl: baseUrl,
+    successfulResources: [],
+    importJobIds: [],
+    ndjsonJobIds: []
   };
   logger.debug(`Adding a bulkImportStatus for clientId ${clientId} with manifestId: ${manifestId}`);
   await collection.insertOne(bulkImportStatus);
@@ -305,6 +314,44 @@ export async function pushBulkFailedOutcomes(manifestId: string, failedOutcomes:
     { id: manifestId },
     { $push: { failedOutcomes: { $each: failedOutcomes } } as Document }
   );
+}
+
+/**
+ * Pushes a successfully imported resource's basic information to a bulkstatus entry to track
+ * all resources associated with the current manifest bulk import for later delete or auditing
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} resourceType The type associated with the imported resource
+ * @param {String} resourceId The id associated with the imported resource
+ */
+export async function pushSuccessfulResource(manifestId: string, resourceType: string, resourceId: string) {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing successful resource update to bulkImportStatus with manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate(
+    { id: manifestId },
+    { $push: { successfulResources: { resourceType: resourceType, resourceId: resourceId } } as Document }
+  );
+}
+
+/**
+ * Pushes import job information for future lookup
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} resourceId The id associated with the import job
+ */
+export async function pushImportJob(manifestId: string, importId: string) {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing import job id ${importId} to bulkImportStatus with manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $push: { importJobIds: importId } as Document });
+}
+
+/**
+ * Pushes ndjson job information for future lookup
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} ndjsonId The id associated with the ndjson job
+ */
+export async function pushNdjsonJobs(manifestId: string, ndjsonIds: string[]) {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing ndjson job ids to bulkImportStatus with manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $push: { ndjsonJobIds: { $each: ndjsonIds } } as Document });
 }
 
 /**
@@ -428,12 +475,19 @@ export async function decrementBulkFileCount(manifestId: string, resourceCount: 
 }
 
 /**
- * Sets bulk import to cancelled
+ * Sets bulk import to cancelled and returns jobs
  * @param {string} manifestId The id signifying the bulk status request
  */
 export async function cancelBulkImport(manifestId: string) {
   const collection = db.collection('bulkImportStatuses');
-  await collection.findOneAndUpdate({ id: manifestId }, { $set: { cancelled: true } });
+  const updatedDoc = (
+    await collection.findOneAndUpdate(
+      { id: manifestId },
+      { $set: { cancelled: true } },
+      { returnDocument: 'after', projection: { importJobIds: true, ndjsonJobIds: true, _id: 0 } }
+    )
+  ).value;
+  return updatedDoc as unknown as { importJobIds: string[]; ndjsonJobIds: string[] };
 }
 
 /**

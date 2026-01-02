@@ -12,7 +12,7 @@ const ndjsonQueue = new Queue('ndjson', {
 });
 
 ndjsonQueue.on('error', err => {
-  console.log('queue error: ', err);
+  console.log('ndjson queue error: ', err);
 });
 
 export = ndjsonQueue;

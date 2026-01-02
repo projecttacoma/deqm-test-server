@@ -3,7 +3,12 @@
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
 const axios = require('axios');
-const { updateResource, pushBulkFailedOutcomes, pushNdjsonFailedOutcomes } = require('../database/dbOperations');
+const {
+  updateResource,
+  pushBulkFailedOutcomes,
+  pushNdjsonFailedOutcomes,
+  pushSuccessfulResource
+} = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 import logger from './logger';
@@ -82,7 +87,9 @@ ndjsonWorker.process(async job => {
       }
 
       checkSupportedResource(data.resourceType);
-      return updateResource(data.id, data, data.resourceType);
+      const updatedResource = await updateResource(data.id, data, data.resourceType);
+      await pushSuccessfulResource(clientId, data.resourceType, data.id);
+      return updatedResource;
     } catch (e) {
       // Rethrow the error with info on the line number. This fails the async promise and will be collected later.
       throw new Error(`Failed to process entry at row ${index + 1}: ${e.issue?.[0]?.details?.text ?? e.message}`);

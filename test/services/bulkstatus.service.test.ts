@@ -35,7 +35,7 @@ describe('bulkstatus.service', () => {
       const response = await supertest(server.app).get('/4_0_1/bulkstatus/submitter-COMPLETED_REQUEST').expect(200);
       expect(response.headers['content-type']).toEqual('application/json; charset=utf-8');
       expect(response.body).toBeDefined();
-      expect(response.body.output[0].url).toBeDefined();
+      expect(response.body.error[0].url).toBeDefined();
       const ndjsonResponse = await supertest(server.app).get('/4_0_1/file/COMPLETED_REQUEST/output.ndjson').expect(200);
       expect(ndjsonResponse.text.includes('informational')).toBeTruthy();
     });

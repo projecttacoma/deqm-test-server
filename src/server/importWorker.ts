@@ -1,7 +1,7 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 import Queue from 'bee-queue';
-import { failBulkImportRequest, initializeBulkFileCount } from '../database/dbOperations';
+import { failBulkImportRequest, initializeBulkFileCount, pushNdjsonJobs } from '../database/dbOperations';
 import { client } from '../database/connection';
 import ndjsonQueue from '../queue/ndjsonProcessQueue';
 import logger from './logger';
@@ -37,16 +37,20 @@ const executeImportWorkflow = async (clientEntryId: string, inputUrls: string[])
   try {
     await initializeBulkFileCount(clientEntryId, inputUrls.length, -1);
 
-    // Enqueue a parsing job for each ndjson file
-    await ndjsonQueue.saveAll(
-      inputUrls.map(url =>
-        ndjsonQueue.createJob({
-          fileUrl: url,
-          clientId: clientEntryId,
-          resourceCount: -1
-        })
-      )
+    const jobs = inputUrls.map(url =>
+      ndjsonQueue.createJob({
+        fileUrl: url,
+        clientId: clientEntryId,
+        resourceCount: -1
+      })
     );
+    // Enqueue a parsing job for each ndjson file
+    await ndjsonQueue.saveAll(jobs);
+    await pushNdjsonJobs(
+      clientEntryId,
+      jobs.map(job => job.id)
+    );
+
     return true;
   } catch (e) {
     if (e instanceof Error) {
