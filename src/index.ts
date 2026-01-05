@@ -21,7 +21,10 @@ const server = initialize(config, app);
 const workerProcesses = [];
 
 const workerTotal =
-  parseInt(process.env.IMPORT_WORKERS) + parseInt(process.env.NDJSON_WORKERS) + parseInt(process.env.EXEC_WORKERS);
+  parseInt(process.env.IMPORT_WORKERS) +
+  parseInt(process.env.NDJSON_WORKERS) +
+  parseInt(process.env.EXEC_WORKERS) +
+  parseInt(process.env.DELETE_WORKERS);
 
 if (workerTotal > os.cpus().length) {
   logger.warn(`WARNING: Requested to start ${workerTotal} workers with only ${os.cpus().length} available cpus`);
@@ -37,6 +40,10 @@ for (let i = 0; i < process.env.EXEC_WORKERS; i++) {
 
 for (let i = 0; i < process.env.NDJSON_WORKERS; i++) {
   workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'ndjsonWorker')));
+}
+
+for (let i = 0; i < process.env.DELETE_WORKERS; i++) {
+  workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'deleteWorker')));
 }
 // Database updates need to happen from the main process to avoid race conditions for bulk status update
 ndjsonQueue.on('job succeeded', async (jobId, { clientId, resourceCount, successCount }) => {

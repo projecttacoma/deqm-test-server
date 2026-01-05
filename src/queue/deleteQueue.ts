@@ -3,7 +3,7 @@
 import Queue from 'bee-queue';
 
 // Create a new queue to establish new Redis connection
-export const importQueue = new Queue('import', {
+export const deleteQueue = new Queue('delete', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379
@@ -13,6 +13,6 @@ export const importQueue = new Queue('import', {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-importQueue.on('error', (err: any) => {
-  console.log('import queue error: ', err);
+deleteQueue.on('error', (err: any) => {
+  console.log('delete queue error: ', err);
 });

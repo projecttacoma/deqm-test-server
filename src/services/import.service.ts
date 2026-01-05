@@ -12,8 +12,10 @@ import axios from 'axios';
 import { importQueue } from '../queue/importQueue';
 import { AxiosError } from 'axios';
 import logger from '../server/logger';
-import { ExportManifest } from '../database/dbOperations';
+import { ExportManifest, pushImportJob } from '../database/dbOperations';
 import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
+import ndjsonQueue from '../queue/ndjsonProcessQueue';
+import { deleteQueue } from '../queue/deleteQueue';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -100,18 +102,16 @@ async function bulkImport(req: any, res: any) {
     if (!existingBulkImportRequest) {
       throw new BadRequestError(`Unable to find status for manifest specified for replacement: ${replacesManifestUrl}`);
     } else {
-      await cancelBulkImport(manifestId);
+      // Update import status and stop jobs synchronously
+      const jobInformation = await cancelBulkImport(manifestId);
+      await stopJobs(jobInformation);
+      // Then discard data using delete queue
+      const jobData = {
+        manifestId
+      };
+      const deleteJob = await deleteQueue.createJob(jobData).save();
+      logger.debug(`Created delete job with id ${deleteJob.id}`);
     }
-    // TODO: continue implementing...
-    // 1. Stop existing job ... (do we also need to stop the ndjson jobs?, could maybe wait for it to complete but is inefficient)
-    // 2. Remove all resources from existing job
-    // => this is also resource intensive. We would need a job to clean this up
-    // 3. Delete existing bulkImport status?
-
-    // Problem: do we have a way of pulling out already imported ndjson files?
-    // For insert, we're doing a straight updateResource -> would have to find all of cancelled job's imported resource ids and delete
-    // Problem: no current way of looking up existing jobs, might need to store job id information for look up
-    // If we wait for job to finish, might need different handling for waiting vs when the job is already complete at request time
   }
 
   const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
@@ -122,7 +122,9 @@ async function bulkImport(req: any, res: any) {
       manifestEntry,
       inputUrls
     };
-    await importQueue.createJob(jobData).save();
+    const createdJob = await importQueue.createJob(jobData).save();
+    await pushImportJob(manifestEntry, createdJob.id);
+    logger.debug(`Created job with id ${createdJob.id}`);
   } catch (e) {
     if (e instanceof Error) {
       // This creates a failed status -> should we return a 500 here instead/as well?
@@ -137,6 +139,32 @@ async function bulkImport(req: any, res: any) {
 
   res.status(200);
   return;
+}
+async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: string[] }) {
+  const { importJobIds, ndjsonJobIds } = jobInformation;
+  await Promise.all(
+    importJobIds.map(async jobId => {
+      const job = await importQueue.getJob(jobId);
+      if (job) {
+        await job.remove();
+        logger.info(`Import job ${jobId} was removed.`);
+      } else {
+        logger.info(`Import job ${jobId} not found in the queue (already removed).`);
+      }
+    })
+  );
+
+  await Promise.all(
+    ndjsonJobIds.map(async jobId => {
+      const job = await ndjsonQueue.getJob(jobId);
+      if (job) {
+        await job.remove();
+        logger.info(`Ndjson job ${jobId} was removed.`);
+      } else {
+        logger.info(`Ndjson job ${jobId} not found in the queue (already removed).`);
+      }
+    })
+  );
 }
 
 module.exports = { bulkImport };
