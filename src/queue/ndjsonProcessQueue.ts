@@ -7,7 +7,7 @@ const ndjsonQueue = new Queue('ndjson', {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379
   },
-  removeOnSuccess: true,
+  removeOnSuccess: false,
   isWorker: false
 });
 

@@ -46,13 +46,15 @@ for (let i = 0; i < process.env.DELETE_WORKERS; i++) {
   workerProcesses.push(childProcess.fork(path.resolve(__dirname, 'server', 'deleteWorker')));
 }
 // Database updates need to happen from the main process to avoid race conditions for bulk status update
-ndjsonQueue.on('job succeeded', async (jobId, { clientId, resourceCount, successCount }) => {
+ndjsonQueue.on('job succeeded', async (jobId, result) => {
   logger.debug(`ndjson job ${jobId} succeeded`);
-  try {
-    await decrementBulkFileCount(clientId, resourceCount);
-    await updateSuccessfulImportCount(clientId, successCount);
-  } catch (e) {
-    logger.info(`Error processing ndjson-worker message: ${e.message}`);
+  if (result) {
+    try {
+      await decrementBulkFileCount(result.clientId, result.resourceCount);
+      await updateSuccessfulImportCount(result.clientId, result.successCount);
+    } catch (e) {
+      logger.info(`Error processing ndjson-worker message: ${e.message}`);
+    }
   }
 });
 
