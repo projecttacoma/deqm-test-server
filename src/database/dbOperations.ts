@@ -44,10 +44,6 @@ export interface BulkImportStatus {
   manifestUrl: string;
   baseUrl: string;
   cancelled?: boolean;
-  successfulResources: {
-    resourceType: string;
-    resourceId: string;
-  }[];
   importJobIds: string[];
   ndjsonJobIds: string[];
 }
@@ -262,7 +258,6 @@ export async function addPendingBulkImportRequest(
     importManifest: manifest,
     manifestUrl: manifestUrl,
     baseUrl: baseUrl,
-    successfulResources: [],
     importJobIds: [],
     ndjsonJobIds: []
   };
@@ -317,22 +312,6 @@ export async function pushBulkFailedOutcomes(manifestId: string, failedOutcomes:
 }
 
 /**
- * Pushes a successfully imported resource's basic information to a bulkstatus entry to track
- * all resources associated with the current manifest bulk import for later delete or auditing
- * @param {String} manifestId The id associated with the bulkImport request
- * @param {String} resourceType The type associated with the imported resource
- * @param {String} resourceId The id associated with the imported resource
- */
-export async function pushSuccessfulResource(manifestId: string, resourceType: string, resourceId: string) {
-  const collection = db.collection('bulkImportStatuses');
-  logger.debug(`Pushing successful resource update to bulkImportStatus with manifestId: ${manifestId}`);
-  await collection.findOneAndUpdate(
-    { id: manifestId },
-    { $push: { successfulResources: { resourceType: resourceType, resourceId: resourceId } } as Document }
-  );
-}
-
-/**
  * Pushes import job information for future lookup
  * @param {String} manifestId The id associated with the bulkImport request
  * @param {String} resourceId The id associated with the import job
@@ -355,25 +334,94 @@ export async function pushNdjsonJobs(manifestId: string, ndjsonIds: string[]) {
 }
 
 /**
- * Pushes an array of error messages to a ndjson status entry to later be converted to
- * OperationOutcomes and made accessible via ndjson file to requestor
+ * Creates an initial ndjson status to track successfully added resources and failed outcomes (to later be converted to
+ * OperationOutcomes and made accessible via ndjson file to requestor)
  * @param {String} manifestId The id associated with the bulkImport request
  * @param {String} fileUrl The url for the resource ndjson
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
+ * @param {String} jobId The id associated with the ndjson processing job
  */
-export async function pushNdjsonFailedOutcomes(
-  manifestId: string,
-  fileUrl: string,
-  failedOutcomes: string[],
-  successCount: number
-) {
+export async function createNdjsonStatus(manifestId: string, fileUrl: string, failedOutcomes: string[], jobId: string) {
   const collection = db.collection('ndjsonStatuses');
   await collection.insertOne({
     id: manifestId + fileUrl,
     failedOutcomes: failedOutcomes,
-    successCount: successCount
+    successCount: 0,
+    successfulResources: [],
+    jobId: jobId
   });
+
   return manifestId;
+}
+
+/**
+ * Finds the ndjson job associated with the passed ndjson processing job
+ * @param {String} jobId The id associated with the ndjson processing job
+ */
+export async function findNdjsonStatusbyJob(jobId: string) {
+  const collection = db.collection('ndjsonStatuses');
+  const ndjsonStatus = await collection.findOne({ jobId: jobId });
+  return ndjsonStatus;
+}
+
+/**
+ * Updates an initial ndjson status and replaces failedOutcomes
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
+ */
+export async function updateNdjsonFailedOutcomes(manifestId: string, fileUrl: string, failedOutcomes: string[]) {
+  const collection = db.collection('ndjsonStatuses');
+  const update = {
+    failedOutcomes: failedOutcomes
+  };
+  await collection.findOneAndUpdate({ id: manifestId + fileUrl }, { $set: update });
+
+  return manifestId;
+}
+
+/**
+ * Updates an initial ndjson status to add a successfully processed resource
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ * @param {String} resourceType Resource type inserted
+ * @param {String} resourceId Resource id inserted
+ */
+export async function addNdjsonSuccessfulResource(
+  manifestId: string,
+  fileUrl: string,
+  resourceType: string,
+  resourceId: string
+) {
+  const collection = db.collection('ndjsonStatuses');
+  await collection.findOneAndUpdate(
+    { id: manifestId + fileUrl },
+    { $push: { successfulResources: { resourceType: resourceType, resourceId: resourceId } } as Document }
+  );
+
+  return manifestId;
+}
+
+/**
+ * Removes all successfully inserted resources from the database (and updates the successfulResources field to empty)**aggregate together?
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ */
+export async function deleteAllNdjsonSuccessfulResources(manifestId: string, fileUrl: string) {
+  logger.info(`Deleting all successful resources for ndjson with manifestId ${manifestId} and fileUrl: ${fileUrl}`);
+  const collection = db.collection('ndjsonStatuses');
+  const ndjsonStatus = await collection.findOne({ id: manifestId + fileUrl });
+  const resourceList = ndjsonStatus?.successfulResources as { resourceType: string; resourceId: string }[];
+  const deletePromises = resourceList.map(async r => removeResource(r.resourceId, r.resourceType));
+  await Promise.all(deletePromises);
+  await collection.findOneAndUpdate(
+    { id: manifestId + fileUrl },
+    {
+      $set: {
+        successfulResources: []
+      }
+    }
+  );
 }
 
 /**

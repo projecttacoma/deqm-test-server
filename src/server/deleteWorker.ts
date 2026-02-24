@@ -2,7 +2,7 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 const Queue = require('bee-queue');
-const { getBulkImportStatus, removeResource } = require('../database/dbOperations');
+const { removeResource } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 import logger from './logger';
 
@@ -17,12 +17,11 @@ const deleteWorker = new Queue('delete', {
 
 // This handler pulls down the jobs on Redis to handle
 deleteWorker.process(async job => {
-  const { manifestId } = job.data;
-  const cancelledBulkImport = await getBulkImportStatus(manifestId);
-  logger.info(`delete-worker-${process.pid}: processing manifest ${manifestId} deletion`);
+  const { ndjsonStatus } = job.data;
+  logger.info(`delete-worker-${process.pid}: processing deletion for ${ndjsonStatus.id}`);
 
   await mongoUtil.client.connect();
-  const deletePromises = cancelledBulkImport.successfulResources.map(async resource => {
+  const deletePromises = ndjsonStatus.successfulResources.map(async resource => {
     const deleteResult = await removeResource(resource.resourceId, resource.resourceType);
     if (deleteResult.deletedCount === 0) {
       // TODO: should this be captured as a status failure? (return false)
@@ -32,7 +31,7 @@ deleteWorker.process(async job => {
 
   await Promise.all(deletePromises);
   await mongoUtil.client.close();
-  logger.info(`delete-worker-${process.pid}: finished processing manifest ${manifestId} deletion`);
+  logger.info(`delete-worker-${process.pid}: finished processing deletion for ${ndjsonStatus.id}`);
 
   return true;
 });

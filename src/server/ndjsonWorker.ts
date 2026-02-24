@@ -6,12 +6,15 @@ const axios = require('axios');
 const {
   updateResource,
   pushBulkFailedOutcomes,
-  pushNdjsonFailedOutcomes,
-  pushSuccessfulResource
+  createNdjsonStatus,
+  updateNdjsonFailedOutcomes,
+  addNdjsonSuccessfulResource,
+  deleteAllNdjsonSuccessfulResources
 } = require('../database/dbOperations');
 const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 import logger from './logger';
+import { checkCancelled } from '../server/redisClient';
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
@@ -37,8 +40,16 @@ const retrieveNDJSONFromLocation = async url => {
   return data;
 };
 
+const rollBackInsertions = async (manifestId, fileUrl) => {
+  await deleteAllNdjsonSuccessfulResources(manifestId, fileUrl);
+};
+
 // This handler pulls down the jobs on Redis to handle
 ndjsonWorker.process(async job => {
+  if (await checkCancelled(job.id)) {
+    logger.warn('Ndjson job canceled before start');
+    return;
+  }
   const { fileUrl, clientId, resourceCount } = job.data;
 
   const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
@@ -52,29 +63,37 @@ ndjsonWorker.process(async job => {
   } catch (e) {
     const outcome = [`ndjson retrieval of ${fileUrl} failed with message: ${e.message}`];
 
-    await pushNdjsonFailedOutcomes(clientId, fileUrl, outcome);
+    await createNdjsonStatus(clientId, fileUrl, outcome, job.id);
     await pushBulkFailedOutcomes(clientId, outcome);
     process.send({ clientId, resourceCount: 0, successCount: 0 });
     logger.info(`ndjson-worker-${process.pid}: failed to fetch ${fileName}`);
     return { clientId, resourceCount: 0, successCount: 0 };
   }
 
+  await createNdjsonStatus(clientId, fileUrl, [], job.id);
+
   const ndjsonLines = ndjsonResources.split(/\n/);
 
   // keep track of when we hit the first non-empty line
   let firstNonEmptyLine = null;
 
-  const insertions = ndjsonLines.map(async (resourceStr, index) => {
+  const insertions = [];
+  for (let i = 0; i < ndjsonLines.length; i++) {
+    let resourceStr = ndjsonLines[i];
+    if (await checkCancelled(job.id)) {
+      await rollBackInsertions(clientId, fileUrl);
+      return;
+    }
     resourceStr = resourceStr.trim();
 
     // if line is empty skip
     if (resourceStr === '') {
-      return null;
+      insertions.push(null);
     }
 
     // if this is the first non empty line then mark that we found it
     if (firstNonEmptyLine === null) {
-      firstNonEmptyLine = index;
+      firstNonEmptyLine = i;
     }
 
     // attempt to parse the line
@@ -82,19 +101,21 @@ ndjsonWorker.process(async job => {
       const data = JSON.parse(resourceStr);
 
       // check if first non empty line is a Parameters header and skip it
-      if (firstNonEmptyLine === index && data.resourceType === 'Parameters') {
-        return null;
+      if (firstNonEmptyLine === i && data.resourceType === 'Parameters') {
+        insertions.push(null);
       }
 
       checkSupportedResource(data.resourceType);
-      const updatedResource = await updateResource(data.id, data, data.resourceType);
-      await pushSuccessfulResource(clientId, data.resourceType, data.id);
-      return updatedResource;
+      const updatedResourcePromise = await updateResource(data.id, data, data.resourceType);
+      const updatedNdjsonPromise = await addNdjsonSuccessfulResource(clientId, fileUrl, data.resourceType, data.id);
+      const [updatedResource] = await Promise.all([updatedResourcePromise, updatedNdjsonPromise]);
+
+      insertions.push(updatedResource);
     } catch (e) {
       // Rethrow the error with info on the line number. This fails the async promise and will be collected later.
-      throw new Error(`Failed to process entry at row ${index + 1}: ${e.issue?.[0]?.details?.text ?? e.message}`);
+      throw new Error(`Failed to process entry at row ${i + 1}: ${e.issue?.[0]?.details?.text ?? e.message}`);
     }
-  });
+  }
 
   const outcomes = await Promise.allSettled(insertions);
 
@@ -109,7 +130,7 @@ ndjsonWorker.process(async job => {
   const successCount = successfulOutcomes.length;
 
   // keep track of failed outcomes for individual ndjson files
-  await pushNdjsonFailedOutcomes(clientId, fileUrl, outcomeData, successCount);
+  await updateNdjsonFailedOutcomes(clientId, fileUrl, outcomeData, successCount);
 
   await pushBulkFailedOutcomes(clientId, outcomeData);
 

@@ -1,4 +1,4 @@
-// Setup for import queue which pushes jobs to Redis
+// Setup for delete queue which pushes jobs to Redis
 
 import Queue from 'bee-queue';
 

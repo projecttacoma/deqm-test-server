@@ -5,7 +5,8 @@ import {
   failBulkImportRequest,
   getBulkImportStatus,
   getBulkSubmissionStatus,
-  updateSubmissionStatus
+  updateSubmissionStatus,
+  findNdjsonStatusbyJob
 } from '../database/dbOperations';
 import { createManifestHash } from '../util/baseUtils';
 import axios from 'axios';
@@ -16,6 +17,7 @@ import { ExportManifest, pushImportJob } from '../database/dbOperations';
 import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
 import ndjsonQueue from '../queue/ndjsonProcessQueue';
 import { deleteQueue } from '../queue/deleteQueue';
+import { setCancelled } from '../server/redisClient';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -102,15 +104,10 @@ async function bulkImport(req: any, res: any) {
     if (!existingBulkImportRequest) {
       throw new BadRequestError(`Unable to find status for manifest specified for replacement: ${replacesManifestUrl}`);
     } else {
-      // Update import status and stop jobs synchronously
+      // Update import status
       const jobInformation = await cancelBulkImport(manifestId);
+      // stop jobs
       await stopJobs(jobInformation);
-      // Then discard data using delete queue
-      const jobData = {
-        manifestId
-      };
-      const deleteJob = await deleteQueue.createJob(jobData).save();
-      logger.debug(`Created delete job with id ${deleteJob.id}`);
     }
   }
 
@@ -142,8 +139,11 @@ async function bulkImport(req: any, res: any) {
 }
 async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: string[] }) {
   const { importJobIds, ndjsonJobIds } = jobInformation;
+
+  // Prevent the creation of new ndjson jobs
   await Promise.all(
     importJobIds.map(async jobId => {
+      await setCancelled(jobId); //set store cancelled flag for active job
       const job = await importQueue.getJob(jobId);
       if (job) {
         await job.remove();
@@ -154,14 +154,32 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
     })
   );
 
+  // cancel and do rollback according to state
   await Promise.all(
     ndjsonJobIds.map(async jobId => {
       const job = await ndjsonQueue.getJob(jobId);
-      if (job) {
+      if (!job) {
+        throw Error('TODO: This is a problem right, or does it just mean it has been removed from the queue?');
+      }
+
+      // TODO: make sure state doesn't change before if checks
+      const state = job.status;
+      logger.info(`Job state for ${jobId} is ${state}`);
+      if (['waiting', 'delayed', 'stalled'].includes(state)) {
         await job.remove();
-        logger.info(`Ndjson job ${jobId} was removed.`);
-      } else {
-        logger.info(`Ndjson job ${jobId} not found in the queue (already removed).`);
+        logger.info(`Ndjson job ${jobId} was cancelled before processing.`);
+      } else if (['failed', 'succeeded'].includes(state)) {
+        // Then discard data using delete queue
+        const ndjsonStatus = findNdjsonStatusbyJob(jobId);
+        const jobData = {
+          ndjsonStatus: ndjsonStatus
+        };
+        const deleteJob = await deleteQueue.createJob(jobData).save();
+        logger.info(`Created delete job with id ${deleteJob.id}`);
+        logger.info(`Ndjson job ${jobId} was cancelled after processing.`);
+      } else if (state === 'active') {
+        await setCancelled(jobId); //set store cancelled flag
+        logger.info(`Ndjson job ${jobId} was cancelled during processing.`);
       }
     })
   );

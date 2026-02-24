@@ -5,6 +5,7 @@ import { failBulkImportRequest, initializeBulkFileCount, pushNdjsonJobs } from '
 import { client } from '../database/connection';
 import ndjsonQueue from '../queue/ndjsonProcessQueue';
 import logger from './logger';
+import { checkCancelled } from '../server/redisClient';
 
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
@@ -18,6 +19,9 @@ const importQueue = new Queue('import', {
 // TODO: Update using bee-queue types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 importQueue.process(async (job: any) => {
+  if (await checkCancelled(job.id)) {
+    throw new Error('Import job canceled before start');
+  }
   // Payload of createJob exists on job.data
   const { manifestEntry, inputUrls } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${manifestEntry}`);
