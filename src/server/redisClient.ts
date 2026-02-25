@@ -13,6 +13,12 @@ export async function setCancelled(jobId: string) {
   redisClient.set(`job:${jobId}:canceled`, '1');
 }
 
+export async function closeRedisConnection() {
+  if (redisClient) {
+    await redisClient.close();
+  }
+}
+
 async function createConnection() {
   if (!redisClient) {
     const client = createClient({

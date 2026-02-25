@@ -156,39 +156,32 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
     })
   );
 
-  logger.info(`Ndjson job ids: ${ndjsonJobIds.join(', ')}`);
-  // logger.info(`Check health: ${await ndjsonQueue.checkHealth()}`);
-  const counts = await ndjsonQueue.checkHealth();
-  console.log('job state counts:', counts);
-  logger.info(
-    await Promise.all(
-      ndjsonJobIds.map(async jobId => {
-        const job = await ndjsonQueue.getJob(jobId);
-        return `Job with id ${job.id} has status ${job.status}`;
-      })
-    )
-  );
+  // TODO: handle paging - page size defaults to 100
+  const jobPromises = [
+    ndjsonQueue.getJobs('waiting'),
+    ndjsonQueue.getJobs('delayed'),
+    ndjsonQueue.getJobs('failed'),
+    ndjsonQueue.getJobs('succeeded'),
+    ndjsonQueue.getJobs('active')
+  ];
 
-  // TODO: page size defaults to 100
-  // TODO: make sure there isn't a race between the following logic
-  ndjsonQueue.getJobs('waiting').then((jobs: Job<NDJSONJobDataType>[]) => {
-    jobs
+  Promise.all(jobPromises).then((results: Job<NDJSONJobDataType>[][]) => {
+    const waitingIds = results[0];
+    const delayedIds = results[1];
+    const failedIds = results[2];
+    const succeededIds = results[3];
+    const activeIds = results[4];
+
+    waitingIds
+      .concat(delayedIds)
       .filter(job => ndjsonJobIds.includes(job.id))
       .map(async job => {
         await job.remove();
-        logger.info(`Ndjson job ${job.id} was cancelled from waiting before processing.`);
+        logger.info(`Ndjson job ${job.id} was cancelled before processing.`);
       });
-  });
-  ndjsonQueue.getJobs('delayed').then((jobs: Job<NDJSONJobDataType>[]) => {
-    jobs
-      .filter(job => ndjsonJobIds.includes(job.id))
-      .map(async job => {
-        await job.remove();
-        logger.info(`Ndjson job ${job.id} was cancelled from delayed before processing.`);
-      });
-  });
-  ndjsonQueue.getJobs('failed').then((jobs: Job<NDJSONJobDataType>[]) => {
-    jobs
+
+    failedIds
+      .concat(succeededIds)
       .filter(job => ndjsonJobIds.includes(job.id))
       .map(async job => {
         // Then discard data using delete queue
@@ -198,65 +191,16 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
         };
         const deleteJob = await deleteQueue.createJob(jobData).save();
         logger.info(`Created delete job with id ${deleteJob.id}`);
-        logger.info(`Ndjson job ${job.id} was cancelled after failed processing.`);
+        logger.info(`Ndjson job ${job.id} was cancelled after processing.`);
       });
-  });
-  ndjsonQueue.getJobs('succeeded').then((jobs: Job<NDJSONJobDataType>[]) => {
-    jobs
-      .filter(job => ndjsonJobIds.includes(job.id))
-      .map(async job => {
-        // Then discard data using delete queue
-        const ndjsonStatus = await getNdjsonFileStatus(job.data.clientId, job.data.fileUrl);
-        const jobData = {
-          ndjsonStatus: ndjsonStatus
-        };
-        const deleteJob = await deleteQueue.createJob(jobData).save();
-        logger.info(`Created delete job with id ${deleteJob.id}`);
-        logger.info(`Ndjson job ${job.id} was cancelled after successful processing.`);
-      });
-  });
-  ndjsonQueue.getJobs('active').then((jobs: Job<NDJSONJobDataType>[]) => {
-    jobs
+
+    activeIds
       .filter(job => ndjsonJobIds.includes(job.id))
       .map(async job => {
         await setCancelled(job.id); //set store cancelled flag
         logger.info(`Ndjson job ${job.id} was cancelled during processing.`);
       });
   });
-
-  // cancel and do rollback according to state
-  // await Promise.all(
-  //   ndjsonJobIds.map(async jobId => {
-  //     const job = await ndjsonQueue.getJob(jobId);
-  //     if (!job) {
-  //       throw Error('TODO: This is a problem right, or does it just mean it has been removed from the queue?');
-  //     }
-
-  //     // // TODO: make sure state doesn't change before if checks
-  //     let state;
-  //     if (await job.isInSet('waiting')){
-  //       state = 'waiting'
-  //     }
-  //     logger.info(`Job state for ${jobId} is ${state}`);
-  //     if (['waiting', 'delayed', 'stalled'].includes(state)) {
-  //       await job.remove();
-  //       logger.info(`Ndjson job ${jobId} was cancelled before processing.`);
-  //     } else if (['failed', 'succeeded'].includes(state)) {
-  //       // Then discard data using delete queue
-  //       // TODO: can probably do this using the job data instead
-  //       const ndjsonStatus = await findNdjsonStatusbyJob(jobId);
-  //       const jobData = {
-  //         ndjsonStatus: ndjsonStatus
-  //       };
-  //       const deleteJob = await deleteQueue.createJob(jobData).save();
-  //       logger.info(`Created delete job with id ${deleteJob.id}`);
-  //       logger.info(`Ndjson job ${jobId} was cancelled after processing.`);
-  //     } else if (state === 'active') {
-  //       await setCancelled(jobId); //set store cancelled flag
-  //       logger.info(`Ndjson job ${jobId} was cancelled during processing.`);
-  //     }
-  //   })
-  // );
 }
 
 interface NDJSONJobDataType {

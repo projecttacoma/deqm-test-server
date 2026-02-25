@@ -24,7 +24,6 @@ deleteWorker.process(async job => {
   const deletePromises = ndjsonStatus.successfulResources.map(async resource => {
     const deleteResult = await removeResource(resource.resourceId, resource.resourceType);
     if (deleteResult.deletedCount === 0) {
-      // TODO: should this be captured as a status failure? (return false)
       throw new Error(`Failed to delete resource ${resource.resourceType}/${resource.resourceId}`);
     }
   });

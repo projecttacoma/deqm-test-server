@@ -8,6 +8,7 @@ import { importQueue } from '../src/queue/importQueue';
 import { deleteQueue } from '../src/queue/deleteQueue';
 const { execQueue } = require('../src/queue/execQueue');
 import ndjsonQueue from '../src/queue/ndjsonProcessQueue';
+import { closeRedisConnection } from '../src/server/redisClient';
 const fs = require('fs');
 
 const createTestResource = async (data, resourceType) => {
@@ -36,6 +37,7 @@ async function cleanUpTest() {
   await ndjsonQueue.close();
   await execQueue.close();
   await deleteQueue.close();
+  await closeRedisConnection();
 }
 
 const testSetup = async testfixtureList => {
