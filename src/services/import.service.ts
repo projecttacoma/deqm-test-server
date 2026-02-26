@@ -6,7 +6,6 @@ import {
   getBulkImportStatus,
   getBulkSubmissionStatus,
   updateSubmissionStatus,
-  // findNdjsonStatusbyJob,
   getNdjsonFileStatus
 } from '../database/dbOperations';
 import { createManifestHash } from '../util/baseUtils';

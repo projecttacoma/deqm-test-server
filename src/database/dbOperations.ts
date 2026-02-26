@@ -339,29 +339,17 @@ export async function pushNdjsonJobs(manifestId: string, ndjsonIds: string[]) {
  * @param {String} manifestId The id associated with the bulkImport request
  * @param {String} fileUrl The url for the resource ndjson
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
- * @param {String} jobId The id associated with the ndjson processing job
  */
-export async function createNdjsonStatus(manifestId: string, fileUrl: string, failedOutcomes: string[], jobId: string) {
+export async function createNdjsonStatus(manifestId: string, fileUrl: string, failedOutcomes: string[]) {
   const collection = db.collection('ndjsonStatuses');
   await collection.insertOne({
     id: manifestId + fileUrl,
     failedOutcomes: failedOutcomes,
     successCount: 0,
-    successfulResources: [],
-    jobId: jobId
+    successfulResources: []
   });
 
   return manifestId;
-}
-
-/**
- * Finds the ndjson job associated with the passed ndjson processing job
- * @param {String} jobId The id associated with the ndjson processing job
- */
-export async function findNdjsonStatusbyJob(jobId: string) {
-  const collection = db.collection('ndjsonStatuses');
-  const ndjsonStatus = await collection.findOne({ jobId: jobId });
-  return ndjsonStatus;
 }
 
 /**
