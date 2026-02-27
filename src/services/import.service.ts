@@ -155,7 +155,7 @@ async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: 
     })
   );
 
-  // TODO: handle paging - page size defaults to 100
+  // TODO: handle paging - page size seems to default to 100
   const jobPromises = [
     ndjsonQueue.getJobs('waiting'),
     ndjsonQueue.getJobs('delayed'),
