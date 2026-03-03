@@ -1,10 +1,11 @@
 // Sets up queue which processes the jobs pushed to Redis
 // This queue is run in a child process when the server is started
 import Queue from 'bee-queue';
-import { failBulkImportRequest, initializeBulkFileCount } from '../database/dbOperations';
+import { failBulkImportRequest, initializeBulkFileCount, pushNdjsonJobs } from '../database/dbOperations';
 import { client } from '../database/connection';
 import ndjsonQueue from '../queue/ndjsonProcessQueue';
 import logger from './logger';
+import { checkCancelled } from '../server/redisClient';
 
 logger.info(`import-worker-${process.pid}: Import Worker Started!`);
 const importQueue = new Queue('import', {
@@ -18,6 +19,9 @@ const importQueue = new Queue('import', {
 // TODO: Update using bee-queue types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 importQueue.process(async (job: any) => {
+  if (await checkCancelled(job.id)) {
+    throw new Error('Import job canceled before start');
+  }
   // Payload of createJob exists on job.data
   const { manifestEntry, inputUrls } = job.data;
   logger.info(`import-worker-${process.pid}: Processing Request: ${manifestEntry}`);
@@ -37,16 +41,20 @@ const executeImportWorkflow = async (clientEntryId: string, inputUrls: string[])
   try {
     await initializeBulkFileCount(clientEntryId, inputUrls.length, -1);
 
-    // Enqueue a parsing job for each ndjson file
-    await ndjsonQueue.saveAll(
-      inputUrls.map(url =>
-        ndjsonQueue.createJob({
-          fileUrl: url,
-          clientId: clientEntryId,
-          resourceCount: -1
-        })
-      )
+    const jobs = inputUrls.map(url =>
+      ndjsonQueue.createJob({
+        fileUrl: url,
+        clientId: clientEntryId,
+        resourceCount: -1
+      })
     );
+    // Enqueue a parsing job for each ndjson file
+    await ndjsonQueue.saveAll(jobs);
+    await pushNdjsonJobs(
+      clientEntryId,
+      jobs.map(job => job.id)
+    );
+
     return true;
   } catch (e) {
     if (e instanceof Error) {

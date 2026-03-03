@@ -44,6 +44,8 @@ export interface BulkImportStatus {
   manifestUrl: string;
   baseUrl: string;
   cancelled?: boolean;
+  importJobIds: string[];
+  ndjsonJobIds: string[];
 }
 
 export interface BulkSubmissionStatus {
@@ -255,7 +257,9 @@ export async function addPendingBulkImportRequest(
     failedOutcomes: [],
     importManifest: manifest,
     manifestUrl: manifestUrl,
-    baseUrl: baseUrl
+    baseUrl: baseUrl,
+    importJobIds: [],
+    ndjsonJobIds: []
   };
   logger.debug(`Adding a bulkImportStatus for clientId ${clientId} with manifestId: ${manifestId}`);
   await collection.insertOne(bulkImportStatus);
@@ -308,25 +312,104 @@ export async function pushBulkFailedOutcomes(manifestId: string, failedOutcomes:
 }
 
 /**
- * Pushes an array of error messages to a ndjson status entry to later be converted to
- * OperationOutcomes and made accessible via ndjson file to requestor
+ * Pushes import job information for future lookup
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} resourceId The id associated with the import job
+ */
+export async function pushImportJob(manifestId: string, importId: string) {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing import job id ${importId} to bulkImportStatus with manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $push: { importJobIds: importId } as Document });
+}
+
+/**
+ * Pushes ndjson job information for future lookup
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} ndjsonId The id associated with the ndjson job
+ */
+export async function pushNdjsonJobs(manifestId: string, ndjsonIds: string[]) {
+  const collection = db.collection('bulkImportStatuses');
+  logger.debug(`Pushing ndjson job ids to bulkImportStatus with manifestId: ${manifestId}`);
+  await collection.findOneAndUpdate({ id: manifestId }, { $push: { ndjsonJobIds: { $each: ndjsonIds } } as Document });
+}
+
+/**
+ * Creates an initial ndjson status to track successfully added resources and failed outcomes (to later be converted to
+ * OperationOutcomes and made accessible via ndjson file to requestor)
  * @param {String} manifestId The id associated with the bulkImport request
  * @param {String} fileUrl The url for the resource ndjson
  * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
  */
-export async function pushNdjsonFailedOutcomes(
-  manifestId: string,
-  fileUrl: string,
-  failedOutcomes: string[],
-  successCount: number
-) {
+export async function createNdjsonStatus(manifestId: string, fileUrl: string, failedOutcomes: string[]) {
   const collection = db.collection('ndjsonStatuses');
   await collection.insertOne({
     id: manifestId + fileUrl,
     failedOutcomes: failedOutcomes,
-    successCount: successCount
+    successCount: 0,
+    successfulResources: []
   });
+
   return manifestId;
+}
+
+/**
+ * Updates an initial ndjson status and replaces failedOutcomes
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ * @param {Array} failedOutcomes An array of strings with messages detailing why the resource failed import
+ */
+export async function updateNdjsonFailedOutcomes(manifestId: string, fileUrl: string, failedOutcomes: string[]) {
+  const collection = db.collection('ndjsonStatuses');
+  const update = {
+    failedOutcomes: failedOutcomes
+  };
+  await collection.findOneAndUpdate({ id: manifestId + fileUrl }, { $set: update });
+
+  return manifestId;
+}
+
+/**
+ * Updates an initial ndjson status to add a successfully processed resource
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ * @param {String} resourceType Resource type inserted
+ * @param {String} resourceId Resource id inserted
+ */
+export async function addNdjsonSuccessfulResource(
+  manifestId: string,
+  fileUrl: string,
+  resourceType: string,
+  resourceId: string
+) {
+  const collection = db.collection('ndjsonStatuses');
+  await collection.findOneAndUpdate(
+    { id: manifestId + fileUrl },
+    { $push: { successfulResources: { resourceType: resourceType, resourceId: resourceId } } as Document }
+  );
+
+  return manifestId;
+}
+
+/**
+ * Removes all successfully inserted resources from the database (and updates the successfulResources field to empty)**aggregate together?
+ * @param {String} manifestId The id associated with the bulkImport request
+ * @param {String} fileUrl The url for the resource ndjson
+ */
+export async function deleteAllNdjsonSuccessfulResources(manifestId: string, fileUrl: string) {
+  logger.info(`Deleting all successful resources for ndjson with manifestId ${manifestId} and fileUrl: ${fileUrl}`);
+  const collection = db.collection('ndjsonStatuses');
+  const ndjsonStatus = await collection.findOne({ id: manifestId + fileUrl });
+  const resourceList = ndjsonStatus?.successfulResources as { resourceType: string; resourceId: string }[];
+  const deletePromises = resourceList.map(async r => removeResource(r.resourceId, r.resourceType));
+  await Promise.all(deletePromises);
+  await collection.findOneAndUpdate(
+    { id: manifestId + fileUrl },
+    {
+      $set: {
+        successfulResources: []
+      }
+    }
+  );
 }
 
 /**
@@ -428,12 +511,19 @@ export async function decrementBulkFileCount(manifestId: string, resourceCount: 
 }
 
 /**
- * Sets bulk import to cancelled
+ * Sets bulk import to cancelled and returns jobs
  * @param {string} manifestId The id signifying the bulk status request
  */
 export async function cancelBulkImport(manifestId: string) {
   const collection = db.collection('bulkImportStatuses');
-  await collection.findOneAndUpdate({ id: manifestId }, { $set: { cancelled: true } });
+  const updatedDoc = (
+    await collection.findOneAndUpdate(
+      { id: manifestId },
+      { $set: { cancelled: true } },
+      { returnDocument: 'after', projection: { importJobIds: true, ndjsonJobIds: true, _id: 0 } }
+    )
+  ).value;
+  return updatedDoc as unknown as { importJobIds: string[]; ndjsonJobIds: string[] };
 }
 
 /**

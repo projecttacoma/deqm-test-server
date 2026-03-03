@@ -151,7 +151,7 @@ export async function checkBulkStatus(req: any, res: any) {
           // From the Bulk Submit Draft IG: "If there are resources to return,
           // the Data Recipient SHALL populate the `output` section of the
           // manifest with one or more files that contain FHIR resources."
-          exportManifest.output.push({
+          exportManifest.error.push({
             extension: {
               manifestUrl: bulkStatus.manifestUrl
             },
