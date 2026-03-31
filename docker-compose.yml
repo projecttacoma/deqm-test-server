@@ -3,7 +3,7 @@ services:
     depends_on:
       - mongo
       - redis
-      - validator
+      #- validator
     build:
       context: .
       dockerfile: Dockerfile
@@ -24,27 +24,27 @@ services:
       VALIDATOR_PORT: 4567
     ports:
       - '3000:3000'
-    volumes:
-      - ./src:/usr/src/app/src
     stdin_open: true
     tty: true
 
   mongo:
-    image: mongo:6.0
+    image: mongo:6
     ports:
-      - '27017'
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
 
   redis:
-    image: redis
-    ports:
-      - '6379:6379'
+    image: dhi.io/redis:8
+    command: ["redis-server", "--protected-mode no"]
+    expose:
+      - '6379'
 
-  validator:
-    image: infernocommunity/fhir-validator-service
-    ports:
-      - '4567:4567'
+  # Disabled for now
+  # validator:
+  #   image: infernocommunity/fhir-validator-service
+  #   ports:
+  #     - '4567:4567'
 
   # TODO: Revisit keycloak setup when using an OAuth-enabled test server
   # keycloak:
