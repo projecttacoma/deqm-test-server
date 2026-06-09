@@ -4,23 +4,14 @@ import { Calculator, CalculationOptions, DRCalculationOutput } from 'fqm-executi
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
 
 function populatePatientIdContext(dataRequirements: DRCalculationOutput, patientId: string): DRCalculationOutput {
-  return {
-    ...dataRequirements,
-    results: {
-      ...dataRequirements.results,
-      dataRequirement: dataRequirements.results.dataRequirement?.map(dataRequirement => ({
-        ...dataRequirement,
-        extension: dataRequirement.extension?.map(extension =>
-          extension.valueString?.includes(PATIENT_ID_CONTEXT_TOKEN)
-            ? {
-                ...extension,
-                valueString: extension.valueString.split(PATIENT_ID_CONTEXT_TOKEN).join(patientId)
-              }
-            : extension
-        )
-      }))
-    }
-  };
+  dataRequirements.results.dataRequirement?.forEach(dataRequirement => {
+    dataRequirement.extension?.forEach(extension => {
+      if (extension.valueString) {
+        extension.valueString = extension.valueString.replaceAll(PATIENT_ID_CONTEXT_TOKEN, patientId);
+      }
+    });
+  });
+  return dataRequirements;
 }
 
 /**
