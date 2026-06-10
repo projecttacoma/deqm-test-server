@@ -80,12 +80,12 @@ describe('patientSpecificDataRequirements', () => {
       }
     };
 
-    bundleUtils.getMeasureBundleFromId.mockResolvedValue(measureBundle);
+    bundleUtils.getMeasureBundleFromUrl.mockResolvedValue(measureBundle);
     jest.spyOn(Calculator, 'calculateDataRequirements').mockResolvedValue(dataRequirementsOutput);
 
     const result = await patientSpecificDataRequirements('measure-1', 'patient-123', { useExpandedCodeQueries: true });
 
-    expect(bundleUtils.getMeasureBundleFromId).toHaveBeenCalledWith('measure-1');
+    expect(bundleUtils.getMeasureBundleFromUrl).toHaveBeenCalledWith('measure-1');
     expect(Calculator.calculateDataRequirements).toHaveBeenCalledWith(measureBundle, { useExpandedCodeQueries: true });
     expect(result.results.dataRequirement[0].extension[0].valueString).toBe(
       '/Coverage?type=1,2,3&policy-holder=Patient/patient-123'

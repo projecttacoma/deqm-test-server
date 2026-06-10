@@ -73,6 +73,12 @@ const buildConfig = () => {
               reference: 'http://hl7.org/fhir/OperationDefinition/Measure-data-requirements'
             },
             {
+              name: 'collectData',
+              route: '/$collect-data',
+              method: 'POST',
+              reference: 'https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html'
+            },
+            {
               name: 'evaluateMeasure',
               route: '/:id/$evaluate',
               method: 'GET',

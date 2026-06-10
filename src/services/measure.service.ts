@@ -1,5 +1,5 @@
 //@ts-nocheck
-const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
+const { BadRequestError, ResourceNotFoundError, NotImplementedError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
@@ -15,6 +15,7 @@ const {
   retrievePatientIds,
   filterPatientByPractitionerFromGroup
 } = require('../util/patientUtils');
+const { patientSpecificDataRequirements } = require('../util/collectDataUtils');
 const {
   findOneResourceWithQuery,
   findResourcesWithQuery,
@@ -140,6 +141,45 @@ const dataRequirements = async (args, { req }) => {
   });
   logger.info('Successfully generated $data-requirements report');
   return results;
+};
+
+/**
+ * Initiate a collect data request (supports invited pull workflow only) according to
+ * https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html
+ * dataEndpoint (Endpoint typed parameter) presumed to be required for this implementation, so POST support only
+ * @param {Object} args the args object passed in by the user
+ * @param {Object} req http request object
+ * @returns {Object} Parameters resource containing one or more Bundles of data exchange MeasureReports.
+ */
+const collectData = async (args, { req }) => {
+  logger.info('Measure >>> $evaluate');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
+  const query = gatherParams(req.query, req.body);
+
+  // TODO: validate collect data parameters with function in ../util/operationValidationUtils
+  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
+  if (subjectGroup) {
+    // TODO: Implement subjectGroup support
+    throw new NotImplementedError(`Parameter "subjectGroup" not yet supported`);
+  }
+  if (!dataEndpoint) {
+    // TODO: pull this check into validation function
+    // change to bad request if capability statement is updated to reflect that this is required
+    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
+  }
+
+  const options = {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd,
+    useExpandedCodeQueries: true
+  };
+  // TODO: better handling of subject reference, combined with handling of subjectGroup. Handle multiple measures
+  const result = await patientSpecificDataRequirements(measureUrl, subject.split('/')[1], options);
+  // TODO: Impement invited pull workflow and return Parameters result
+  return result;
 };
 
 /**
@@ -560,6 +600,7 @@ module.exports = {
   search,
   submitData,
   dataRequirements,
+  collectData,
   evaluateMeasure,
   careGaps
 };

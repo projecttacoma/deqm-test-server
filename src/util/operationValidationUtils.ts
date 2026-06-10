@@ -220,7 +220,14 @@ export function gatherParams(query: Record<string, string>, body: fhir4.Paramete
 
   if (body.parameter) {
     body.parameter.reduce((acc, e) => {
-      const value = e.valueDate || e.valueString || e.valueId || e.valueCode || e.resource;
+      const value =
+        e.valueDate ||
+        e.valueString ||
+        e.valueId ||
+        e.valueCode ||
+        e.valueReference?.reference ||
+        e.valueCanonical ||
+        e.resource;
       if (acc[e.name] !== undefined) {
         // add to existing parameter values
         if (Array.isArray(acc[e.name])) {

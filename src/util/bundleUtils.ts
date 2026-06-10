@@ -114,6 +114,20 @@ export async function getMeasureBundleFromId(measureId: string): Promise<fhir4.B
 }
 
 /**
+ * Assemble a measure bundle with necessary FHIR Library resources
+ * @param {string} measureId id of the measure to assemble bundle for
+ * @returns {Object} FHIR Bundle of Measure resource and all dependent FHIR Library resources
+ */
+export async function getMeasureBundleFromUrl(measureUrl: string): Promise<fhir4.Bundle> {
+  // TODO: Add handling for version matching (see bulk-export-server for logic)
+  const measure = (await findOneResourceWithQuery({ url: measureUrl }, 'Measure')) as fhir4.Measure | null;
+  if (!measure) {
+    throw new ResourceNotFoundError(`Measure with url ${measureUrl} does not exist in the server`);
+  }
+  return assembleCollectionBundleFromMeasure(measure);
+}
+
+/**
  * Takes in a measure resource, finds all dependent library resources and bundles them
  * together with the measure in a collection bundle
  * @param {Object} measure a fhir measure resource
