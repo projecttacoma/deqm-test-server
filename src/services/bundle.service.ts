@@ -159,7 +159,9 @@ async function uploadResourcesFromBundle(entries, baseVersion) {
 
   logger.debug(`Attempting to upload bundle resources: ${JSON.stringify(entries)}`);
   const requestsArray = scrubbedEntries.map(async entry => {
-    const { method } = entry.request;
+    // TODO: Assume default PUT for now - cannot replace references until all related resources are known
+    // (may be from a different searchset bundle)
+    const { method } = entry.request ?? { method: 'PUT' };
     return insertBundleResources(entry, method).catch(e => {
       const operationOutcome = resolveSchema(baseVersion, 'operationoutcome');
       const results = new operationOutcome();

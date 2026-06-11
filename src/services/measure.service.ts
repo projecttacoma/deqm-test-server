@@ -2,14 +2,18 @@
 const { BadRequestError, ResourceNotFoundError, NotImplementedError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { handleSubmitDataBundles } = require('./bundle.service');
+const { handleSubmitDataBundles, uploadResourcesFromBundle } = require('./bundle.service');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
-const { getMeasureBundleFromId, assembleCollectionBundleFromMeasure } = require('../util/bundleUtils');
+const {
+  getMeasureBundleFromId,
+  assembleCollectionBundleFromMeasure,
+  getMeasureBundleFromUrl
+} = require('../util/bundleUtils');
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
@@ -23,7 +27,9 @@ const {
   findResourceById
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
+import axios from 'axios';
 import logger from '../server/logger';
+const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
 
 /**
@@ -152,11 +158,12 @@ const dataRequirements = async (args, { req }) => {
  * @returns {Object} Parameters resource containing one or more Bundles of data exchange MeasureReports.
  */
 const collectData = async (args, { req }) => {
-  logger.info('Measure >>> $evaluate');
+  logger.info('Measure >>> $collect-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
   logger.debug(`Request args: ${JSON.stringify(args)}`);
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
+  const { base_version: baseVersion } = req.params;
   const query = gatherParams(req.query, req.body);
 
   // TODO: validate collect data parameters with function in ../util/operationValidationUtils
@@ -176,10 +183,82 @@ const collectData = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     useExpandedCodeQueries: true
   };
+  const measureBundle = await getMeasureBundleFromUrl(measureUrl);
   // TODO: better handling of subject reference, combined with handling of subjectGroup. Handle multiple measures
-  const result = await patientSpecificDataRequirements(measureUrl, subject.split('/')[1], options);
-  // TODO: Impement invited pull workflow and return Parameters result
-  return result;
+  const result = await patientSpecificDataRequirements(measureBundle, subject.split('/')[1], options);
+  const queries =
+    result.results.dataRequirement?.flatMap(dr => {
+      return (
+        dr.extension
+          ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
+          .map(e => `${dataEndpoint.address}${e.valueString}`) ?? []
+      );
+    }) ?? [];
+  // TODO: uniquify queries (for each patient)?
+
+  // Track an array of references for the resources returned from each query
+  const resourceReferenceArrays = await Promise.all(
+    queries.map(async query => {
+      const bundle = await axios.get(query).then(response => response.data);
+      const references = bundle.entry?.map(e => `${e.resource?.resourceType}/${e.resource?.id}`);
+      if (bundle.entry) {
+        // TODO: check this works well with a searchset bundle
+        //TODO: this may replace references - gather new ids to use in final response
+        await uploadResourcesFromBundle(bundle.entry, baseVersion);
+      }
+      return references ?? [];
+    })
+  );
+
+  const measure = measureBundle.entry?.find(e => e.resource.resourceType === 'Measure').resource;
+  const measureReport = {
+    resourceType: 'MeasureReport',
+    id: uuidv4(),
+    measure: measure.url?.includes('|') ? measure.url : `${measure.url}|${measure.version}`, //canonical measure/version
+    period: { start: periodStart, end: periodEnd },
+    status: 'complete',
+    type: 'data-collection',
+    subject: { reference: subject },
+    date: new Date().toISOString(),
+    reporter: { reference: 'Organization/deqm-test-server' },
+    meta: {
+      profile: ['http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm']
+    },
+    extension: [
+      {
+        url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
+        valueCode: 'snapshot'
+      }
+    ],
+    evaluatedResource: resourceReferenceArrays?.flat().map(r => {
+      return { reference: r };
+    }),
+    contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
+  };
+
+  return {
+    resourceType: 'Parameters',
+    parameter: [
+      {
+        name: 'return',
+        resource: {
+          type: 'transaction',
+          resourceType: 'Bundle',
+          id: uuidv4(),
+          entry: [
+            {
+              resource: measureReport,
+              request: {
+                method: 'PUT',
+                url: `MeasureReport/${measureReport.id}`
+              },
+              fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
+            }
+          ]
+        }
+      }
+    ]
+  };
 };
 
 /**

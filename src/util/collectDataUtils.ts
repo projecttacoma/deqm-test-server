@@ -1,4 +1,3 @@
-import { getMeasureBundleFromUrl } from './bundleUtils';
 import { CalculationOptions, Calculator, DRCalculationOutput } from 'fqm-execution';
 
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
@@ -20,11 +19,10 @@ function populatePatientIdContext(dataRequirements: DRCalculationOutput, patient
  * ID injected into the cqfm FHIR queries in the output
  */
 export async function patientSpecificDataRequirements(
-  measureUrl: string,
+  measureBundle: fhir4.Bundle,
   patientId: string,
   options: CalculationOptions = {}
 ): Promise<DRCalculationOutput> {
-  const measureBundle = await getMeasureBundleFromUrl(measureUrl);
   const dataRequirements = await Calculator.calculateDataRequirements(measureBundle, options);
   return populatePatientIdContext(dataRequirements, patientId);
 }

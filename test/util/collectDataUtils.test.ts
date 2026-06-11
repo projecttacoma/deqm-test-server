@@ -1,9 +1,6 @@
 //@ts-nocheck
 const { Calculator } = require('fqm-execution');
-const bundleUtils = require('../../src/util/bundleUtils');
 const { patientSpecificDataRequirements } = require('../../src/util/collectDataUtils');
-
-jest.mock('../../src/util/bundleUtils');
 
 describe('patientSpecificDataRequirements', () => {
   beforeEach(() => {
@@ -80,12 +77,12 @@ describe('patientSpecificDataRequirements', () => {
       }
     };
 
-    bundleUtils.getMeasureBundleFromUrl.mockResolvedValue(measureBundle);
     jest.spyOn(Calculator, 'calculateDataRequirements').mockResolvedValue(dataRequirementsOutput);
 
-    const result = await patientSpecificDataRequirements('measure-1', 'patient-123', { useExpandedCodeQueries: true });
+    const result = await patientSpecificDataRequirements(measureBundle, 'patient-123', {
+      useExpandedCodeQueries: true
+    });
 
-    expect(bundleUtils.getMeasureBundleFromUrl).toHaveBeenCalledWith('measure-1');
     expect(Calculator.calculateDataRequirements).toHaveBeenCalledWith(measureBundle, { useExpandedCodeQueries: true });
     expect(result.results.dataRequirement[0].extension[0].valueString).toBe(
       '/Coverage?type=1,2,3&policy-holder=Patient/patient-123'
