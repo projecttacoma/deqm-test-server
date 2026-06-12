@@ -31,6 +31,7 @@ import axios from 'axios';
 import logger from '../server/logger';
 const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
+import _ from 'lodash';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -186,15 +187,15 @@ const collectData = async (args, { req }) => {
   const measureBundle = await getMeasureBundleFromUrl(measureUrl);
   // TODO: better handling of subject reference, combined with handling of subjectGroup. Handle multiple measures
   const result = await patientSpecificDataRequirements(measureBundle, subject.split('/')[1], options);
-  const queries =
+  const queries = _.uniq(
     result.results.dataRequirement?.flatMap(dr => {
       return (
         dr.extension
           ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
           .map(e => `${dataEndpoint.address}${e.valueString}`) ?? []
       );
-    }) ?? [];
-  // TODO: uniquify queries (for each patient)?
+    }) ?? []
+  );
 
   // Track an array of references for the resources returned from each query
   const resourceReferenceArrays = await Promise.all(
@@ -202,8 +203,8 @@ const collectData = async (args, { req }) => {
       const bundle = await axios.get(query).then(response => response.data);
       const references = bundle.entry?.map(e => `${e.resource?.resourceType}/${e.resource?.id}`);
       if (bundle.entry) {
-        // TODO: check this works well with a searchset bundle
-        //TODO: this may replace references - gather new ids to use in final response
+        //TODO: in a POST-based transaction bundle implementation (currently PUT),
+        // this may replace references - gather new ids to use in final response
         await uploadResourcesFromBundle(bundle.entry, baseVersion);
       }
       return references ?? [];
