@@ -16,15 +16,24 @@ const testEmptyParam = require('../fixtures/fhir-resources/parameters/emptyParam
 const testParamTwoMeasureReports = require('../fixtures/fhir-resources/parameters/paramTwoMeasureReports.json');
 const testCareGapsMeasureReport = require('../fixtures/testCareGapsMeasureReport.json');
 const deleteMeasure = require('../fixtures/fhir-resources/deleteMeasure.json');
-const { testSetup, cleanUpTest, cleanUpDb } = require('../populateTestData');
+const { testSetup, cleanUpTest, cleanUpDb, createTestResource } = require('../populateTestData');
 const { buildConfig } = require('../../src/config/profileConfig');
 const { initialize } = require('../../src/server/server');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 const testParam2Resources = require('../fixtures/fhir-resources/parameters/paramNoExport2Resources.json');
 const testParamPartial = require('../fixtures/fhir-resources/parameters/paramNoExportPartialFailure.json');
+const dataRequirementsOutput = require('../fixtures/dataRequirementsOutput.json');
+import axios from 'axios';
+jest.mock('axios');
 
 let server;
+const collectDataMeasure = {
+  ...testMeasure,
+  id: 'collectDataMeasure',
+  url: 'http://example.org/fhir/Measure/collect-data',
+  version: '1.0.0'
+};
 
 const resetMeasureData = async () => {
   await cleanUpDb();
@@ -817,6 +826,242 @@ describe('measure.service', () => {
           periodEnd: '01-01-2021'
         })
         .expect(200);
+    });
+
+    test('$collect-data returns a parameters transaction bundle for valid input', async () => {
+      const { Calculator } = require('fqm-execution');
+      await createTestResource(collectDataMeasure, 'Measure');
+
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockResolvedValue(dataRequirementsOutput);
+      axios.get
+        .mockResolvedValueOnce({
+          data: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            entry: [
+              {
+                resource: {
+                  resourceType: 'Coverage',
+                  id: 'collectDataPolicyHolderCoverage',
+                  status: 'active',
+                  beneficiary: { reference: 'Patient/testPatient' }
+                }
+              }
+            ]
+          }
+        })
+        .mockResolvedValueOnce({
+          data: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            entry: [
+              {
+                resource: {
+                  resourceType: 'Coverage',
+                  id: 'collectDataSubscriberCoverage',
+                  status: 'active',
+                  beneficiary: { reference: 'Patient/testPatient' }
+                }
+              }
+            ]
+          }
+        })
+        .mockResolvedValueOnce({
+          data: {
+            resourceType: 'Bundle',
+            type: 'searchset',
+            entry: [
+              {
+                resource: {
+                  resourceType: 'Encounter',
+                  id: 'collectDataEncounter',
+                  status: 'finished',
+                  class: {
+                    system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+                    code: 'AMB'
+                  },
+                  subject: { reference: 'Patient/testPatient' }
+                }
+              }
+            ]
+          }
+        });
+
+      try {
+        await supertest(server.app)
+          .post('/4_0_1/Measure/$collect-data')
+          .send({
+            resourceType: 'Parameters',
+            parameter: [
+              {
+                name: 'measureUrl',
+                valueCanonical: collectDataMeasure.url
+              },
+              {
+                name: 'periodStart',
+                valueDate: '2020-01-01'
+              },
+              {
+                name: 'periodEnd',
+                valueDate: '2020-12-31'
+              },
+              {
+                name: 'subject',
+                valueReference: { reference: 'Patient/testPatient' }
+              },
+              {
+                name: 'dataEndpoint',
+                resource: {
+                  resourceType: 'Endpoint',
+                  id: 'collect-data-endpoint',
+                  status: 'active',
+                  connectionType: {
+                    system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
+                    code: 'hl7-fhir-rest'
+                  },
+                  payloadType: [
+                    {
+                      coding: [
+                        {
+                          system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
+                          code: 'any',
+                          display: 'Any'
+                        }
+                      ]
+                    }
+                  ],
+                  address: 'http://example-data-server.org/fhir'
+                }
+              }
+            ]
+          })
+          .set('Accept', 'application/json+fhir')
+          .set('content-type', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(axios.get).toHaveBeenCalledWith(
+              'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient'
+            );
+            expect(axios.get).toHaveBeenCalledWith(
+              'http://example-data-server.org/fhir/Coverage?type=1,2,3&subscriber=Patient/testPatient'
+            );
+            expect(axios.get).toHaveBeenCalledWith(
+              'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient'
+            );
+
+            expect(response.body.resourceType).toEqual('Parameters');
+            expect(response.body.parameter).toHaveLength(1);
+            expect(response.body.parameter[0].name).toEqual('return');
+            expect(response.body.parameter[0].resource.resourceType).toEqual('Bundle');
+            expect(response.body.parameter[0].resource.type).toEqual('transaction');
+
+            const measureReport = response.body.parameter[0].resource.entry[0].resource;
+            expect(measureReport.resourceType).toEqual('MeasureReport');
+            expect(measureReport.measure).toEqual(`${collectDataMeasure.url}|${collectDataMeasure.version}`);
+            expect(measureReport.period).toEqual({ start: '2020-01-01', end: '2020-12-31' });
+            expect(measureReport.subject.reference).toEqual('Patient/testPatient');
+            expect(measureReport.type).toEqual('data-collection');
+            expect(measureReport.evaluatedResource).toEqual([
+              { reference: 'Coverage/collectDataPolicyHolderCoverage' },
+              { reference: 'Coverage/collectDataSubscriberCoverage' },
+              { reference: 'Encounter/collectDataEncounter' }
+            ]);
+          });
+      } finally {
+        await resetMeasureData();
+      }
+    });
+
+    test('$collect-data returns 501 when dataEndpoint is omitted', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$collect-data')
+        .send({
+          resourceType: 'Parameters',
+          parameter: [
+            {
+              name: 'measureUrl',
+              valueCanonical: collectDataMeasure.url
+            },
+            {
+              name: 'periodStart',
+              valueDate: '2020-01-01'
+            },
+            {
+              name: 'periodEnd',
+              valueDate: '2020-12-31'
+            },
+            {
+              name: 'subject',
+              valueReference: { reference: 'Patient/testPatient' }
+            }
+          ]
+        })
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(501)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('NotImplemented');
+          expect(response.body.issue[0].details.text).toEqual(
+            'Currently implemented workflow requires passing a "dataEndpoint" parameter.'
+          );
+        });
+    });
+
+    test('$collect-data returns 501 when subjectGroup is provided', async () => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$collect-data')
+        .send({
+          resourceType: 'Parameters',
+          parameter: [
+            {
+              name: 'measureUrl',
+              valueCanonical: collectDataMeasure.url
+            },
+            {
+              name: 'periodStart',
+              valueDate: '2020-01-01'
+            },
+            {
+              name: 'periodEnd',
+              valueDate: '2020-12-31'
+            },
+            {
+              name: 'subjectGroup',
+              valueReference: { reference: 'Group/testGroup' }
+            },
+            {
+              name: 'dataEndpoint',
+              resource: {
+                resourceType: 'Endpoint',
+                id: 'collect-data-endpoint',
+                status: 'active',
+                connectionType: {
+                  system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
+                  code: 'hl7-fhir-rest'
+                },
+                payloadType: [
+                  {
+                    coding: [
+                      {
+                        system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
+                        code: 'any',
+                        display: 'Any'
+                      }
+                    ]
+                  }
+                ],
+                address: 'http://example-data-server.org/fhir'
+              }
+            }
+          ]
+        })
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(501)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual('NotImplemented');
+          expect(response.body.issue[0].details.text).toEqual('Parameter "subjectGroup" not yet supported');
+        });
     });
 
     test('$care-gaps returns 200 with valid params and specified measureId', async () => {
