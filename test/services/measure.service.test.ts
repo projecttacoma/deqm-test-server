@@ -23,7 +23,7 @@ const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const testParamResource = require('../fixtures/fhir-resources/parameters/paramNoExportResource.json');
 const testParam2Resources = require('../fixtures/fhir-resources/parameters/paramNoExport2Resources.json');
 const testParamPartial = require('../fixtures/fhir-resources/parameters/paramNoExportPartialFailure.json');
-const dataRequirementsOutput = require('../fixtures/dataRequirementsOutput.json');
+const dataRequirementsOutput = require('../fixtures/testDataRequirementsOutput.json');
 import axios from 'axios';
 jest.mock('axios');
 

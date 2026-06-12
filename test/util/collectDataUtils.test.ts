@@ -1,7 +1,7 @@
 //@ts-nocheck
 const { Calculator } = require('fqm-execution');
 const { patientSpecificDataRequirements } = require('../../src/util/collectDataUtils');
-const dataRequirementsOutput = require('../fixtures/dataRequirementsOutput.json');
+const dataRequirementsOutput = require('../fixtures/testDataRequirementsOutput.json');
 
 describe('patientSpecificDataRequirements', () => {
   beforeEach(() => {
