@@ -6,8 +6,10 @@ const {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
   BOTH_REPLACE_REFERENCES_ENTRIES,
+  URL_VALUE_REPLACE_REFERENCES_ENTRIES,
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
-  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
+  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT,
+  EXPECTED_URL_VALUE_REPLACE_REFERENCES_OUTPUT
 } = require('../fixtures/bundleUtilFixtures');
 const { v4: uuidv4 } = require('uuid');
 const libraryWithDependencies = require('../fixtures/fhir-resources/testLibraryDependencies.json');
@@ -48,6 +50,16 @@ describe('Testing functionality of all functions which run uuidv4', () => {
     });
     test('Check that replaceReference does not replace ref on reference: resourceType/resourceId -> fullUrl: urn:uuid: resourceId', () => {
       expect(replaceReferences(BOTH_REPLACE_REFERENCES_ENTRIES)).toEqual(EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT);
+    });
+  });
+  describe('Testing functionality of bundleUtils when URLs are used as values and references', () => {
+    beforeEach(() => {
+      init(URL_VALUE_REPLACE_REFERENCES_ENTRIES);
+    });
+    test('Check that replaceReference only replaces URL values in reference fields', () => {
+      expect(replaceReferences(URL_VALUE_REPLACE_REFERENCES_ENTRIES)).toEqual(
+        EXPECTED_URL_VALUE_REPLACE_REFERENCES_OUTPUT
+      );
     });
   });
   afterAll(async () => {

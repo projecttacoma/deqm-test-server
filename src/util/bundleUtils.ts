@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findOneResourceWithQuery } from '../database/dbOperations';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
+import * as fhir4 from 'fhir/r4';
 
 /*
  Some connectathon bundles currently contain incorrect url references from the main library
@@ -255,18 +256,20 @@ export function replaceReferences(entries: any[]) {
 
   let entriesStr = JSON.stringify(entries);
   const postEntries = entries.filter(e => e.isPost);
+  const referenceProperty = (reference: string) => JSON.stringify({ reference }).slice(1, -1);
 
   // For each POST entry, replace existing reference across all entries
   postEntries.forEach(e => {
     logger.debug(`Replacing referenceIds for entry: ${JSON.stringify(e)}`);
+    const newReference = `${e.resource.resourceType}/${e.newId}`;
     // Checking fullUrl and id in separate replace loops will prevent invalid ResourceType/ResourceID -> urn:uuid references
     if (e.oldId) {
-      const idRegexp = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
-      entriesStr = entriesStr.replace(idRegexp, `${e.resource.resourceType}/${e.newId}`);
+      entriesStr = entriesStr
+        .split(referenceProperty(`${e.resource.resourceType}/${e.oldId}`))
+        .join(referenceProperty(newReference));
     }
     if (e.fullUrl) {
-      const urnRegexp = new RegExp(e.fullUrl, 'g');
-      entriesStr = entriesStr.replace(urnRegexp, `${e.resource.resourceType}/${e.newId}`);
+      entriesStr = entriesStr.split(referenceProperty(e.fullUrl)).join(referenceProperty(newReference));
     }
   });
 
