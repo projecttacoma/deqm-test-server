@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findOneResourceWithQuery } from '../database/dbOperations';
 import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
-import * as fhir4 from 'fhir/r4';
 
 /*
  Some connectathon bundles currently contain incorrect url references from the main library
@@ -234,6 +233,16 @@ export async function getAllDependentLibraries(lib: fhir4.Library): Promise<(fhi
 }
 
 /**
+ * Convert a FHIR reference value into the JSON property fragment used for targeted string replacement.
+ * This ensures only `reference` fields are replaced, rather than every matching string value.
+ * @param {string} reference reference value to encode
+ * @returns {string} JSON property fragment for the reference
+ */
+function referenceProperty(reference: string): string {
+  return JSON.stringify({ reference }).slice(1, -1);
+}
+
+/**
  * For entries in a transaction bundle whose IDs will be auto-generated, replace all instances of an existing reference
  * to the old id with a reference to the newly generated one.
  *
@@ -256,7 +265,6 @@ export function replaceReferences(entries: any[]) {
 
   let entriesStr = JSON.stringify(entries);
   const postEntries = entries.filter(e => e.isPost);
-  const referenceProperty = (reference: string) => JSON.stringify({ reference }).slice(1, -1);
 
   // For each POST entry, replace existing reference across all entries
   postEntries.forEach(e => {
@@ -264,12 +272,13 @@ export function replaceReferences(entries: any[]) {
     const newReference = `${e.resource.resourceType}/${e.newId}`;
     // Checking fullUrl and id in separate replace loops will prevent invalid ResourceType/ResourceID -> urn:uuid references
     if (e.oldId) {
-      entriesStr = entriesStr
-        .split(referenceProperty(`${e.resource.resourceType}/${e.oldId}`))
-        .join(referenceProperty(newReference));
+      entriesStr = entriesStr.replaceAll(
+        referenceProperty(`${e.resource.resourceType}/${e.oldId}`),
+        referenceProperty(newReference)
+      );
     }
     if (e.fullUrl) {
-      entriesStr = entriesStr.split(referenceProperty(e.fullUrl)).join(referenceProperty(newReference));
+      entriesStr = entriesStr.replaceAll(referenceProperty(e.fullUrl), referenceProperty(newReference));
     }
   });
 
