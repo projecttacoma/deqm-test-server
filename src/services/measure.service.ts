@@ -223,11 +223,11 @@ const collectData = async (args, { req }) => {
     date: new Date().toISOString(),
     reporter: { reference: 'Organization/deqm-test-server' },
     meta: {
-      profile: ['http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm']
+      profile: ['http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-dataexchangemeasurereport']
     },
     extension: [
       {
-        url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
+        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType"',
         valueCode: 'snapshot'
       }
     ],

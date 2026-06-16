@@ -253,7 +253,7 @@ Supported parameters include:
 - `subject`: patient reference for the subject of data collection
 - `dataEndpoint`: embedded FHIR R4 `Endpoint` resource identifying the FHIR server to query for patient data
 
-The current implementation requires `dataEndpoint`, does not yet support `subjectGroup`, and returns a `Parameters` resource containing a transaction `Bundle` with a data-collection `MeasureReport`.
+The current implementation supports one patient and one measure, requires `dataEndpoint`, does not yet support `subjectGroup`, and returns a `Parameters` resource containing a transaction `Bundle` with a data-collection `MeasureReport`.
 
 See the [DEQM $collect-data operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html) for more information.
 

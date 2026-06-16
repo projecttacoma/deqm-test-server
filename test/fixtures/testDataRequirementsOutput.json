@@ -34,7 +34,7 @@
         "codeFilter": [
           {
             "path": "type",
-            "valueSet": "http://exmaple.com/ValueSet/exampleVS"
+            "valueSet": "http://example.com/ValueSet/exampleVS"
           }
         ],
         "dateFilter": [
