@@ -18,6 +18,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
       - [`$evaluate`](#evaluate)
       - [`$care-gaps`](#care-gaps)
       - [`$data-requirements`](#data-requirements)
+      - [`$collect-data`](#collect-data)
       - [`$submit-data`](#submit-data)
       - [`Patient/$everything`](#patienteverything)
     - [Bulk Import](#bulk-import)
@@ -239,6 +240,22 @@ If either `periodStart` or `periodEnd` parameter is supplied without the other, 
 To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$data-requirements`.
 
 Check out the [$data-requirements operation spec](https://www.hl7.org/fhir/measure-operation-data-requirements.html) for more information.
+
+#### `$collect-data`
+
+This operation supports the DEQM invited pull workflow for collecting patient-specific data for a measure. To use, first POST a measure bundle into your database, then send a valid FHIR `Parameters` object in a POST request to `http://localhost:3000/4_0_1/Measure/$collect-data`.
+
+Supported parameters include:
+
+- `measureUrl`: canonical URL of the measure to collect data for
+- `periodStart`: start of the measurement period
+- `periodEnd`: end of the measurement period
+- `subject`: patient reference for the subject of data collection
+- `dataEndpoint`: embedded FHIR R4 `Endpoint` resource identifying the FHIR server to query for patient data
+
+The current implementation supports one patient and one measure, requires `dataEndpoint`, does not yet support `subjectGroup`, and returns a `Parameters` resource containing a transaction `Bundle` with a data-collection `MeasureReport`.
+
+See the [DEQM $collect-data operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html) for more information.
 
 #### `$submit-data`
 

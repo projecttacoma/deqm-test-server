@@ -1,20 +1,25 @@
 //@ts-nocheck
-const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
+const { BadRequestError, ResourceNotFoundError, NotImplementedError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { handleSubmitDataBundles } = require('./bundle.service');
+const { handleSubmitDataBundles, uploadResourcesFromBundle } = require('./bundle.service');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
-const { getMeasureBundleFromId, assembleCollectionBundleFromMeasure } = require('../util/bundleUtils');
+const {
+  getMeasureBundleFromId,
+  assembleCollectionBundleFromMeasure,
+  getMeasureBundleFromUrl
+} = require('../util/bundleUtils');
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
   filterPatientByPractitionerFromGroup
 } = require('../util/patientUtils');
+const { patientSpecificDataRequirements } = require('../util/collectDataUtils');
 const {
   findOneResourceWithQuery,
   findResourcesWithQuery,
@@ -22,8 +27,11 @@ const {
   findResourceById
 } = require('../database/dbOperations');
 const { getResourceReference } = require('../util/referenceUtils');
+import axios from 'axios';
 import logger from '../server/logger';
+const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
+import _ from 'lodash';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -140,6 +148,118 @@ const dataRequirements = async (args, { req }) => {
   });
   logger.info('Successfully generated $data-requirements report');
   return results;
+};
+
+/**
+ * Initiate a collect data request (supports invited pull workflow only) according to
+ * https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html
+ * dataEndpoint (Endpoint typed parameter) presumed to be required for this implementation, so POST support only
+ * @param {Object} args the args object passed in by the user
+ * @param {Object} req http request object
+ * @returns {Object} Parameters resource containing one or more Bundles of data exchange MeasureReports.
+ */
+const collectData = async (args, { req }) => {
+  logger.info('Measure >>> $collect-data');
+  logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
+  logger.debug(`Request args: ${JSON.stringify(args)}`);
+  logger.debug(`Request body: ${JSON.stringify(req.body)}`);
+
+  const { base_version: baseVersion } = req.params;
+  const query = gatherParams(req.query, req.body);
+
+  // TODO: validate collect data parameters with function in ../util/operationValidationUtils
+  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
+  if (subjectGroup) {
+    // TODO: Implement subjectGroup support
+    throw new NotImplementedError(`Parameter "subjectGroup" not yet supported`);
+  }
+  if (!dataEndpoint) {
+    // TODO: pull this check into validation function
+    // change to bad request if capability statement is updated to reflect that this is required
+    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
+  }
+
+  const options = {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd,
+    useExpandedCodeQueries: true
+  };
+  const measureBundle = await getMeasureBundleFromUrl(measureUrl);
+  // TODO: better handling of subject reference, combined with handling of subjectGroup. Handle multiple measures
+  const result = await patientSpecificDataRequirements(measureBundle, subject.split('/')[1], options);
+  const queries = _.uniq(
+    result.results.dataRequirement?.flatMap(dr => {
+      return (
+        dr.extension
+          ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
+          .map(e => `${dataEndpoint.address}${e.valueString}`) ?? []
+      );
+    }) ?? []
+  );
+
+  // Track an array of references for the resources returned from each query
+  const resourceReferenceArrays = await Promise.all(
+    queries.map(async query => {
+      const bundle = await axios.get(query).then(response => response.data);
+      const references = bundle.entry?.map(e => `${e.resource?.resourceType}/${e.resource?.id}`);
+      if (bundle.entry) {
+        //TODO: in a POST-based transaction bundle implementation (currently PUT),
+        // this may replace references - gather new ids to use in final response
+        await uploadResourcesFromBundle(bundle.entry, baseVersion);
+      }
+      return references ?? [];
+    })
+  );
+
+  const measure = measureBundle.entry?.find(e => e.resource.resourceType === 'Measure').resource;
+  const measureReport = {
+    resourceType: 'MeasureReport',
+    id: uuidv4(),
+    measure: measure.url?.includes('|') ? measure.url : `${measure.url}|${measure.version}`, //canonical measure/version
+    period: { start: periodStart, end: periodEnd },
+    status: 'complete',
+    type: 'data-collection',
+    subject: { reference: subject },
+    date: new Date().toISOString(),
+    reporter: { reference: 'Organization/deqm-test-server' },
+    meta: {
+      profile: ['http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-dataexchangemeasurereport']
+    },
+    extension: [
+      {
+        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType"',
+        valueCode: 'snapshot'
+      }
+    ],
+    evaluatedResource: resourceReferenceArrays?.flat().map(r => {
+      return { reference: r };
+    }),
+    contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
+  };
+
+  return {
+    resourceType: 'Parameters',
+    parameter: [
+      {
+        name: 'return',
+        resource: {
+          type: 'transaction',
+          resourceType: 'Bundle',
+          id: uuidv4(),
+          entry: [
+            {
+              resource: measureReport,
+              request: {
+                method: 'PUT',
+                url: `MeasureReport/${measureReport.id}`
+              },
+              fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
+            }
+          ]
+        }
+      }
+    ]
+  };
 };
 
 /**
@@ -560,6 +680,7 @@ module.exports = {
   search,
   submitData,
   dataRequirements,
+  collectData,
   evaluateMeasure,
   careGaps
 };
