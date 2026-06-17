@@ -233,6 +233,16 @@ export async function getAllDependentLibraries(lib: fhir4.Library): Promise<(fhi
 }
 
 /**
+ * Convert a FHIR reference value into the JSON property fragment used for targeted string replacement.
+ * This ensures only `reference` fields are replaced, rather than every matching string value.
+ * @param {string} reference reference value to encode
+ * @returns {string} JSON property fragment for the reference
+ */
+function referenceProperty(reference: string): string {
+  return JSON.stringify({ reference }).slice(1, -1);
+}
+
+/**
  * For entries in a transaction bundle whose IDs will be auto-generated, replace all instances of an existing reference
  * to the old id with a reference to the newly generated one.
  *
@@ -259,14 +269,16 @@ export function replaceReferences(entries: any[]) {
   // For each POST entry, replace existing reference across all entries
   postEntries.forEach(e => {
     logger.debug(`Replacing referenceIds for entry: ${JSON.stringify(e)}`);
+    const newReference = `${e.resource.resourceType}/${e.newId}`;
     // Checking fullUrl and id in separate replace loops will prevent invalid ResourceType/ResourceID -> urn:uuid references
     if (e.oldId) {
-      const idRegexp = new RegExp(`${e.resource.resourceType}/${e.oldId}`, 'g');
-      entriesStr = entriesStr.replace(idRegexp, `${e.resource.resourceType}/${e.newId}`);
+      entriesStr = entriesStr.replaceAll(
+        referenceProperty(`${e.resource.resourceType}/${e.oldId}`),
+        referenceProperty(newReference)
+      );
     }
     if (e.fullUrl) {
-      const urnRegexp = new RegExp(e.fullUrl, 'g');
-      entriesStr = entriesStr.replace(urnRegexp, `${e.resource.resourceType}/${e.newId}`);
+      entriesStr = entriesStr.replaceAll(referenceProperty(e.fullUrl), referenceProperty(newReference));
     }
   });
 

@@ -86,6 +86,35 @@ const BOTH_REPLACE_REFERENCES_ENTRIES = [
   }
 ];
 
+const URL_VALUE_REPLACE_REFERENCES_ENTRIES = [
+  {
+    resource: {
+      id: '61ebe359-bfdc-4613-8bf2-c5e300945f0a',
+      resourceType: 'Patient',
+      gender: 'male',
+      birthDate: '1974-12-25'
+    },
+    request: {
+      method: 'POST',
+      url: 'Patient'
+    }
+  },
+  {
+    resource: {
+      id: '88f151c0-a954-468a-88bd-5ae15c08e059',
+      resourceType: 'Observation',
+      subject: {
+        reference: 'Patient/61ebe359-bfdc-4613-8bf2-c5e300945f0a'
+      },
+      valueString: 'https://example.org/fhir/Patient/61ebe359-bfdc-4613-8bf2-c5e300945f0a'
+    },
+    request: {
+      method: 'POST',
+      url: 'Observation'
+    }
+  }
+];
+
 const EXPECTED_REPLACE_REFERENCES_OUTPUT = [
   {
     resource: {
@@ -142,10 +171,41 @@ const EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT = [
   }
 ];
 
+const EXPECTED_URL_VALUE_REPLACE_REFERENCES_OUTPUT = [
+  {
+    resource: {
+      id: 'Patient-0',
+      resourceType: 'Patient',
+      gender: 'male',
+      birthDate: '1974-12-25'
+    },
+    request: {
+      method: 'PUT',
+      url: 'Patient/Patient-0'
+    }
+  },
+  {
+    resource: {
+      id: 'Observation-1',
+      resourceType: 'Observation',
+      subject: {
+        reference: 'Patient/Patient-0'
+      },
+      valueString: 'https://example.org/fhir/Patient/61ebe359-bfdc-4613-8bf2-c5e300945f0a'
+    },
+    request: {
+      method: 'PUT',
+      url: 'Observation/Observation-1'
+    }
+  }
+];
+
 module.exports = {
   URN_REPLACE_REFERENCES_ENTRIES,
   RESOURCETYPE_REPLACE_REFERENCES_ENTRIES,
   BOTH_REPLACE_REFERENCES_ENTRIES,
+  URL_VALUE_REPLACE_REFERENCES_ENTRIES,
   EXPECTED_REPLACE_REFERENCES_OUTPUT,
-  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT
+  EXPECTED_FAILED_REPLACE_REFERENCES_OUTPUT,
+  EXPECTED_URL_VALUE_REPLACE_REFERENCES_OUTPUT
 };
