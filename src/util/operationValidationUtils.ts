@@ -44,7 +44,7 @@ function paramPresent(parameters: QueryObject, param: string) {
 export function validateEvalMeasureParams(query: QueryObject, expectedId: string) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
   // currently only supports measureId as the identifier
-  const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measureUrl', 'measure', 'measureResource'];
+  const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measure', 'measureResource'];
 
   // if there is not a url argument id, then there must be measure identifying information (measureId is supported)
   checkRequiredParams(query, !expectedId ? ['measureId', ...REQUIRED_PARAMS] : REQUIRED_PARAMS, '$evaluate');
