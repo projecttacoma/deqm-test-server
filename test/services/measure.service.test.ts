@@ -34,6 +34,68 @@ const collectDataMeasure = {
   url: 'http://example.org/fhir/Measure/collect-data',
   version: '1.0.0'
 };
+const collectDataMeasure2 = {
+  ...testMeasure2,
+  id: 'collectDataMeasure2',
+  url: 'http://example.org/fhir/Measure/collect-data-2',
+  version: '2.0.0'
+};
+
+const collectDataEndpoint = {
+  resourceType: 'Endpoint',
+  id: 'collect-data-endpoint',
+  status: 'active',
+  connectionType: {
+    system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
+    code: 'hl7-fhir-rest'
+  },
+  payloadType: [
+    {
+      coding: [
+        {
+          system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
+          code: 'any',
+          display: 'Any'
+        }
+      ]
+    }
+  ],
+  address: 'http://example-data-server.org/fhir'
+};
+
+const mockCollectDataRequirements = () => {
+  const { Calculator } = require('fqm-execution');
+  return jest
+    .spyOn(Calculator, 'calculateDataRequirements')
+    .mockImplementation(() => JSON.parse(JSON.stringify(dataRequirementsOutput)));
+};
+
+// Mock with flexible patient information, but always return Encounter for simplicity
+const mockCollectDataEndpointResponses = () => {
+  axios.get.mockImplementation(query => {
+    const patientId = query.match(/Patient\/([^&]+)/)?.[1] ?? 'unknown';
+    return Promise.resolve({
+      data: {
+        resourceType: 'Bundle',
+        type: 'searchset',
+        entry: [
+          {
+            resource: {
+              resourceType: 'Encounter',
+              id: `collectDataEncounter-${patientId}`,
+              status: 'finished',
+              class: {
+                system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+                code: 'AMB'
+              },
+              subject: { reference: `Patient/${patientId}` }
+            }
+          }
+        ]
+      }
+    });
+  });
+};
 
 const resetMeasureData = async () => {
   await cleanUpDb();
@@ -829,10 +891,9 @@ describe('measure.service', () => {
     });
 
     test('$collect-data returns a parameters transaction bundle for valid input', async () => {
-      const { Calculator } = require('fqm-execution');
       await createTestResource(collectDataMeasure, 'Measure');
 
-      jest.spyOn(Calculator, 'calculateDataRequirements').mockResolvedValue(dataRequirementsOutput);
+      mockCollectDataRequirements();
       axios.get
         .mockResolvedValueOnce({
           data: {
@@ -911,27 +972,7 @@ describe('measure.service', () => {
               },
               {
                 name: 'dataEndpoint',
-                resource: {
-                  resourceType: 'Endpoint',
-                  id: 'collect-data-endpoint',
-                  status: 'active',
-                  connectionType: {
-                    system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
-                    code: 'hl7-fhir-rest'
-                  },
-                  payloadType: [
-                    {
-                      coding: [
-                        {
-                          system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
-                          code: 'any',
-                          display: 'Any'
-                        }
-                      ]
-                    }
-                  ],
-                  address: 'http://example-data-server.org/fhir'
-                }
+                resource: collectDataEndpoint
               }
             ]
           })
@@ -1007,61 +1048,149 @@ describe('measure.service', () => {
         });
     });
 
-    test('$collect-data returns 501 when subjectGroup is provided', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$collect-data')
-        .send({
-          resourceType: 'Parameters',
-          parameter: [
-            {
-              name: 'measureUrl',
-              valueCanonical: collectDataMeasure.url
-            },
-            {
-              name: 'periodStart',
-              valueDate: '2020-01-01'
-            },
-            {
-              name: 'periodEnd',
-              valueDate: '2020-12-31'
-            },
-            {
-              name: 'subjectGroup',
-              valueReference: { reference: 'Group/testGroup' }
-            },
-            {
-              name: 'dataEndpoint',
-              resource: {
-                resourceType: 'Endpoint',
-                id: 'collect-data-endpoint',
-                status: 'active',
-                connectionType: {
-                  system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
-                  code: 'hl7-fhir-rest'
-                },
-                payloadType: [
-                  {
-                    coding: [
-                      {
-                        system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
-                        code: 'any',
-                        display: 'Any'
-                      }
-                    ]
-                  }
-                ],
-                address: 'http://example-data-server.org/fhir'
+    test('$collect-data supports multiple measures for all patients in a Group subject', async () => {
+      await createTestResource(collectDataMeasure, 'Measure');
+      await createTestResource(collectDataMeasure2, 'Measure');
+      mockCollectDataRequirements();
+      mockCollectDataEndpointResponses();
+
+      try {
+        await supertest(server.app)
+          .post('/4_0_1/Measure/$collect-data')
+          .send({
+            resourceType: 'Parameters',
+            parameter: [
+              {
+                name: 'measureUrl',
+                valueCanonical: collectDataMeasure.url
+              },
+              {
+                name: 'measureUrl',
+                valueCanonical: collectDataMeasure2.url
+              },
+              {
+                name: 'periodStart',
+                valueDate: '2020-01-01'
+              },
+              {
+                name: 'periodEnd',
+                valueDate: '2020-12-31'
+              },
+              {
+                name: 'subject',
+                valueReference: { reference: 'Group/testGroup' }
+              },
+              {
+                name: 'dataEndpoint',
+                resource: collectDataEndpoint
               }
-            }
-          ]
-        })
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .expect(501)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('NotImplemented');
-          expect(response.body.issue[0].details.text).toEqual('Parameter "subjectGroup" not yet supported');
-        });
+            ]
+          })
+          .set('Accept', 'application/json+fhir')
+          .set('content-type', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(response.body.resourceType).toEqual('Parameters');
+            expect(response.body.parameter).toHaveLength(2);
+            expect(response.body.parameter[0].resource.entry).toHaveLength(2);
+            expect(response.body.parameter[1].resource.entry).toHaveLength(2);
+
+            const patient1Reports = response.body.parameter[0].resource.entry.map(entry => entry.resource);
+            const patient2Reports = response.body.parameter[1].resource.entry.map(entry => entry.resource);
+            expect(patient1Reports.map(report => report.subject.reference)).toEqual([
+              'Patient/testPatient',
+              'Patient/testPatient'
+            ]);
+            expect(patient2Reports.map(report => report.subject.reference)).toEqual([
+              'Patient/testPatient2',
+              'Patient/testPatient2'
+            ]);
+            expect(patient1Reports.map(report => report.measure)).toEqual([
+              `${collectDataMeasure.url}|${collectDataMeasure.version}`,
+              `${collectDataMeasure2.url}|${collectDataMeasure2.version}`
+            ]);
+            expect(axios.get).toHaveBeenCalledTimes(12);
+            expect(axios.get).toHaveBeenCalledWith(
+              'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient2'
+            );
+          });
+      } finally {
+        await resetMeasureData();
+      }
+    });
+
+    test('$collect-data supports subjectGroup for multiple patients', async () => {
+      await createTestResource(collectDataMeasure, 'Measure');
+      mockCollectDataRequirements();
+      mockCollectDataEndpointResponses();
+
+      try {
+        await supertest(server.app)
+          .post('/4_0_1/Measure/$collect-data')
+          .send({
+            resourceType: 'Parameters',
+            parameter: [
+              {
+                name: 'measureUrl',
+                valueCanonical: collectDataMeasure.url
+              },
+              {
+                name: 'periodStart',
+                valueDate: '2020-01-01'
+              },
+              {
+                name: 'periodEnd',
+                valueDate: '2020-12-31'
+              },
+              {
+                name: 'subjectGroup',
+                resource: {
+                  resourceType: 'Group',
+                  id: 'collectDataSubjectGroup',
+                  type: 'person',
+                  actual: true,
+                  member: [
+                    {
+                      entity: {
+                        reference: 'Patient/testPatient'
+                      }
+                    },
+                    {
+                      entity: {
+                        reference: 'Patient/testPatient2'
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                name: 'dataEndpoint',
+                resource: collectDataEndpoint
+              }
+            ]
+          })
+          .set('Accept', 'application/json+fhir')
+          .set('content-type', 'application/json+fhir')
+          .expect(200)
+          .then(response => {
+            expect(response.body.resourceType).toEqual('Parameters');
+            expect(response.body.parameter).toHaveLength(2);
+            expect(response.body.parameter[0].resource.entry).toHaveLength(1);
+            expect(response.body.parameter[1].resource.entry).toHaveLength(1);
+            expect(response.body.parameter[0].resource.entry[0].resource.subject.reference).toEqual(
+              'Patient/testPatient'
+            );
+            expect(response.body.parameter[1].resource.entry[0].resource.subject.reference).toEqual(
+              'Patient/testPatient2'
+            );
+            expect(axios.get).toHaveBeenCalledTimes(6);
+            expect(axios.get).toHaveBeenCalledWith(
+              'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient2'
+            );
+          });
+      } finally {
+        await resetMeasureData();
+      }
     });
 
     test('$care-gaps returns 200 with valid params and specified measureId', async () => {
