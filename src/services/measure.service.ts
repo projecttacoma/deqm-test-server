@@ -185,12 +185,12 @@ const collectData = async (args, { req }) => {
       const measureReportEntries = await Promise.all(
         measureBundles.map(async measureBundle => {
           const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
-          const resourceReferenceStrings = await pullResourceReferences(patientDR, dataEndpoint, baseVersion);
+          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion);
           const measureReport = createDataExchangeMeasureReport(
             measureBundle,
             { start: periodStart, end: periodEnd },
             `Patient/${patientId}`,
-            resourceReferenceStrings
+            resourceReferences
           );
           return {
             resource: measureReport,
@@ -284,11 +284,11 @@ const getPatientIdsFromGroup = group => {
 };
 
 /**
- * Pulls data for a set of patient-specific data requirement from the provided Endpoint and stores returned resources.
+ * Pulls data for a set of patient-specific data requirements from the provided Endpoint and stores returned resources.
  * @param {Object} patientDR patient-specific data requirements
  * @param {Object} dataEndpoint FHIR Endpoint resource
  * @param {string} baseVersion FHIR base version
- * @returns {Promise<string[]>} Resource reference strings returned by the Endpoint queries.
+ * @returns {Promise<Object[]>} Resource Reference object created from the results of Endpoint queries.
  */
 const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
   const queries = _.uniq(
@@ -300,23 +300,42 @@ const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
       );
     }) ?? []
   );
+  const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 
   // Track an array of references for the resources returned from each query
   const resourceReferenceArrays = await Promise.all(
     queries.map(async query => {
       const bundle = await axios.get(query).then(response => response.data);
-      const references = bundle.entry
-        ?.map(e => (e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null))
-        .filter(Boolean);
       if (bundle.entry) {
-        //TODO: in a POST-based transaction bundle implementation (currently PUT),
-        // this may replace references - gather new ids to use in final response
-        await uploadResourcesFromBundle(bundle.entry, baseVersion);
+        const originalReferences = bundle.entry?.map(e =>
+          e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
+        );
+        //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
+        const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
+        // Get new ids
+        const references = originalReferences
+          .map((refString, i) => {
+            if (!refString) return null;
+            // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
+            const newRef =
+              results[i].resource?.resourceType && results[i].resource?.id
+                ? `${results[i].resource.resourceType}/${results[i].resource.id}`
+                : null;
+            return {
+              reference: refString,
+              identifier: {
+                system: serverUrl,
+                value: newRef
+              }
+            };
+          })
+          .filter(Boolean);
+        return references;
       }
-      return references ?? [];
+      return [];
     })
   );
-  return _.uniq(resourceReferenceArrays.flat());
+  return _.uniqBy(resourceReferenceArrays.flat(), r => JSON.stringify(r));
 };
 
 /**
@@ -324,10 +343,10 @@ const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
  * @param {Object} measureBundle FHIR Bundle containing a Measure resource
  * @param {Object} period Measurement period with start and end
  * @param {string} subjectReference Patient reference
- * @param {string[]} resourceReferenceStrings Reference strings to resources returned from data collection queries
+ * @param {Object[]} resourceReferences FHIR References to resources returned from data collection queries
  * @returns {Object} FHIR MeasureReport
  */
-const createDataExchangeMeasureReport = (measureBundle, period, subjectReference, resourceReferenceStrings) => {
+const createDataExchangeMeasureReport = (measureBundle, period, subjectReference, resourceReferences) => {
   const measure = measureBundle.entry?.find(e => e.resource.resourceType === 'Measure').resource;
   return {
     resourceType: 'MeasureReport',
@@ -348,9 +367,7 @@ const createDataExchangeMeasureReport = (measureBundle, period, subjectReference
         valueCode: 'snapshot'
       }
     ],
-    evaluatedResource: resourceReferenceStrings.map(r => {
-      return { reference: r };
-    }),
+    evaluatedResource: resourceReferences,
     contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
   };
 };

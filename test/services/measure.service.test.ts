@@ -1003,9 +1003,27 @@ describe('measure.service', () => {
             expect(measureReport.subject.reference).toEqual('Patient/testPatient');
             expect(measureReport.type).toEqual('data-collection');
             expect(measureReport.evaluatedResource).toEqual([
-              { reference: 'Coverage/collectDataPolicyHolderCoverage' },
-              { reference: 'Coverage/collectDataSubscriberCoverage' },
-              { reference: 'Encounter/collectDataEncounter' }
+              {
+                reference: 'Coverage/collectDataPolicyHolderCoverage',
+                identifier: {
+                  system: 'deqm-test-server.example.com/4_0_1',
+                  value: 'Coverage/collectDataPolicyHolderCoverage'
+                }
+              },
+              {
+                reference: 'Coverage/collectDataSubscriberCoverage',
+                identifier: {
+                  system: 'deqm-test-server.example.com/4_0_1',
+                  value: 'Coverage/collectDataSubscriberCoverage'
+                }
+              },
+              {
+                reference: 'Encounter/collectDataEncounter',
+                identifier: {
+                  system: 'deqm-test-server.example.com/4_0_1',
+                  value: 'Encounter/collectDataEncounter'
+                }
+              }
             ]);
           });
       } finally {
