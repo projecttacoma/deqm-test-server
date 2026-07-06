@@ -1,11 +1,12 @@
 //@ts-nocheck
-const { BadRequestError, ResourceNotFoundError, NotImplementedError } = require('../util/errorUtils');
+const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles, uploadResourcesFromBundle } = require('./bundle.service');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
+  validateCollectDataParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
@@ -167,13 +168,8 @@ const collectData = async (args, { req }) => {
   const { base_version: baseVersion } = req.params;
   const query = gatherParams(req.query, req.body);
 
-  // TODO: validate collect data parameters with function in ../util/operationValidationUtils
+  validateCollectDataParams(query);
   const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
-  if (!dataEndpoint) {
-    // TODO: pull this check into validation function
-    // change to bad request if capability statement is updated to reflect that this is required
-    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
-  }
 
   const options = {
     measurementPeriodStart: periodStart,

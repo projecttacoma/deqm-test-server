@@ -3,6 +3,37 @@ import { BadRequestError, NotImplementedError } from './errorUtils';
 type QueryValue = string | fhir4.FhirResource | undefined;
 type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
+const COLLECT_DATA_RECOGNIZED_PARAMS = [
+  'measureUrl',
+  'periodStart',
+  'periodEnd',
+  'subject',
+  'subjectGroup',
+  'reporter',
+  'reporterResource',
+  'location',
+  'lastReceivedOn',
+  'parameters',
+  'manifest',
+  'validateResources',
+  'dataEndpoint'
+];
+const COLLECT_DATA_SUPPORTED_PARAMS = [
+  'measureUrl',
+  'periodStart',
+  'periodEnd',
+  'subject',
+  'subjectGroup',
+  'dataEndpoint'
+];
+const COLLECT_DATA_REQUIRED_PARAMS = ['measureUrl', 'periodStart', 'periodEnd'];
+const COLLECT_DATA_SINGLE_CARDINALITY_PARAMS = ['periodStart', 'periodEnd', 'subject', 'subjectGroup', 'dataEndpoint'];
+
+function paramPresent(parameters: QueryObject, param: string) {
+  const value = parameters[param];
+  return value !== undefined && value !== null && value !== '';
+}
+
 /**
  * Checks that the parameters input to $evaluate are valid. Throws an error
  * for missing parameters, the use of unsupported parameters, and the use of unsupported
@@ -169,6 +200,78 @@ export function validateCareGapsParams(query: QueryObject) {
     throw new NotImplementedError(
       'Simultaneous measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
     );
+  }
+}
+
+/**
+ * Checks that the parameters input to $collect-data are valid. Throws an error
+ * for missing parameters, repeated single-cardinality parameters, unrecognized
+ * parameters, unsupported parameters, and invalid subject inputs.
+ * @param {Object} query query from http request object
+ */
+export function validateCollectDataParams(query: QueryObject) {
+  const unrecognizedParams = Object.keys(query).filter(param => !COLLECT_DATA_RECOGNIZED_PARAMS.includes(param));
+  if (unrecognizedParams.length > 0) {
+    throw new BadRequestError(
+      `The following parameters are unrecognized by the server: ${unrecognizedParams.join(', ')}.`
+    );
+  }
+
+  const missingRequiredParams = COLLECT_DATA_REQUIRED_PARAMS.filter(param => !paramPresent(query, param));
+  if (missingRequiredParams.length > 0) {
+    if (missingRequiredParams.length === 1 && missingRequiredParams[0] === 'measureUrl') {
+      throw new BadRequestError('At least one measureUrl is required.');
+    }
+    throw new BadRequestError(
+      `The following required parameters are missing for $collect-data: ${missingRequiredParams.join(', ')}.`
+    );
+  }
+
+  const repeatedSingleCardinalityParams = COLLECT_DATA_SINGLE_CARDINALITY_PARAMS.filter(param =>
+    Array.isArray(query[param])
+  );
+  if (repeatedSingleCardinalityParams.length > 0) {
+    throw new BadRequestError(
+      `The following parameters can only be provided once for $collect-data: ${repeatedSingleCardinalityParams.join(
+        ', '
+      )}.`
+    );
+  }
+
+  const hasSubject = paramPresent(query, 'subject');
+  const hasSubjectGroup = paramPresent(query, 'subjectGroup');
+  if (hasSubject && hasSubjectGroup) {
+    throw new BadRequestError('Only one of subject or subjectGroup may be specified for $collect-data.');
+  }
+
+  if (hasSubjectGroup) {
+    const subjectGroup = query.subjectGroup;
+    if (
+      !subjectGroup ||
+      Array.isArray(subjectGroup) ||
+      typeof subjectGroup === 'string' ||
+      subjectGroup.resourceType !== 'Group'
+    ) {
+      throw new BadRequestError('Parameter subjectGroup must be a resource of type Group.');
+    }
+  }
+
+  const unsupportedParams = Object.keys(query).filter(param => !COLLECT_DATA_SUPPORTED_PARAMS.includes(param));
+  if (unsupportedParams.length > 0) {
+    throw new NotImplementedError(
+      `The following parameters are not yet supported by the server: ${unsupportedParams.join(', ')}.`
+    );
+  }
+
+  const subject = query.subject;
+  if (hasSubject && (typeof subject !== 'string' || !/^(Patient|Group)\/[\w.-]+$/.test(subject))) {
+    throw new BadRequestError(
+      'The subject parameter must be a Patient or Group reference of the format "Patient/{id}".'
+    );
+  }
+
+  if (!paramPresent(query, 'dataEndpoint')) {
+    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
   }
 }
 
