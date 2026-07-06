@@ -189,7 +189,7 @@ const collectData = async (args, { req }) => {
           const measureReport = createDataExchangeMeasureReport(
             measureBundle,
             { start: periodStart, end: periodEnd },
-            `Patient/${patientId}`,
+            { reference: `Patient/${patientId}` },
             resourceReferences
           );
           return {
@@ -342,7 +342,7 @@ const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
  * Build a DEQM data exchange MeasureReport for the resources collected for a patient/measure pair.
  * @param {Object} measureBundle FHIR Bundle containing a Measure resource
  * @param {Object} period Measurement period with start and end
- * @param {string} subjectReference Patient reference
+ * @param {string} subjectReference FHIR Reference to subject (a Patient)
  * @param {Object[]} resourceReferences FHIR References to resources returned from data collection queries
  * @returns {Object} FHIR MeasureReport
  */
@@ -355,7 +355,7 @@ const createDataExchangeMeasureReport = (measureBundle, period, subjectReference
     period: period,
     status: 'complete',
     type: 'data-collection',
-    subject: { reference: subjectReference },
+    subject: subjectReference,
     date: new Date().toISOString(),
     reporter: { reference: 'Organization/deqm-test-server' },
     meta: {

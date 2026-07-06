@@ -63,6 +63,29 @@ const collectDataEndpoint = {
   address: 'http://example-data-server.org/fhir'
 };
 
+const baseCollectDataParameters = () => [
+  {
+    name: 'measureUrl',
+    valueCanonical: collectDataMeasure.url
+  },
+  {
+    name: 'periodStart',
+    valueDate: '2020-01-01'
+  },
+  {
+    name: 'periodEnd',
+    valueDate: '2020-12-31'
+  },
+  {
+    name: 'subject',
+    valueReference: { reference: 'Patient/testPatient' }
+  },
+  {
+    name: 'dataEndpoint',
+    resource: collectDataEndpoint
+  }
+];
+
 const mockCollectDataRequirements = () => {
   const { Calculator } = require('fqm-execution');
   return jest
@@ -890,6 +913,118 @@ describe('measure.service', () => {
         .expect(200);
     });
 
+    test.each([
+      {
+        name: 'unrecognized parameter',
+        parameters: [...baseCollectDataParameters(), { name: 'unsupportedName', valueString: 'unsupported' }],
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'The following parameters are unrecognized by the server: unsupportedName.'
+      },
+      {
+        name: 'missing measureUrl',
+        parameters: baseCollectDataParameters().filter(p => p.name !== 'measureUrl'),
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'At least one measureUrl is required.'
+      },
+      {
+        name: 'missing period dates',
+        parameters: baseCollectDataParameters().filter(p => !['periodStart', 'periodEnd'].includes(p.name)),
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'The following required parameters are missing for $collect-data: periodStart, periodEnd.'
+      },
+      {
+        name: 'repeated single-cardinality parameter',
+        parameters: [...baseCollectDataParameters(), { name: 'periodStart', valueDate: '2021-01-01' }],
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'The following parameters can only be provided once for $collect-data: periodStart.'
+      },
+      {
+        name: 'subject and subjectGroup together',
+        parameters: [
+          ...baseCollectDataParameters(),
+          {
+            name: 'subjectGroup',
+            resource: {
+              resourceType: 'Group',
+              id: 'collectDataSubjectGroup',
+              type: 'person',
+              actual: true
+            }
+          }
+        ],
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'Only one of subject or subjectGroup may be specified for $collect-data.'
+      },
+      {
+        name: 'invalid subjectGroup resource',
+        parameters: [
+          ...baseCollectDataParameters().filter(p => p.name !== 'subject'),
+          {
+            name: 'subjectGroup',
+            resource: {
+              resourceType: 'Patient',
+              id: 'testPatient'
+            }
+          }
+        ],
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'Parameter subjectGroup must be a resource of type Group.'
+      },
+      {
+        name: 'recognized but unsupported parameter',
+        parameters: [
+          ...baseCollectDataParameters(),
+          {
+            name: 'reporter',
+            valueReference: { reference: 'Practitioner/testPractitioner' }
+          }
+        ],
+        status: 501,
+        code: 'NotImplemented',
+        detailsText: 'The following parameters are not yet supported by the server: reporter.'
+      },
+      {
+        name: 'invalid subject reference',
+        parameters: [
+          ...baseCollectDataParameters().filter(p => p.name !== 'subject'),
+          {
+            name: 'subject',
+            valueReference: { reference: 'Practitioner/testPractitioner' }
+          }
+        ],
+        status: 400,
+        code: 'BadRequest',
+        detailsText: 'The subject parameter must be a Patient or Group reference of the format "Patient/{id}".'
+      },
+      {
+        name: 'missing dataEndpoint',
+        parameters: baseCollectDataParameters().filter(p => p.name !== 'dataEndpoint'),
+        status: 501,
+        code: 'NotImplemented',
+        detailsText: 'Currently implemented workflow requires passing a "dataEndpoint" parameter.'
+      }
+    ])('$collect-data returns $status for $name', async ({ parameters, status, code, detailsText }) => {
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$collect-data')
+        .send({
+          resourceType: 'Parameters',
+          parameter: parameters
+        })
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .expect(status)
+        .then(response => {
+          expect(response.body.issue[0].code).toEqual(code);
+          expect(response.body.issue[0].details.text).toEqual(detailsText);
+        });
+    });
+
     test('$collect-data returns a parameters transaction bundle for valid input', async () => {
       await createTestResource(collectDataMeasure, 'Measure');
 
@@ -1029,41 +1164,6 @@ describe('measure.service', () => {
       } finally {
         await resetMeasureData();
       }
-    });
-
-    test('$collect-data returns 501 when dataEndpoint is omitted', async () => {
-      await supertest(server.app)
-        .post('/4_0_1/Measure/$collect-data')
-        .send({
-          resourceType: 'Parameters',
-          parameter: [
-            {
-              name: 'measureUrl',
-              valueCanonical: collectDataMeasure.url
-            },
-            {
-              name: 'periodStart',
-              valueDate: '2020-01-01'
-            },
-            {
-              name: 'periodEnd',
-              valueDate: '2020-12-31'
-            },
-            {
-              name: 'subject',
-              valueReference: { reference: 'Patient/testPatient' }
-            }
-          ]
-        })
-        .set('Accept', 'application/json+fhir')
-        .set('content-type', 'application/json+fhir')
-        .expect(501)
-        .then(response => {
-          expect(response.body.issue[0].code).toEqual('NotImplemented');
-          expect(response.body.issue[0].details.text).toEqual(
-            'Currently implemented workflow requires passing a "dataEndpoint" parameter.'
-          );
-        });
     });
 
     test('$collect-data supports multiple measures for all patients in a Group subject', async () => {
