@@ -227,14 +227,7 @@ const collectData = async (args, { req }) => {
  * @returns {Promise<string[]>} Patient ids.
  */
 const getPatientIds = async (subject, subjectGroup) => {
-  if (subject && subjectGroup) {
-    throw new BadRequestError('Only one of subject or subjectGroup may be specified for $collect-data.');
-  }
-
   if (subject) {
-    if (Array.isArray(subject) || typeof subject !== 'string') {
-      throw new BadRequestError('Parameter subject must be a single Patient or Group reference.');
-    }
     const [resourceType, id] = subject.split('/');
     if (resourceType === 'Patient' && id) {
       return [id];
@@ -246,15 +239,7 @@ const getPatientIds = async (subject, subjectGroup) => {
       }
       return getPatientIdsFromGroup(group);
     }
-    throw new BadRequestError(
-      'Subject may only be a Group resource of format "Group/{id}" or Patient resource of format "Patient/{id}".'
-    );
-  }
-
-  if (subjectGroup) {
-    if (Array.isArray(subjectGroup) || typeof subjectGroup === 'string' || subjectGroup.resourceType !== 'Group') {
-      throw new BadRequestError('Parameter subjectGroup must be a FHIR Group resource.');
-    }
+  } else if (subjectGroup) {
     return getPatientIdsFromGroup(subjectGroup);
   }
 

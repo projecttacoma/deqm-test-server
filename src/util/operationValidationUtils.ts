@@ -266,7 +266,7 @@ export function validateCollectDataParams(query: QueryObject) {
   const subject = query.subject;
   if (hasSubject && (typeof subject !== 'string' || !/^(Patient|Group)\/[\w.-]+$/.test(subject))) {
     throw new BadRequestError(
-      'The subject parameter must be a Patient or Group reference of the format "Patient/{id}".'
+      'The subject parameter must be a Patient or Group reference of the format "Patient/{id}" or "Group/{id}".'
     );
   }
 

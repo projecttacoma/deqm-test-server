@@ -1000,7 +1000,8 @@ describe('measure.service', () => {
         ],
         status: 400,
         code: 'BadRequest',
-        detailsText: 'The subject parameter must be a Patient or Group reference of the format "Patient/{id}".'
+        detailsText:
+          'The subject parameter must be a Patient or Group reference of the format "Patient/{id}" or "Group/{id}".'
       },
       {
         name: 'missing dataEndpoint',
