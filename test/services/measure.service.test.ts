@@ -353,11 +353,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          reportType: 'population'
+          reportType: 'population',
+          measureUrl: testMeasure.url
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -413,12 +414,12 @@ describe('measure.service', () => {
               valueString: 'population'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure2'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure2'
             }
           ]
         })
@@ -434,7 +435,8 @@ describe('measure.service', () => {
                 _id: expect.anything(),
                 id: 'testMeasure',
                 library: ['Library/testLibrary'],
-                resourceType: 'Measure'
+                resourceType: 'Measure',
+                url: 'http://example.com/testMeasure'
               }
             },
             {
@@ -465,6 +467,7 @@ describe('measure.service', () => {
                 id: 'testMeasure2',
                 library: ['Library/testLibrary'],
                 resourceType: 'Measure',
+                url: 'http://example.com/testMeasure2',
                 useContext: expect.anything()
               }
             },
@@ -518,11 +521,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup'
         })
         .expect(200);
@@ -581,8 +585,8 @@ describe('measure.service', () => {
               valueString: 'population'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure'
             },
             {
               name: 'subjectGroup',
@@ -651,10 +655,11 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
-          periodEnd: '01-01-2021'
+          periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure'
         })
         .expect(200);
 
@@ -696,11 +701,12 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          subject: 'testPatient'
+          subject: 'testPatient',
+          measureUrl: 'http://example.com/testMeasure'
         })
         .expect(200);
 
@@ -740,12 +746,13 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'subject',
           subject: 'testPatient',
+          measureUrl: 'http://example.com/testMeasure',
           practitioner: 'Practitioner/testPractitioner'
         })
         .expect(200);
@@ -785,11 +792,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
           practitioner: 'Practitioner/testPractitioner'
         })
@@ -830,11 +838,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
+          measureUrl: 'http://example.com/testMeasure',
           practitioner: 'Practitioner/testPractitioner'
         })
         .expect(200);
@@ -847,11 +856,12 @@ describe('measure.service', () => {
 
     test('$evaluate returns 400 when practitioner is not referenced by Patient subject, individual report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'subject',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'testPatient',
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
@@ -866,11 +876,12 @@ describe('measure.service', () => {
 
     test('$evaluate returns 400 when practitioner is not referenced by any patients in Group subject, population report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
@@ -885,11 +896,12 @@ describe('measure.service', () => {
 
     test('$evaluate returns 400 when practitioner is not referenced by any patients, population report type, no subject', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure',
           practitioner: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)

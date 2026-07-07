@@ -80,7 +80,7 @@ class ScaledCalculation {
         const end = index + jobSize < patientIds.length ? index + jobSize : patientIds.length;
         this._jobs.push({
           patientIds: patientIds.slice(index, end),
-          measureId: currentBuilder.measure.id,
+          measureUrl: currentBuilder.measure.url,
           periodStart: this._periodStart,
           periodEnd: this._periodEnd
         });
@@ -135,7 +135,7 @@ class ScaledCalculation {
   async tabulateResults(jobResult) {
     this._count += jobResult.calcResult.results.length;
     // find the correct builder for this job
-    const currentBuilder = this._mrBuilders.find(mrb => mrb.measure.id === jobResult.jobInfo.measureId);
+    const currentBuilder = this._mrBuilders.find(mrb => mrb.measure.url === jobResult.jobInfo.measureUrl);
     jobResult.calcResult.results.forEach(execResult => {
       currentBuilder.addPatientResults(execResult);
     });

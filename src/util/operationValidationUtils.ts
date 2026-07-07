@@ -41,19 +41,14 @@ function paramPresent(parameters: QueryObject, param: string) {
  * @param {Object} query query from http request object
  * @param {string} expectedId an id passed from the url arguments
  */
-export function validateEvalMeasureParams(query: QueryObject, expectedId: string) {
-  const REQUIRED_PARAMS = ['periodStart', 'periodEnd'];
+export function validateEvalMeasureParams(query: QueryObject) {
+  const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'measureUrl'];
   // currently only supports measureId as the identifier
   const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measure', 'measureResource'];
 
   // if there is not a url argument id, then there must be measure identifying information (measureId is supported)
-  checkRequiredParams(query, !expectedId ? ['measureId', ...REQUIRED_PARAMS] : REQUIRED_PARAMS, '$evaluate');
+  checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate');
   checkNoUnsupportedParams(query, UNSUPPORTED_PARAMS, '$evaluate');
-
-  // if both url argument id and parameter measureId exist, they must match
-  if (expectedId && query.measureId && expectedId !== query.measureId) {
-    throw new BadRequestError(`URL argument id ${expectedId} must match parameter id ${query.measureId}`);
-  }
 
   if (query.reportType === 'subject-list') {
     throw new NotImplementedError(`The subject-list reportType is not currently supported by the server.`);
