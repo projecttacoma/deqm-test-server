@@ -1,11 +1,12 @@
 //@ts-nocheck
-const { BadRequestError, ResourceNotFoundError, NotImplementedError } = require('../util/errorUtils');
+const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles, uploadResourcesFromBundle } = require('./bundle.service');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
+  validateCollectDataParams,
   gatherParams,
   checkSubmitDataBody
 } = require('../util/operationValidationUtils');
@@ -167,28 +168,116 @@ const collectData = async (args, { req }) => {
   const { base_version: baseVersion } = req.params;
   const query = gatherParams(req.query, req.body);
 
-  // TODO: validate collect data parameters with function in ../util/operationValidationUtils
+  validateCollectDataParams(query);
   const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
-  if (subjectGroup) {
-    // TODO: Implement subjectGroup support
-    throw new NotImplementedError(`Parameter "subjectGroup" not yet supported`);
-  }
-  if (!dataEndpoint) {
-    // TODO: pull this check into validation function
-    // change to bad request if capability statement is updated to reflect that this is required
-    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
-  }
 
   const options = {
     measurementPeriodStart: periodStart,
     measurementPeriodEnd: periodEnd,
     useExpandedCodeQueries: true
   };
-  const measureBundle = await getMeasureBundleFromUrl(measureUrl);
-  // TODO: better handling of subject reference, combined with handling of subjectGroup. Handle multiple measures
-  const result = await patientSpecificDataRequirements(measureBundle, subject.split('/')[1], options);
+  const patientIds = await getPatientIds(subject, subjectGroup);
+  const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
+  const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
+
+  const parameters = await Promise.all(
+    patientIds.map(async patientId => {
+      const measureReportEntries = await Promise.all(
+        measureBundles.map(async measureBundle => {
+          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
+          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion);
+          const measureReport = createDataExchangeMeasureReport(
+            measureBundle,
+            { start: periodStart, end: periodEnd },
+            { reference: `Patient/${patientId}` },
+            resourceReferences
+          );
+          return {
+            resource: measureReport,
+            request: {
+              method: 'PUT',
+              url: `MeasureReport/${measureReport.id}`
+            },
+            fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
+          };
+        })
+      );
+      return {
+        name: 'return',
+        resource: {
+          type: 'transaction',
+          resourceType: 'Bundle',
+          id: uuidv4(),
+          entry: measureReportEntries
+        }
+      };
+    })
+  );
+
+  return {
+    resourceType: 'Parameters',
+    parameter: parameters
+  };
+};
+
+/**
+ * Resolve the patients to include based on a subject or subjectGroup parameter.
+ * @param {string} subject reference to a subject (Patient or Group) on the server
+ * @param {Object} subjectGroup FHIR Group that defines a set of patients as the subject
+ * @returns {Promise<string[]>} Patient ids.
+ */
+const getPatientIds = async (subject, subjectGroup) => {
+  if (subject) {
+    const [resourceType, id] = subject.split('/');
+    if (resourceType === 'Patient' && id) {
+      return [id];
+    }
+    if (resourceType === 'Group' && id) {
+      const group = await findResourceById(id, 'Group');
+      if (!group) {
+        throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
+      }
+      return getPatientIdsFromGroup(group);
+    }
+  } else if (subjectGroup) {
+    return getPatientIdsFromGroup(subjectGroup);
+  }
+
+  throw new BadRequestError('Must specify subject or subjectGroup.');
+};
+
+/**
+ * Extract Patient ids from a Group resource.
+ * @param {Object} group FHIR Group resource
+ * @returns {string[]} Patient ids.
+ */
+const getPatientIdsFromGroup = group => {
+  if (!group.member || group.member.length === 0) {
+    throw new BadRequestError('Parameter subjectGroup or referenced Group must contain members.');
+  }
+  return group.member.map(member => {
+    const reference = member.entity?.reference;
+    if (!reference) {
+      throw new BadRequestError('Group members must have references to Patients.');
+    }
+    const [resourceType, id] = reference.split('/');
+    if (resourceType !== 'Patient' || !id) {
+      throw new BadRequestError('Group members may only be Patient resource references of format "Patient/{id}".');
+    }
+    return id;
+  });
+};
+
+/**
+ * Pulls data for a set of patient-specific data requirements from the provided Endpoint and stores returned resources.
+ * @param {Object} patientDR patient-specific data requirements
+ * @param {Object} dataEndpoint FHIR Endpoint resource
+ * @param {string} baseVersion FHIR base version
+ * @returns {Promise<Object[]>} Resource Reference object created from the results of Endpoint queries.
+ */
+const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
   const queries = _.uniq(
-    result.results.dataRequirement?.flatMap(dr => {
+    patientDR.results.dataRequirement?.flatMap(dr => {
       return (
         dr.extension
           ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
@@ -196,30 +285,62 @@ const collectData = async (args, { req }) => {
       );
     }) ?? []
   );
+  const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 
   // Track an array of references for the resources returned from each query
   const resourceReferenceArrays = await Promise.all(
     queries.map(async query => {
       const bundle = await axios.get(query).then(response => response.data);
-      const references = bundle.entry?.map(e => `${e.resource?.resourceType}/${e.resource?.id}`);
       if (bundle.entry) {
-        //TODO: in a POST-based transaction bundle implementation (currently PUT),
-        // this may replace references - gather new ids to use in final response
-        await uploadResourcesFromBundle(bundle.entry, baseVersion);
+        const originalReferences = bundle.entry?.map(e =>
+          e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
+        );
+        //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
+        const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
+        // Get new ids
+        const references = originalReferences
+          .map((refString, i) => {
+            if (!refString) return null;
+            // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
+            const newRef =
+              results[i].resource?.resourceType && results[i].resource?.id
+                ? `${results[i].resource.resourceType}/${results[i].resource.id}`
+                : null;
+            return {
+              reference: refString,
+              identifier: {
+                system: serverUrl,
+                value: newRef
+              }
+            };
+          })
+          .filter(Boolean);
+        return references;
       }
-      return references ?? [];
+      return [];
     })
   );
+  return _.uniqBy(resourceReferenceArrays.flat(), r => JSON.stringify(r));
+};
 
+/**
+ * Build a DEQM data exchange MeasureReport for the resources collected for a patient/measure pair.
+ * @param {Object} measureBundle FHIR Bundle containing a Measure resource
+ * @param {Object} period Measurement period with start and end
+ * @param {string} subjectReference FHIR Reference to subject (a Patient)
+ * @param {Object[]} resourceReferences FHIR References to resources returned from data collection queries
+ * @returns {Object} FHIR MeasureReport
+ */
+const createDataExchangeMeasureReport = (measureBundle, period, subjectReference, resourceReferences) => {
   const measure = measureBundle.entry?.find(e => e.resource.resourceType === 'Measure').resource;
-  const measureReport = {
+  return {
     resourceType: 'MeasureReport',
     id: uuidv4(),
     measure: measure.url?.includes('|') ? measure.url : `${measure.url}|${measure.version}`, //canonical measure/version
-    period: { start: periodStart, end: periodEnd },
+    period: period,
     status: 'complete',
     type: 'data-collection',
-    subject: { reference: subject },
+    subject: subjectReference,
     date: new Date().toISOString(),
     reporter: { reference: 'Organization/deqm-test-server' },
     meta: {
@@ -231,34 +352,8 @@ const collectData = async (args, { req }) => {
         valueCode: 'snapshot'
       }
     ],
-    evaluatedResource: resourceReferenceArrays?.flat().map(r => {
-      return { reference: r };
-    }),
+    evaluatedResource: resourceReferences,
     contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
-  };
-
-  return {
-    resourceType: 'Parameters',
-    parameter: [
-      {
-        name: 'return',
-        resource: {
-          type: 'transaction',
-          resourceType: 'Bundle',
-          id: uuidv4(),
-          entry: [
-            {
-              resource: measureReport,
-              request: {
-                method: 'PUT',
-                url: `MeasureReport/${measureReport.id}`
-              },
-              fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
-            }
-          ]
-        }
-      }
-    ]
   };
 };
 
