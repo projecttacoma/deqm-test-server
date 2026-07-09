@@ -44,7 +44,7 @@ function paramPresent(parameters: QueryObject, param: string) {
 export function validateEvalMeasureParams(query: QueryObject) {
   const REQUIRED_PARAMS = ['periodStart', 'periodEnd', 'measureUrl'];
   // currently only supports measureId as the identifier
-  const UNSUPPORTED_PARAMS = ['lastReceivedOn', 'measureIdentifier', 'measure', 'measureResource'];
+  const UNSUPPORTED_PARAMS = ['lastReceivedOn'];
 
   // if there is not a url argument id, then there must be measure identifying information (measureId is supported)
   checkRequiredParams(query, REQUIRED_PARAMS, '$evaluate');
@@ -55,7 +55,9 @@ export function validateEvalMeasureParams(query: QueryObject) {
   }
 
   // returns unsupported report type that is included in the http request
-  if (!['subject', 'population', 'subject-list', undefined].includes(query.reportType as string)) {
+  if (
+    !['subject', 'population', 'subject-list', 'individual', 'summary', undefined].includes(query.reportType as string)
+  ) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate`);
   }
 
@@ -64,7 +66,7 @@ export function validateEvalMeasureParams(query: QueryObject) {
     throw new BadRequestError(`"subject" parameter must not be included when "subjectGroup" is used.`);
   }
 
-  if (query.reportType === 'population') {
+  if (query.reportType === 'population' || query.reportType === 'summary') {
     if (query.subject && typeof query.subject === 'string') {
       const subjectReference = query.subject.split('/');
       if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
@@ -104,7 +106,7 @@ export function validateEvalMeasureParams(query: QueryObject) {
         throw new BadRequestError("'subjectGroup' must contain members.");
       }
     }
-  } else if (query.reportType === 'subject') {
+  } else if (query.reportType === 'subject' || query.reportType === 'individual') {
     if (!query.subject && !query.subjectGroup) {
       throw new BadRequestError(
         `Must specify subject or subjectGroup for all $evaluate requests with reportType parameter: subject`
@@ -131,10 +133,12 @@ export function validateEvalMeasureParams(query: QueryObject) {
     }
   }
 
-  if (query.practitioner && typeof query.practitioner === 'string') {
-    const practitionerReference = query.practitioner.split('/');
+  if (query.reporter && typeof query.reporter === 'string') {
+    const practitionerReference = query.reporter.split('/');
     if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
-      throw new BadRequestError(`practitioner may only be a Practitioner resource of format "Practitioner/{id}".`);
+      throw new BadRequestError(
+        `reporter may only be a Practitioner resource reference of format "Practitioner/{id}".`
+      );
     }
   }
 }

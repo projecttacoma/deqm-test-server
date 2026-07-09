@@ -52,7 +52,7 @@ const PRACTITIONER_AND_NO_ORG = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
   status: 'open-gap',
-  practitioner: 'Practitioner/testPractitioner',
+  reporter: 'Practitioner/testPractitioner',
   measureId: 'testID'
 };
 const VALID_PRACTITIONER_QUERY = {
@@ -60,7 +60,7 @@ const VALID_PRACTITIONER_QUERY = {
   periodEnd: '2019-12-31',
   status: 'open-gap',
   organization: 'Organization/testOrganization',
-  practitioner: 'Practitioner/testPractitioner',
+  reporter: 'Practitioner/testPractitioner',
   measureId: 'testID'
 };
 const INVALID_PRACTITIONER_QUERY = {
@@ -482,13 +482,13 @@ describe('validateEvalMeasureParams', () => {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Patient/testPatient',
-        practitioner: 'INVALID'
+        reporter: 'INVALID'
       });
       expect.fail('validateEvalMeasureParams failed to throw error for invalid Practitioner reference');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        'practitioner may only be a Practitioner resource of format "Practitioner/{id}".'
+        'reporter may only be a Practitioner resource reference of format "Practitioner/{id}".'
       );
     }
   });
@@ -500,7 +500,7 @@ describe('validateEvalMeasureParams', () => {
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Patient/testPatient',
-        practitioner: 'INVALID'
+        reporter: 'INVALID'
       });
       expect.fail('validateEvalMeasureParams failed to throw error for invalid Practitioner reference');
     } catch (e) {

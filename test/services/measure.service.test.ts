@@ -753,7 +753,7 @@ describe('measure.service', () => {
           reportType: 'subject',
           subject: 'testPatient',
           measureUrl: 'http://example.com/testMeasure',
-          practitioner: 'Practitioner/testPractitioner'
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -799,7 +799,7 @@ describe('measure.service', () => {
           reportType: 'population',
           measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
-          practitioner: 'Practitioner/testPractitioner'
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -844,7 +844,7 @@ describe('measure.service', () => {
           periodEnd: '01-01-2021',
           reportType: 'population',
           measureUrl: 'http://example.com/testMeasure',
-          practitioner: 'Practitioner/testPractitioner'
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -863,7 +863,7 @@ describe('measure.service', () => {
           periodEnd: '01-01-2021',
           measureUrl: 'http://example.com/testMeasure',
           subject: 'testPatient',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
@@ -883,7 +883,7 @@ describe('measure.service', () => {
           periodEnd: '01-01-2021',
           measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
@@ -902,7 +902,7 @@ describe('measure.service', () => {
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           measureUrl: 'http://example.com/testMeasure',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {

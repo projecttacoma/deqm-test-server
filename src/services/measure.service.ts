@@ -359,7 +359,7 @@ const createDataExchangeMeasureReport = (measureBundle, period, subjectReference
 
 /**
  * Execute the measure for a given Patient or Group
- * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} args the args object passed in by the user, includes measureUrl
  * @param {Object} req http request object
  * @returns {Object} Parameters resource containing one or more Bundles of MeasureReports.
  */
@@ -385,7 +385,7 @@ const evaluateMeasure = async (args, { req }) => {
 
   // If reportType is not specified, default to 'subject', but
   // only if the 'subject' parameter is also specified
-  if (reportType === 'subject' || (reportType == null && subject != null)) {
+  if (reportType === 'subject' || reportType === 'individual' || (reportType == null && subject != null)) {
     logger.debug('Evaluating measure for individual');
     return evaluateMeasureForIndividual(query);
   }
@@ -395,7 +395,7 @@ const evaluateMeasure = async (args, { req }) => {
 };
 
 /**
- * Evaluate measure for "summary" report type
+ * Evaluate measure for "summary"/"population" report type
  */
 const evaluateMeasureForPopulation = async query => {
   const measureBundles =
@@ -417,11 +417,11 @@ const evaluateMeasureForPopulation = async query => {
         );
       }
     }
-    if (query.practitioner) {
-      const patients = await filterPatientByPractitionerFromGroup(group, query.practitioner);
+    if (query.reporter) {
+      const patients = await filterPatientByPractitionerFromGroup(group, query.reporter);
       if (patients.length === 0) {
         throw new BadRequestError(
-          `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.practitioner}`
+          `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.reporter}`
         );
       } else {
         patientIds = patients.map(p => p.id);
@@ -433,13 +433,13 @@ const evaluateMeasureForPopulation = async query => {
       });
     }
   } else {
-    if (query.practitioner) {
+    if (query.reporter) {
       patientIds = await findResourceIdsWithQuery(
-        getResourceReference('generalPractitioner', query.practitioner),
+        getResourceReference('generalPractitioner', query.reporter),
         'Patient'
       );
       if (patientIds.length === 0) {
-        throw new BadRequestError(`No Patient resources reference the given practitioner, ${query.practitioner}`);
+        throw new BadRequestError(`No Patient resources reference the given practitioner, ${query.reporter}`);
       }
     } else {
       patientIds = await findResourceIdsWithQuery({}, 'Patient');
@@ -483,7 +483,7 @@ const evaluateMeasureForPopulation = async query => {
 };
 
 /**
- * Evaluate measure for "individual" report type
+ * Evaluate measure for "individual"/"subject" report type
  */
 const evaluateMeasureForIndividual = async query => {
   const measureBundles =
@@ -497,10 +497,10 @@ const evaluateMeasureForIndividual = async query => {
       measurementPeriodEnd: query.periodEnd
     });
 
-    const { periodStart, periodEnd, subject, practitioner } = query;
+    const { periodStart, periodEnd, subject, reporter } = query;
     let patientBundle;
     // does this change to reporter?
-    if (practitioner) {
+    if (reporter) {
       let patientId = subject;
 
       if (subject.includes('/')) {
@@ -509,7 +509,7 @@ const evaluateMeasureForIndividual = async query => {
 
       const practitionerQuery = {
         id: patientId,
-        ...getResourceReference('generalPractitioner', practitioner)
+        ...getResourceReference('generalPractitioner', reporter)
       };
 
       const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
@@ -517,7 +517,7 @@ const evaluateMeasureForIndividual = async query => {
         patientBundle = getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
       } else {
         throw new BadRequestError(
-          `The given subject, ${subject}, does not reference the given practitioner, ${practitioner}`
+          `The given subject, ${subject}, does not reference the given practitioner, ${reporter}`
         );
       }
     } else {

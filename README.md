@@ -141,31 +141,31 @@ This operation calculates measure(s) for a given patient or set of patients. Cur
 
 Required parameters include:
 
+- `measureUrl`: canonical URL of the. measure to be evaluated
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject is required for an `individual` `reportType` and is the subject for which a measure will be calculated
-- `measureId`: Required if the measure ID is not specified in the URL. May also be a list of measure IDs if provided in a Parameters object.
+- `subject`: subject is required for a `individual` (`subject` for backwards compatibility) `reportType` and is the subject for which a measure will be calculated
 
 Optional parameters include:
 
-- `practitioner`: practitioner for which the measure will be calculated
+- `reporter`: reference to practitioner for which the measure will be calculated (only practitioner reference currently supported)
 
-Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
+Currently, `lastReceivedOn` and `reporter` (for PractitionerRole and Organization references) parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `individual` (`subject` for backwards compatibility) and `summary` (`population` for backwards compatibility) `reportTypes` are supported at this time,
 which will generate `individual` and `summary` `MeasureReport`s respectively.
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters. Example `Parameters` object for `$evaluate`:
+To use, first POST a measure bundle into your database, then send a GET or POST request to `http://localhost:3000/4_0_1/Measure/$evaluate`. Example `Parameters` object for POST `$evaluate`:
 
 ```json
 {
   "resourceType": "Parameters",
   "parameter": [
     {
-      "name": "measureId",
-      "valueString": "BreastCancerScreeningsFHIR"
+      "name": "measureUrl",
+      "valueString": "http://ecqi.healthit.gov/ecqms/Measure/BreastCancerScreeningsFHIR"
     },
     {
-      "name": "measureId",
-      "valueString": "CervicalCancerScreeningFHIR"
+      "name": "measureUrl",
+      "valueString": "http://ecqi.healthit.gov/ecqms/Measure/CervicalCancerScreeningFHIR"
     },
     {
       "name": "periodEnd",
@@ -177,7 +177,7 @@ To use, first POST a measure bundle into your database, then send a GET request 
     },
     {
       "name": "reportType",
-      "valueString": "population"
+      "valueString": "summary"
     }
   ]
 }
@@ -192,7 +192,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
+This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-evaluate.html) for more information.
 
 #### `$care-gaps`
 
