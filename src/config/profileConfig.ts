@@ -82,7 +82,7 @@ const buildConfig = () => {
               name: 'evaluateMeasure',
               route: '/$evaluate',
               method: 'GET',
-              reference: 'http://hl7.org/fhir/uv/deqm/OperationDefinition/evaluatee'
+              reference: 'http://hl7.org/fhir/uv/deqm/OperationDefinition/evaluate'
             },
             {
               name: 'evaluateMeasure',
