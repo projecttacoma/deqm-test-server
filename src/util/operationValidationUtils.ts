@@ -135,7 +135,9 @@ export function validateEvalMeasureParams(query: QueryObject) {
 
   if (query.reporter && typeof query.reporter === 'string') {
     const practitionerReference = query.reporter.split('/');
-    if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
+    if (practitionerReference[0] === 'PractitionerRole' || practitionerReference[0] === 'Organization') {
+      throw new NotImplementedError(`reporter as a PractitionerRole or Organization reference is not yet implemented.`);
+    } else if (practitionerReference.length !== 2 || practitionerReference[0] !== 'Practitioner') {
       throw new BadRequestError(
         `reporter may only be a Practitioner resource reference of format "Practitioner/{id}".`
       );

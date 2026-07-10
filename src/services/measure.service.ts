@@ -499,7 +499,6 @@ const evaluateMeasureForIndividual = async query => {
 
     const { periodStart, periodEnd, subject, reporter } = query;
     let patientBundle;
-    // does this change to reporter?
     if (reporter) {
       let patientId = subject;
 
