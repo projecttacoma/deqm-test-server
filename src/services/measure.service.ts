@@ -447,6 +447,7 @@ const evaluateMeasureForPopulation = async query => {
   }
 
   const calcCount = patientIds.length * measureBundles.length;
+  // count number of patientIds times measureBundles, if over threshold, then do them with workers, otherwise do it here
   if (process.env.EXEC_WORKERS > 0 && calcCount > process.env.SCALED_EXEC_THRESHOLD) {
     logger.info(
       `Starting scaled calculation run with ${patientIds.length} patients and ${measureBundles.length} measures`
@@ -477,6 +478,7 @@ const evaluateMeasureForPopulation = async query => {
     const allResults = await Promise.all(resultsPromises);
 
     logger.info('Successfully generated $evaluate reports');
+    // an array of summary reports, one for each measure
 
     return wrapReportsInBundlesParameters([allResults]);
   }
@@ -513,7 +515,7 @@ const evaluateMeasureForIndividual = async query => {
 
       const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
       if (patient) {
-        patientBundle = getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
+        patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
       } else {
         throw new BadRequestError(
           `The given subject, ${subject}, does not reference the given practitioner, ${reporter}`
@@ -528,7 +530,7 @@ const evaluateMeasureForIndividual = async query => {
       measurementPeriodEnd: periodEnd,
       reportType: 'individual'
     });
-
+    // Currently called with exactly one patient, so returns a single measure report in the array
     return results[0];
   });
 

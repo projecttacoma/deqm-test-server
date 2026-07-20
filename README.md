@@ -144,14 +144,15 @@ Required parameters include:
 - `measureUrl`: canonical URL of the. measure to be evaluated
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject is required for a `individual` (`subject` for backwards compatibility) `reportType` and is the subject for which a measure will be calculated
 
 Optional parameters include:
 
+- `reportType`: `individual` (`subject` for backwards compatibility) or `summary` (`population` for backwards compatibility) report type (`subject-list` not yet supported)
+- `subject`: Patient or Group reference for which a measure will be calculated
+- `subjectGroup`: Group resource for which a measure will be calculated
 - `reporter`: reference to practitioner for which the measure will be calculated (only practitioner reference currently supported)
 
-Currently, `lastReceivedOn` and `reporter` (for PractitionerRole and Organization references) parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `individual` (`subject` for backwards compatibility) and `summary` (`population` for backwards compatibility) `reportTypes` are supported at this time,
-which will generate `individual` and `summary` `MeasureReport`s respectively.
+Currently, `reporter` (for PractitionerRole and Organization references) parameters are not supported by the test server. Optional parameters `reporterResource`, `location`, `parameters`, `manifest`, `lastReceivedOn`, `excludeEvaluatedResources`, `stratifier`, and `supplementalData` are not supported by the test server. 
 
 To use, first POST a measure bundle into your database, then send a GET or POST request to `http://localhost:3000/4_0_1/Measure/$evaluate`. Example `Parameters` object for POST `$evaluate`:
 
