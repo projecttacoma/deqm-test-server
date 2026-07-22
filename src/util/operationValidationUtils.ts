@@ -69,77 +69,7 @@ export function validateEvalMeasureParams(query: QueryObject) {
     throw new BadRequestError(`reportType ${query.reportType} is not supported for $evaluate`);
   }
 
-  // ensure that subject and subjectGroup are exclusive
-  if (query.subjectGroup && query.subject) {
-    throw new BadRequestError(`"subject" parameter must not be included when "subjectGroup" is used.`);
-  }
-
-  if (query.reportType === 'population' || query.reportType === 'summary') {
-    if (query.subject && typeof query.subject === 'string') {
-      const subjectReference = query.subject.split('/');
-      if (subjectReference.length !== 2 || subjectReference[0] !== 'Group') {
-        throw new BadRequestError(
-          `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
-        );
-      }
-    }
-
-    // check subjectGroup resource if specified
-    if (query.subjectGroup) {
-      // ensure it is a group resource
-      if (
-        Array.isArray(query.subjectGroup) ||
-        typeof query.subjectGroup === 'string' ||
-        query.subjectGroup.resourceType !== 'Group'
-      ) {
-        throw new BadRequestError("'subjectGroup' must be an embedded Group resource.");
-      }
-      // ensure it has members
-      if (query.subjectGroup.member && query.subjectGroup.member.length > 0) {
-        // check each member to make sure they all have valid references
-        for (let i = 0; i < query.subjectGroup.member.length; i++) {
-          const member = query.subjectGroup.member[i];
-          if (member.entity?.reference) {
-            const patientReference = member.entity.reference.split('/');
-            if (patientReference.length !== 2 || patientReference[0] !== 'Patient') {
-              throw new BadRequestError(
-                '\'subjectGroup\' members may only be Patient resource references of format "Patient/{id}".'
-              );
-            }
-          } else {
-            throw new BadRequestError("'subjectGroup' members must have references to Patients.");
-          }
-        }
-      } else {
-        throw new BadRequestError("'subjectGroup' must contain members.");
-      }
-    }
-  } else if (query.reportType === 'subject' || query.reportType === 'individual') {
-    if (!query.subject && !query.subjectGroup) {
-      throw new BadRequestError(
-        `Must specify subject or subjectGroup for all $evaluate requests with reportType parameter: subject`
-      );
-    }
-
-    if (query.subjectGroup) {
-      throw new NotImplementedError(
-        `"subjectGroup" parameter is not currently supported for "reportType" parameter with value subject.`
-      );
-    }
-
-    if (query.subject && typeof query.subject === 'string') {
-      const subjectReference = query.subject.split('/');
-      if (subjectReference.length > 1 && subjectReference[0] === 'Group') {
-        throw new NotImplementedError(
-          `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
-        );
-      } else if (subjectReference.length > 1 && !['Patient', 'Group'].includes(subjectReference[0])) {
-        throw new BadRequestError(
-          `For reportType parameter 'subject', subject reference may only be a Patient or Group resource of format "Patient/{id}" or "Group/{id}".`
-        );
-      }
-    }
-  }
+  validateSubject(query);
 
   if (query.reporter && typeof query.reporter === 'string') {
     const practitionerReference = query.reporter.split('/');
@@ -201,15 +131,6 @@ export function validateCareGapsParams(query: QueryObject) {
       );
     }
   }
-
-  if (
-    (query.measureId && (query.measureIdentifier || query.measureUrl)) ||
-    ((query.measureId || query.measureIdentifier) && query.measureUrl)
-  ) {
-    throw new NotImplementedError(
-      'Simultaneous measure identification (measureId/measureIdentifier/measureUrl) is not currently supported by the server.'
-    );
-  }
 }
 
 /**
@@ -247,10 +168,30 @@ export function validateCollectDataParams(query: QueryObject) {
     );
   }
 
+  const unsupportedParams = Object.keys(query).filter(param => !COLLECT_DATA_SUPPORTED_PARAMS.includes(param));
+  if (unsupportedParams.length > 0) {
+    throw new NotImplementedError(
+      `The following parameters are not yet supported by the server: ${unsupportedParams.join(', ')}.`
+    );
+  }
+
+  validateSubject(query);
+
+  if (!paramPresent(query, 'dataEndpoint')) {
+    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
+  }
+}
+
+/**
+ * Checks that and subject and subjectGroup parameters are valid (same validation for evaluate and collect-data).
+ * Throws an error for invalid subject inputs.
+ * @param {Object} query query from http request object
+ */
+export function validateSubject(query: QueryObject) {
   const hasSubject = paramPresent(query, 'subject');
   const hasSubjectGroup = paramPresent(query, 'subjectGroup');
   if (hasSubject && hasSubjectGroup) {
-    throw new BadRequestError('Only one of subject or subjectGroup may be specified for $collect-data.');
+    throw new BadRequestError('Only one of subject or subjectGroup may be specified.');
   }
 
   if (hasSubjectGroup) {
@@ -265,22 +206,11 @@ export function validateCollectDataParams(query: QueryObject) {
     }
   }
 
-  const unsupportedParams = Object.keys(query).filter(param => !COLLECT_DATA_SUPPORTED_PARAMS.includes(param));
-  if (unsupportedParams.length > 0) {
-    throw new NotImplementedError(
-      `The following parameters are not yet supported by the server: ${unsupportedParams.join(', ')}.`
-    );
-  }
-
   const subject = query.subject;
   if (hasSubject && (typeof subject !== 'string' || !/^(Patient|Group)\/[\w.-]+$/.test(subject))) {
     throw new BadRequestError(
       'The subject parameter must be a Patient or Group reference of the format "Patient/{id}" or "Group/{id}".'
     );
-  }
-
-  if (!paramPresent(query, 'dataEndpoint')) {
-    throw new NotImplementedError(`Currently implemented workflow requires passing a "dataEndpoint" parameter.`);
   }
 }
 

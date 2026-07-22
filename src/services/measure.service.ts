@@ -18,16 +18,10 @@ const {
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
-  filterPatientByPractitionerFromGroup
+  filterPatientByPractitionerFromIds
 } = require('../util/patientUtils');
 const { patientSpecificDataRequirements } = require('../util/collectDataUtils');
-const {
-  findOneResourceWithQuery,
-  findResourcesWithQuery,
-  findResourceIdsWithQuery,
-  findResourceById
-} = require('../database/dbOperations');
-const { getResourceReference } = require('../util/referenceUtils');
+const { findResourcesWithQuery, findResourceIdsWithQuery, findResourceById } = require('../database/dbOperations');
 import axios from 'axios';
 import logger from '../server/logger';
 const { v4: uuidv4 } = require('uuid');
@@ -242,8 +236,7 @@ const getPatientIds = async (subject, subjectGroup) => {
   } else if (subjectGroup) {
     return getPatientIdsFromGroup(subjectGroup);
   }
-
-  throw new BadRequestError('Must specify subject or subjectGroup.');
+  return findResourceIdsWithQuery({}, 'Patient');
 };
 
 /**
@@ -381,69 +374,45 @@ const evaluateMeasure = async (args, { req }) => {
   // or using unsupported report type
   validateEvalMeasureParams(query);
 
-  const { reportType, subject } = query;
+  const { reportType, subject, subjectGroup } = query;
+  const subjectIds = await getPatientIds(subject, subjectGroup);
 
   // If reportType is not specified, default to 'subject', but
   // only if the 'subject' parameter is also specified
-  if (reportType === 'subject' || reportType === 'individual' || (reportType == null && subject != null)) {
+  if (
+    reportType === 'subject' ||
+    reportType === 'individual' ||
+    (reportType == null && subject?.split('/')[0] === 'Patient')
+  ) {
     logger.debug('Evaluating measure for individual');
-    return evaluateMeasureForIndividual(query);
+    return evaluateMeasureForIndividual(query, subjectIds);
   }
 
   logger.debug('Evaluating measure for population');
-  return evaluateMeasureForPopulation(query);
+  return evaluateMeasureForPopulation(query, subjectIds);
 };
 
 /**
  * Evaluate measure for "summary"/"population" report type
  */
-const evaluateMeasureForPopulation = async query => {
+const evaluateMeasureForPopulation = async (query, subjectIds) => {
   const measureBundles =
     query.measureUrl && Array.isArray(query.measureUrl)
       ? await Promise.all(query.measureUrl.map(async m => await getMeasureBundleFromUrl(m)))
       : [await getMeasureBundleFromUrl(query.measureUrl)];
-  // Collect patientId instead of bundles
+
   let patientIds = [];
-  if (query.subject || query.subjectGroup) {
-    let group;
-    if (query.subjectGroup) {
-      group = query.subjectGroup;
+  if (query.reporter) {
+    const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
+    if (patients.length === 0) {
+      throw new BadRequestError(
+        `The given subject has no patients that reference the given practitioner, ${query.reporter}`
+      );
     } else {
-      const subjectReference = query.subject.split('/');
-      group = await findResourceById(subjectReference[1], subjectReference[0]);
-      if (!group) {
-        throw new ResourceNotFoundError(
-          `No resource found in collection: ${subjectReference[0]}, with id ${subjectReference[1]}.`
-        );
-      }
-    }
-    if (query.reporter) {
-      const patients = await filterPatientByPractitionerFromGroup(group, query.reporter);
-      if (patients.length === 0) {
-        throw new BadRequestError(
-          `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.reporter}`
-        );
-      } else {
-        patientIds = patients.map(p => p.id);
-      }
-    } else {
-      patientIds = group.member.map(m => {
-        const ref = m.entity.reference.split('/');
-        return ref[1];
-      });
+      patientIds = patients.map(p => p.id);
     }
   } else {
-    if (query.reporter) {
-      patientIds = await findResourceIdsWithQuery(
-        getResourceReference('generalPractitioner', query.reporter),
-        'Patient'
-      );
-      if (patientIds.length === 0) {
-        throw new BadRequestError(`No Patient resources reference the given practitioner, ${query.reporter}`);
-      }
-    } else {
-      patientIds = await findResourceIdsWithQuery({}, 'Patient');
-    }
+    patientIds = subjectIds;
   }
 
   const calcCount = patientIds.length * measureBundles.length;
@@ -487,56 +456,54 @@ const evaluateMeasureForPopulation = async query => {
 /**
  * Evaluate measure for "individual"/"subject" report type
  */
-const evaluateMeasureForIndividual = async query => {
+const evaluateMeasureForIndividual = async (query, subjectIds) => {
+  // TODO: we currently don't bother to check for a scaled execution option here since we formerly only
+  // ran this for single patient inputs. Consider consolidating the approach with the above evaluateMeasureForPopulation
+  // and introducing scaled execution for individual report generation across several patients and measures
   const measureBundles =
     query.measureUrl && Array.isArray(query.measureUrl)
       ? await Promise.all(query.measureUrl.map(async m => await getMeasureBundleFromUrl(m)))
       : [await getMeasureBundleFromUrl(query.measureUrl)];
+
+  let patientIds = [];
+  if (query.reporter) {
+    const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
+    if (patients.length === 0) {
+      throw new BadRequestError(
+        `The given subject has no patients that reference the given practitioner, ${query.reporter}`
+      );
+    } else {
+      patientIds = patients.map(p => p.id);
+    }
+  } else {
+    patientIds = subjectIds;
+  }
 
   const resultsPromises = measureBundles.map(async measureBundle => {
     const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
       measurementPeriodStart: query.periodStart,
       measurementPeriodEnd: query.periodEnd
     });
+    let patientBundles = patientIds.map(async id => {
+      return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
+    });
+    patientBundles = await Promise.all(patientBundles);
 
-    const { periodStart, periodEnd, subject, reporter } = query;
-    let patientBundle;
-    if (reporter) {
-      let patientId = subject;
-
-      if (subject.includes('/')) {
-        patientId = subject.split('/')[1];
-      }
-
-      const practitionerQuery = {
-        id: patientId,
-        ...getResourceReference('generalPractitioner', reporter)
-      };
-
-      const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
-      if (patient) {
-        patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
-      } else {
-        throw new BadRequestError(
-          `The given subject, ${subject}, does not reference the given practitioner, ${reporter}`
-        );
-      }
-    } else {
-      patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
-    }
-
-    const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
+    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
       measurementPeriodStart: periodStart,
       measurementPeriodEnd: periodEnd,
       reportType: 'individual'
     });
-    // Currently called with exactly one patient, so returns a single measure report in the array
-    return results[0];
+    // an array of individual measure reports for each subject
+    return results;
   });
 
+  // an array of arrays of individual measure reports
   const allResults = await Promise.all(resultsPromises);
 
-  return wrapReportsInBundlesParameters([allResults]);
+  // change by-measure array of patient results arrays to by-patient array of measure results arrays
+  const transposedResults = _.zip(...allResults);
+  return wrapReportsInBundlesParameters(transposedResults);
 };
 
 /**
