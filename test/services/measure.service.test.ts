@@ -624,7 +624,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate should default to reportType population when not set and no subject provided', async () => {
+    test('$evaluate should default to reportType summary when not set and no subject provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -670,7 +670,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate should default to reportType subject when not set and subject is provided', async () => {
+    test('$evaluate should default to reportType individual when not set and subject is provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -705,7 +705,7 @@ describe('measure.service', () => {
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          subject: 'testPatient',
+          subject: 'Patient/testPatient',
           measureUrl: 'http://example.com/testMeasure'
         })
         .expect(200);
@@ -751,7 +751,7 @@ describe('measure.service', () => {
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'subject',
-          subject: 'testPatient',
+          subject: 'Patient/testPatient',
           measureUrl: 'http://example.com/testMeasure',
           reporter: 'Practitioner/testPractitioner'
         })
@@ -862,14 +862,14 @@ describe('measure.service', () => {
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           measureUrl: 'http://example.com/testMeasure',
-          subject: 'testPatient',
+          subject: 'Patient/testPatient',
           reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject, testPatient, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -889,7 +889,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject with id, testGroup, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -908,7 +908,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `No Patient resources reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -970,7 +970,7 @@ describe('measure.service', () => {
         ],
         status: 400,
         code: 'BadRequest',
-        detailsText: 'Only one of subject or subjectGroup may be specified for $collect-data.'
+        detailsText: 'Only one of subject or subjectGroup may be specified.'
       },
       {
         name: 'invalid subjectGroup resource',
