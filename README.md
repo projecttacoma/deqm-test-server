@@ -162,23 +162,23 @@ To use, first POST a measure bundle into your database, then send a GET or POST 
   "parameter": [
     {
       "name": "measureUrl",
-      "valueString": "http://ecqi.healthit.gov/ecqms/Measure/BreastCancerScreeningsFHIR"
+      "valueCanonical": "http://ecqi.healthit.gov/ecqms/Measure/BreastCancerScreeningsFHIR"
     },
     {
       "name": "measureUrl",
-      "valueString": "http://ecqi.healthit.gov/ecqms/Measure/CervicalCancerScreeningFHIR"
+      "valueCanonical": "http://ecqi.healthit.gov/ecqms/Measure/CervicalCancerScreeningFHIR"
     },
     {
       "name": "periodEnd",
-      "valueString": "2022-12-31"
+      "valueDate": "2022-12-31"
     },
     {
       "name": "periodStart",
-      "valueString": "2022-01-01"
+      "valueDate": "2022-01-01"
     },
     {
       "name": "reportType",
-      "valueString": "summary"
+      "valueCode": "summary"
     }
   ]
 }
@@ -193,7 +193,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-evaluate.html) for more information.
+This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-evaluate.html) for more information. Note that the current implementation assumes 1 Bundle returned for a summary report, but further clarification on this is requested in ticket here: https://jira.hl7.org/browse/FHIR-57893.
 
 #### `$care-gaps`
 
