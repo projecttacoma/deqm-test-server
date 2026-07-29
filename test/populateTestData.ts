@@ -14,7 +14,7 @@ const fs = require('fs');
 const createTestResource = async (data, resourceType) => {
   const collection = db.collection(resourceType);
   await collection.insertOne(data);
-  return { id: data.id };
+  return { id: data.id, url: data.url };
 };
 //clean up db after test
 async function cleanUpDb() {

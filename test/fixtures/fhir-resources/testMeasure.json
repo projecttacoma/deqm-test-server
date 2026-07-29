@@ -1,5 +1,6 @@
 {
   "resourceType": "Measure",
   "id": "testMeasure",
-  "library": ["Library/testLibrary"]
+  "library": ["Library/testLibrary"],
+  "url": "http://example.com/testMeasure"
 }

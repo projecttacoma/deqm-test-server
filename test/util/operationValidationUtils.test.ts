@@ -52,7 +52,7 @@ const PRACTITIONER_AND_NO_ORG = {
   periodStart: '2019-01-01',
   periodEnd: '2019-12-31',
   status: 'open-gap',
-  practitioner: 'Practitioner/testPractitioner',
+  reporter: 'Practitioner/testPractitioner',
   measureId: 'testID'
 };
 const VALID_PRACTITIONER_QUERY = {
@@ -60,7 +60,7 @@ const VALID_PRACTITIONER_QUERY = {
   periodEnd: '2019-12-31',
   status: 'open-gap',
   organization: 'Organization/testOrganization',
-  practitioner: 'Practitioner/testPractitioner',
+  reporter: 'Practitioner/testPractitioner',
   measureId: 'testID'
 };
 const INVALID_PRACTITIONER_QUERY = {
@@ -112,7 +112,12 @@ describe('checkRequiredParams', () => {
 describe('validateEvalMeasureParams', () => {
   test('error thrown for unsupported $evaluate params', () => {
     const UNSUPPORTEDREQ = {
-      query: { measureId: 'testId', lastReceivedOn: '2019-01-01', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: {
+        measureUrl: 'http://example.com/testId',
+        lastReceivedOn: '2019-01-01',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31'
+      }
     };
     try {
       validateEvalMeasureParams(UNSUPPORTEDREQ.query);
@@ -127,7 +132,12 @@ describe('validateEvalMeasureParams', () => {
 
   test('error thrown for unsupported $evaluate reportType', () => {
     const UNSUPPORTEDREQ = {
-      query: { measureId: 'testId', reportType: 'subject-list', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: {
+        measureUrl: 'http://example.com/testId',
+        reportType: 'subject-list',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31'
+      }
     };
     try {
       validateEvalMeasureParams(UNSUPPORTEDREQ.query);
@@ -140,7 +150,12 @@ describe('validateEvalMeasureParams', () => {
 
   test('error thrown for invalid $evaluate reportType', () => {
     const INVALIDREQ = {
-      query: { measureId: 'testId', reportType: 'invalid', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: {
+        measureUrl: 'http://example.com/testId',
+        reportType: 'invalid',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31'
+      }
     };
     try {
       validateEvalMeasureParams(INVALIDREQ.query);
@@ -151,47 +166,11 @@ describe('validateEvalMeasureParams', () => {
     }
   });
 
-  test('error thrown for missing subject for $evaluate', () => {
-    const MISSING_SUBJECT_REQ = {
-      query: { measureId: 'testId', reportType: 'subject', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
-    };
-    try {
-      validateEvalMeasureParams(MISSING_SUBJECT_REQ.query);
-      expect.fail('validateEvalMeasureParams failed to throw error for missing subject param');
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        `Must specify subject or subjectGroup for all $evaluate requests with reportType parameter: subject`
-      );
-    }
-  });
-
-  test('error thrown for population $evaluate with non-Group subject', () => {
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'population',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subject: 'Patient/testPatient'
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-      expect.fail('validateEvalMeasureParams failed to throw error for population report with non-Group subject');
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        `For reportType parameter 'population', subject may only be a Group resource of format "Group/{id}".`
-      );
-    }
-  });
-
   test('error thrown for population $evaluate with subjectGroup and subject parameter set', () => {
     expect.assertions(2);
     const POPULATION_REQ = {
       query: {
-        measureId: 'testId',
+        measureUrl: 'http://example.com/testId',
         reportType: 'population',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
@@ -220,160 +199,7 @@ describe('validateEvalMeasureParams', () => {
       validateEvalMeasureParams(POPULATION_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(`"subject" parameter must not be included when "subjectGroup" is used.`);
-    }
-  });
-
-  test('error thrown for population $evaluate with subjectGroup used for reportType subject', () => {
-    expect.assertions(2);
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'subject',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subjectGroup: {
-          resourceType: 'Group',
-          id: 'testGroup',
-          type: 'person',
-          actual: 'true',
-          member: [
-            {
-              entity: {
-                reference: 'Patient/testPatient'
-              }
-            },
-            {
-              entity: {
-                reference: 'Patient/testPatient2'
-              }
-            }
-          ]
-        }
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(501);
-      expect(e.issue[0].details.text).toEqual(
-        `"subjectGroup" parameter is not currently supported for "reportType" parameter with value subject.`
-      );
-    }
-  });
-
-  test('error thrown for population $evaluate with Group reference used for reportType subject', () => {
-    expect.assertions(2);
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'subject',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subject: 'Group/testGroup'
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(501);
-      expect(e.issue[0].details.text).toEqual(
-        `"subject" parameter referencing a Group is not currently supported for "reportType" parameter with value subject.`
-      );
-    }
-  });
-
-  test('error thrown for population $evaluate with subjectGroup without valid Patient reference members', () => {
-    expect.assertions(2);
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'population',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subjectGroup: {
-          resourceType: 'Group',
-          id: 'testGroup',
-          type: 'person',
-          actual: 'true',
-          member: [
-            {
-              entity: {
-                reference: 'Patient/testPatient'
-              }
-            },
-            {
-              entity: {
-                reference: 'Medication/testMedication'
-              }
-            }
-          ]
-        }
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual(
-        '\'subjectGroup\' members may only be Patient resource references of format "Patient/{id}".'
-      );
-    }
-  });
-
-  test('error thrown for population $evaluate with subjectGroup with members missing references', () => {
-    expect.assertions(2);
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'population',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subjectGroup: {
-          resourceType: 'Group',
-          id: 'testGroup',
-          type: 'person',
-          actual: 'true',
-          member: [
-            {
-              entity: {
-                reference: 'Patient/testPatient'
-              }
-            },
-            {}
-          ]
-        }
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual("'subjectGroup' members must have references to Patients.");
-    }
-  });
-
-  test('error thrown for population $evaluate with subjectGroup without members list', () => {
-    expect.assertions(2);
-    const POPULATION_REQ = {
-      query: {
-        measureId: 'testId',
-        reportType: 'population',
-        periodStart: '2019-01-01',
-        periodEnd: '2019-12-31',
-        subjectGroup: {
-          resourceType: 'Group',
-          id: 'testGroup',
-          type: 'person',
-          actual: 'true'
-        }
-      }
-    };
-    try {
-      validateEvalMeasureParams(POPULATION_REQ.query);
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual("'subjectGroup' must contain members.");
+      expect(e.issue[0].details.text).toEqual(`Only one of subject or subjectGroup may be specified.`);
     }
   });
 
@@ -381,7 +207,7 @@ describe('validateEvalMeasureParams', () => {
     expect.assertions(2);
     const POPULATION_REQ = {
       query: {
-        measureId: 'testId',
+        measureUrl: 'http://example.com/testId',
         reportType: 'population',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
@@ -395,14 +221,14 @@ describe('validateEvalMeasureParams', () => {
       validateEvalMeasureParams(POPULATION_REQ.query);
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual("'subjectGroup' must be an embedded Group resource.");
+      expect(e.issue[0].details.text).toEqual('Parameter subjectGroup must be a resource of type Group.');
     }
   });
 
   test('no error thrown for population $evaluate with valid subjectGroup', () => {
     const POPULATION_REQ = {
       query: {
-        measureId: 'testId',
+        measureUrl: 'http://example.com/testId',
         reportType: 'population',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
@@ -434,7 +260,7 @@ describe('validateEvalMeasureParams', () => {
   test('error thrown for subject $evaluate with non-Patient reference subject', () => {
     const INDIVIDUAL_REQ = {
       query: {
-        measureId: 'testId',
+        measureUrl: 'http://example.com/testId',
         reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
@@ -449,7 +275,7 @@ describe('validateEvalMeasureParams', () => {
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        `For reportType parameter 'subject', subject reference may only be a Patient or Group resource of format "Patient/{id}" or "Group/{id}".`
+        `The subject parameter must be a Patient or Group reference of the format "Patient/{id}" or "Group/{id}".`
       );
     }
   });
@@ -457,61 +283,46 @@ describe('validateEvalMeasureParams', () => {
   test('should throw error for invalid Practitioner reference', () => {
     try {
       validateEvalMeasureParams({
-        measureId: 'testId',
+        measureUrl: 'http://example.com/testId',
         reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Patient/testPatient',
-        practitioner: 'INVALID'
+        reporter: 'INVALID'
       });
       expect.fail('validateEvalMeasureParams failed to throw error for invalid Practitioner reference');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
       expect(e.issue[0].details.text).toEqual(
-        'practitioner may only be a Practitioner resource of format "Practitioner/{id}".'
+        'reporter may only be a Practitioner resource reference of format "Practitioner/{id}".'
       );
     }
   });
 
-  test('should throw error for no measure id or expected id', () => {
+  test('should throw error for no measureUrl', () => {
     try {
       validateEvalMeasureParams({
         reportType: 'subject',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31',
         subject: 'Patient/testPatient',
-        practitioner: 'INVALID'
+        reporter: 'INVALID'
       });
       expect.fail('validateEvalMeasureParams failed to throw error for invalid Practitioner reference');
     } catch (e) {
       expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual('Missing required parameters for $evaluate: measureId.');
-    }
-  });
-
-  test('should throw error for measure id and expected id mismatch', () => {
-    try {
-      validateEvalMeasureParams(
-        {
-          measureId: 'testId',
-          reportType: 'subject',
-          periodStart: '2019-01-01',
-          periodEnd: '2019-12-31',
-          subject: 'Patient/testPatient',
-          practitioner: 'INVALID'
-        },
-        'mismatchId'
-      );
-      expect.fail('validateEvalMeasureParams failed to throw error for invalid Practitioner reference');
-    } catch (e) {
-      expect(e.statusCode).toEqual(400);
-      expect(e.issue[0].details.text).toEqual('URL argument id mismatchId must match parameter id testId');
+      expect(e.issue[0].details.text).toEqual('Missing required parameters for $evaluate: measureUrl.');
     }
   });
 
   test('validateEvalMeasureParams does not throw error with correct params', () => {
     const VALID_REQ = {
-      query: { measureId: 'testId', reportType: 'population', periodStart: '2019-01-01', periodEnd: '2019-12-31' }
+      query: {
+        measureUrl: 'http://example.com/testId',
+        reportType: 'population',
+        periodStart: '2019-01-01',
+        periodEnd: '2019-12-31'
+      }
     };
     expect(validateEvalMeasureParams(VALID_REQ.query)).toBeUndefined();
   });

@@ -34,7 +34,7 @@ describe('execWorker', () => {
       });
 
       // Configure the spy mocks for mongo functions used by the worker
-      bundleUtils.getMeasureBundleFromId.mockResolvedValue(testMeasureBundle);
+      bundleUtils.getMeasureBundleFromUrl.mockResolvedValue(testMeasureBundle);
       patientUtils.getPatientDataCollectionBundle.mockResolvedValue(testBundle);
 
       // Created scaled calculation for 8 patients. This should create 4 jobs that will get run by one processor.
@@ -53,7 +53,7 @@ describe('execWorker', () => {
 
       // Fetching measure bundle and calculating data requirements should have happened only once because of cache
       expect(drSpy.mock.calls.length).toBe(1);
-      expect(bundleUtils.getMeasureBundleFromId.mock.calls.length).toBe(1);
+      expect(bundleUtils.getMeasureBundleFromUrl.mock.calls.length).toBe(1);
 
       // Patient data should have been collected 8 times and there should be 8 patients in the IPP
       expect(patientUtils.getPatientDataCollectionBundle.mock.calls.length).toBe(8);

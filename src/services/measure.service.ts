@@ -2,7 +2,7 @@
 const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
-const { handleSubmitDataBundles, uploadResourcesFromBundle } = require('./bundle.service');
+const { handleSubmitDataBundles } = require('./bundle.service');
 const {
   validateEvalMeasureParams,
   validateCareGapsParams,
@@ -18,17 +18,19 @@ const {
 const {
   getPatientDataCollectionBundle,
   retrievePatientIds,
-  filterPatientByPractitionerFromGroup
+  filterPatientByPractitionerFromIds
 } = require('../util/patientUtils');
-const { patientSpecificDataRequirements } = require('../util/collectDataUtils');
 const {
-  findOneResourceWithQuery,
-  findResourcesWithQuery,
-  findResourceIdsWithQuery,
-  findResourceById
-} = require('../database/dbOperations');
-const { getResourceReference } = require('../util/referenceUtils');
-import axios from 'axios';
+  patientSpecificDataRequirements,
+  getPatientIds,
+  pullResourceReferences,
+  createDataExchangeMeasureReport,
+  wrapReportsInBundlesParameters,
+  basicProgramQuery,
+  systemCodeProgramQuery,
+  retrieveSearchTerm
+} = require('../util/measureUtils');
+const { findResourcesWithQuery } = require('../database/dbOperations');
 import logger from '../server/logger';
 const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
@@ -221,145 +223,8 @@ const collectData = async (args, { req }) => {
 };
 
 /**
- * Resolve the patients to include based on a subject or subjectGroup parameter.
- * @param {string} subject reference to a subject (Patient or Group) on the server
- * @param {Object} subjectGroup FHIR Group that defines a set of patients as the subject
- * @returns {Promise<string[]>} Patient ids.
- */
-const getPatientIds = async (subject, subjectGroup) => {
-  if (subject) {
-    const [resourceType, id] = subject.split('/');
-    if (resourceType === 'Patient' && id) {
-      return [id];
-    }
-    if (resourceType === 'Group' && id) {
-      const group = await findResourceById(id, 'Group');
-      if (!group) {
-        throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
-      }
-      return getPatientIdsFromGroup(group);
-    }
-  } else if (subjectGroup) {
-    return getPatientIdsFromGroup(subjectGroup);
-  }
-
-  throw new BadRequestError('Must specify subject or subjectGroup.');
-};
-
-/**
- * Extract Patient ids from a Group resource.
- * @param {Object} group FHIR Group resource
- * @returns {string[]} Patient ids.
- */
-const getPatientIdsFromGroup = group => {
-  if (!group.member || group.member.length === 0) {
-    throw new BadRequestError('Parameter subjectGroup or referenced Group must contain members.');
-  }
-  return group.member.map(member => {
-    const reference = member.entity?.reference;
-    if (!reference) {
-      throw new BadRequestError('Group members must have references to Patients.');
-    }
-    const [resourceType, id] = reference.split('/');
-    if (resourceType !== 'Patient' || !id) {
-      throw new BadRequestError('Group members may only be Patient resource references of format "Patient/{id}".');
-    }
-    return id;
-  });
-};
-
-/**
- * Pulls data for a set of patient-specific data requirements from the provided Endpoint and stores returned resources.
- * @param {Object} patientDR patient-specific data requirements
- * @param {Object} dataEndpoint FHIR Endpoint resource
- * @param {string} baseVersion FHIR base version
- * @returns {Promise<Object[]>} Resource Reference object created from the results of Endpoint queries.
- */
-const pullResourceReferences = async (patientDR, dataEndpoint, baseVersion) => {
-  const queries = _.uniq(
-    patientDR.results.dataRequirement?.flatMap(dr => {
-      return (
-        dr.extension
-          ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
-          .map(e => `${dataEndpoint.address}${e.valueString}`) ?? []
-      );
-    }) ?? []
-  );
-  const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
-
-  // Track an array of references for the resources returned from each query
-  const resourceReferenceArrays = await Promise.all(
-    queries.map(async query => {
-      const bundle = await axios.get(query).then(response => response.data);
-      if (bundle.entry) {
-        const originalReferences = bundle.entry?.map(e =>
-          e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
-        );
-        //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
-        const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
-        // Get new ids
-        const references = originalReferences
-          .map((refString, i) => {
-            if (!refString) return null;
-            // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
-            const newRef =
-              results[i].resource?.resourceType && results[i].resource?.id
-                ? `${results[i].resource.resourceType}/${results[i].resource.id}`
-                : null;
-            return {
-              reference: refString,
-              identifier: {
-                system: serverUrl,
-                value: newRef
-              }
-            };
-          })
-          .filter(Boolean);
-        return references;
-      }
-      return [];
-    })
-  );
-  return _.uniqBy(resourceReferenceArrays.flat(), r => JSON.stringify(r));
-};
-
-/**
- * Build a DEQM data exchange MeasureReport for the resources collected for a patient/measure pair.
- * @param {Object} measureBundle FHIR Bundle containing a Measure resource
- * @param {Object} period Measurement period with start and end
- * @param {string} subjectReference FHIR Reference to subject (a Patient)
- * @param {Object[]} resourceReferences FHIR References to resources returned from data collection queries
- * @returns {Object} FHIR MeasureReport
- */
-const createDataExchangeMeasureReport = (measureBundle, period, subjectReference, resourceReferences) => {
-  const measure = measureBundle.entry?.find(e => e.resource.resourceType === 'Measure').resource;
-  return {
-    resourceType: 'MeasureReport',
-    id: uuidv4(),
-    measure: measure.url?.includes('|') ? measure.url : `${measure.url}|${measure.version}`, //canonical measure/version
-    period: period,
-    status: 'complete',
-    type: 'data-collection',
-    subject: subjectReference,
-    date: new Date().toISOString(),
-    reporter: { reference: 'Organization/deqm-test-server' },
-    meta: {
-      profile: ['http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-dataexchangemeasurereport']
-    },
-    extension: [
-      {
-        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType"',
-        valueCode: 'snapshot'
-      }
-    ],
-    evaluatedResource: resourceReferences,
-    contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
-  };
-};
-
-/**
  * Execute the measure for a given Patient or Group
- * @param {Object} args the args object passed in by the user, includes measure id
+ * @param {Object} args the args object passed in by the user, includes measureUrl
  * @param {Object} req http request object
  * @returns {Object} Parameters resource containing one or more Bundles of MeasureReports.
  */
@@ -379,74 +244,45 @@ const evaluateMeasure = async (args, { req }) => {
 
   // throw errors if missing required params, using unsupported params,
   // or using unsupported report type
-  validateEvalMeasureParams(query, args.id);
+  validateEvalMeasureParams(query);
 
-  const { reportType, subject } = query;
+  const { reportType, subject, subjectGroup } = query;
+  const subjectIds = await getPatientIds(subject, subjectGroup);
 
   // If reportType is not specified, default to 'subject', but
   // only if the 'subject' parameter is also specified
-  if (reportType === 'subject' || (reportType == null && subject != null)) {
+  if (
+    reportType === 'subject' ||
+    reportType === 'individual' ||
+    (reportType == null && subject?.split('/')[0] === 'Patient')
+  ) {
     logger.debug('Evaluating measure for individual');
-    return evaluateMeasureForIndividual(args, query);
+    return evaluateMeasureForIndividual(query, subjectIds);
   }
 
   logger.debug('Evaluating measure for population');
-  return evaluateMeasureForPopulation(args, query);
+  return evaluateMeasureForPopulation(query, subjectIds);
 };
 
 /**
- * Evaluate measure for "population" report type
- * @param {Object} args the args object passed in by the user, includes measure id
- * @param {Object} req http request object
- * @returns {Object} Parameters resource containing one Bundle with measureReports.
+ * Evaluate measure for "summary"/"population" report type
  */
-const evaluateMeasureForPopulation = async (args, query) => {
+const evaluateMeasureForPopulation = async (query, subjectIds) => {
   const measureBundles =
-    query.measureId && Array.isArray(query.measureId)
-      ? await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)))
-      : [await getMeasureBundleFromId(args.id ?? query.measureId)];
-  // Collect patientId instead of bundles
+    query.measureUrl && Array.isArray(query.measureUrl)
+      ? await Promise.all(query.measureUrl.map(async m => await getMeasureBundleFromUrl(m)))
+      : [await getMeasureBundleFromUrl(query.measureUrl)];
+
   let patientIds = [];
-  if (query.subject || query.subjectGroup) {
-    let group;
-    if (query.subjectGroup) {
-      group = query.subjectGroup;
+  if (query.reporter) {
+    const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
+    if (patients.length === 0) {
+      throw new BadRequestError(`No provided subject patient(s) reference the given practitioner, ${query.reporter}`);
     } else {
-      const subjectReference = query.subject.split('/');
-      group = await findResourceById(subjectReference[1], subjectReference[0]);
-      if (!group) {
-        throw new ResourceNotFoundError(
-          `No resource found in collection: ${subjectReference[0]}, with: id ${subjectReference[1]}.`
-        );
-      }
-    }
-    if (query.practitioner) {
-      const patients = await filterPatientByPractitionerFromGroup(group, query.practitioner);
-      if (patients.length === 0) {
-        throw new BadRequestError(
-          `The given subject with id, ${group.id}, does not reference the given practitioner, ${query.practitioner}`
-        );
-      } else {
-        patientIds = patients.map(p => p.id);
-      }
-    } else {
-      patientIds = group.member.map(m => {
-        const ref = m.entity.reference.split('/');
-        return ref[1];
-      });
+      patientIds = patients.map(p => p.id);
     }
   } else {
-    if (query.practitioner) {
-      patientIds = await findResourceIdsWithQuery(
-        getResourceReference('generalPractitioner', query.practitioner),
-        'Patient'
-      );
-      if (patientIds.length === 0) {
-        throw new BadRequestError(`No Patient resources reference the given practitioner, ${query.practitioner}`);
-      }
-    } else {
-      patientIds = await findResourceIdsWithQuery({}, 'Patient');
-    }
+    patientIds = subjectIds;
   }
 
   const calcCount = patientIds.length * measureBundles.length;
@@ -482,94 +318,60 @@ const evaluateMeasureForPopulation = async (args, query) => {
 
     logger.info('Successfully generated $evaluate reports');
     // an array of summary reports, one for each measure
+
     return wrapReportsInBundlesParameters([allResults]);
   }
 };
 
 /**
- * Evaluate measure for "individual" report type
- * @param {Object} args the args object passed in by the user, includes measure id
- * @param {Object} req http request object
- * @returns {Object} Parameters resource containing one Bundle with a single MeasureReport.
+ * Evaluate measure for "individual"/"subject" report type
  */
-const evaluateMeasureForIndividual = async (args, query) => {
+const evaluateMeasureForIndividual = async (query, subjectIds) => {
+  // TODO: we currently don't bother to check for a scaled execution option here since we formerly only
+  // ran this for single patient inputs. Consider consolidating the approach with the above evaluateMeasureForPopulation
+  // and introducing scaled execution for individual report generation across several patients and measures
   const measureBundles =
-    query.measureId && Array.isArray(query.measureId)
-      ? await Promise.all(query.measureId.map(async m => await getMeasureBundleFromId(m)))
-      : [await getMeasureBundleFromId(args.id ?? query.measureId)];
+    query.measureUrl && Array.isArray(query.measureUrl)
+      ? await Promise.all(query.measureUrl.map(async m => await getMeasureBundleFromUrl(m)))
+      : [await getMeasureBundleFromUrl(query.measureUrl)];
+
+  let patientIds = [];
+  if (query.reporter) {
+    const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
+    if (patients.length === 0) {
+      throw new BadRequestError(`No provided subject patient(s) reference the given practitioner, ${query.reporter}`);
+    } else {
+      patientIds = patients.map(p => p.id);
+    }
+  } else {
+    patientIds = subjectIds;
+  }
 
   const resultsPromises = measureBundles.map(async measureBundle => {
     const dataReq = await Calculator.calculateDataRequirements(measureBundle, {
       measurementPeriodStart: query.periodStart,
       measurementPeriodEnd: query.periodEnd
     });
+    let patientBundles = patientIds.map(async id => {
+      return getPatientDataCollectionBundle(id, dataReq.results.dataRequirement);
+    });
+    patientBundles = await Promise.all(patientBundles);
 
-    const { periodStart, periodEnd, subject, practitioner } = query;
-    let patientBundle;
-    if (practitioner) {
-      let patientId = subject;
-
-      if (subject.includes('/')) {
-        patientId = subject.split('/')[1];
-      }
-
-      const practitionerQuery = {
-        id: patientId,
-        ...getResourceReference('generalPractitioner', practitioner)
-      };
-
-      const patient = await findOneResourceWithQuery(practitionerQuery, 'Patient');
-      if (patient) {
-        patientBundle = await getPatientDataCollectionBundle(patient.id, dataReq.results.dataRequirement);
-      } else {
-        throw new BadRequestError(
-          `The given subject, ${subject}, does not reference the given practitioner, ${practitioner}`
-        );
-      }
-    } else {
-      patientBundle = await getPatientDataCollectionBundle(subject, dataReq.results.dataRequirement);
-    }
-
-    const { results } = await Calculator.calculateMeasureReports(measureBundle, [patientBundle], {
-      measurementPeriodStart: periodStart,
-      measurementPeriodEnd: periodEnd,
+    const { results } = await Calculator.calculateMeasureReports(measureBundle, patientBundles, {
+      measurementPeriodStart: query.periodStart,
+      measurementPeriodEnd: query.periodEnd,
       reportType: 'individual'
     });
-    // Currently called with exactly one patient, so returns a single measure report in the array
-    return results[0];
+    // an array of individual measure reports for each subject
+    return results;
   });
 
+  // an array of arrays of individual measure reports
   const allResults = await Promise.all(resultsPromises);
 
-  return wrapReportsInBundlesParameters([allResults]);
-};
-
-/**
- * Wraps groups of measureReports in a Bundle, where each Bundle is grouped by subject, then wraps each Bundle in a return parameter
- * @param {Array<Object>} measureReportsArray An array where each entry is an array of measureReports associated with a specific subject.
- * @returns {Object} A FHIR Parameters resource containing one parameter per Bundle, where each parameter/bundle contains all measure reports for a single subject.
- */
-const wrapReportsInBundlesParameters = measureReportsArray => {
-  const parameterArray = measureReportsArray.map(measureReports => {
-    const bundle = {
-      resourceType: 'Bundle',
-      type: 'collection',
-      entry: measureReports.map(report => ({
-        resource: report
-      }))
-    };
-
-    // every parameter has name 'return'
-    return {
-      name: 'return',
-      resource: bundle
-    };
-  });
-
-  return {
-    resourceType: 'Parameters',
-    parameter: parameterArray
-  };
+  // change by-measure array of patient results arrays to by-patient array of measure results arrays
+  const transposedResults = _.zip(...allResults);
+  return wrapReportsInBundlesParameters(transposedResults);
 };
 
 /**
@@ -704,67 +506,6 @@ const careGaps = async (args, { req }) => {
   };
   logger.info('Successfully generated $care-gaps report');
   return responseParameters;
-};
-
-/**
- * Creates a query that searches for the program parameter as either a code or text element
- * @param {string} program program parameter of single code or text format
- * @returns {Object} the query data that searches for this program parameter
- */
-const basicProgramQuery = program => {
-  return {
-    useContext: {
-      $elemMatch: {
-        'code.code': 'program',
-        $or: [{ 'valueCodeableConcept.coding.code': program }, { 'valueCodeableConcept.text': program }]
-      }
-    }
-  };
-};
-
-/**
- * Creates a query for a system|code formatted program parameter
- * @param {string} program program parameter of system|code format
- * @returns {Object} the query data that searches for this program parameter
- */
-const systemCodeProgramQuery = program => {
-  const [system, code] = program.split('|');
-  return {
-    useContext: {
-      $elemMatch: {
-        'code.code': 'program',
-        'valueCodeableConcept.coding': {
-          $elemMatch: {
-            code: code,
-            system: system
-          }
-        }
-      }
-    }
-  };
-};
-
-/**
- * Determines the type of identifier used by the client to identify the measure and returns it
- * @param {Object} query http request query
- * @param {boolean} isForQb flag to indicate if the result will be used by the query build
- * or for a mongo query
- * @returns {Object} an object containing the measure identifier with the appropriate key
- */
-const retrieveSearchTerm = (query, isForQb) => {
-  const { measureId, measureIdentifier, measureUrl } = query;
-  if (measureId) {
-    //some manipulation will be needed here because _id means a generated id when interacting with mongo
-    //however if this field is used with the Asymmetrik query builder it means the actual id of the measure
-    // this overlap can cause some confusion
-    return isForQb ? { _id: measureId } : { id: measureId };
-  } else if (measureIdentifier) {
-    return { identifier: measureIdentifier };
-  } else if (measureUrl) {
-    return { url: measureUrl };
-  } else {
-    return null;
-  }
 };
 
 module.exports = {

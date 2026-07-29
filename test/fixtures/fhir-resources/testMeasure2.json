@@ -2,24 +2,27 @@
   "resourceType": "Measure",
   "id": "testMeasure2",
   "library": ["Library/testLibrary"],
+  "url": "http://example.com/testMeasure2",
   "useContext": [
     {
-        "code" : {
-            "code" : "program"
-        },
-        "valueCodeableConcept" : {
-            "text" : "testProgram"
-        }
+      "code": {
+        "code": "program"
+      },
+      "valueCodeableConcept": {
+        "text": "testProgram"
+      }
     },
     {
-      "code" : {
-        "code" : "program"
+      "code": {
+        "code": "program"
       },
-      "valueCodeableConcept" : {
-        "coding":[{
-          "system":"http://hl7.org/fhir/us/cqfmeasures/CodeSystem/quality-programs",
-          "code" : "testProgram2"
-        }]
+      "valueCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://hl7.org/fhir/us/cqfmeasures/CodeSystem/quality-programs",
+            "code": "testProgram2"
+          }
+        ]
       }
     }
   ]

@@ -7,6 +7,7 @@
       "resource": {
         "resourceType": "Measure",
         "id": "test-measure",
+        "url": "http://example.com/test-measure",
         "library": ["Library/test-library"]
       },
       "request": {

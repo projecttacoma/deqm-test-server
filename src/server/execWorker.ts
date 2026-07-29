@@ -2,7 +2,7 @@ import Queue from 'bee-queue';
 import { Calculator, DRCalculationOutput } from 'fqm-execution';
 import logger from './logger';
 import * as mongoUtil from '../database/connection';
-import { getMeasureBundleFromId } from '../util/bundleUtils';
+import { getMeasureBundleFromUrl } from '../util/bundleUtils';
 const { getPatientDataCollectionBundle } = require('../util/patientUtils');
 const { PatientSource: MongoPatientSource } = require('cql-exec-fhir-mongo');
 
@@ -36,8 +36,8 @@ const measureBundleCache: Record<string, MeasureBundleAndDRCacheItem> = {};
  * @param {string} periodEnd Measurement period end.
  * @returns {object} Object with measureBundle and dataReqs.
  */
-async function getMeasureBundle(measureId: string, periodStart: string, periodEnd: string) {
-  const cacheLabel = `${measureId}-${periodStart}-${periodEnd}`;
+async function getMeasureBundle(measureUrl: string, periodStart: string, periodEnd: string) {
+  const cacheLabel = `${measureUrl}-${periodStart}-${periodEnd}`;
   // first check in cache if it has been more than 20seconds dump it.
   const cachedBundle = measureBundleCache[cacheLabel];
   if (cachedBundle != null) {
@@ -55,7 +55,7 @@ async function getMeasureBundle(measureId: string, periodStart: string, periodEn
   // load from mongo
   logger.info(`exec-worker-${process.pid}: Loading ${cacheLabel} from mongo.`);
   await mongoUtil.client.connect();
-  const measureBundle = await getMeasureBundleFromId(measureId);
+  const measureBundle = await getMeasureBundleFromUrl(measureUrl);
   measureBundleCache[cacheLabel] = {
     lastUsed: Date.now(),
     bundle: measureBundle,
@@ -92,7 +92,7 @@ async function resolvePatients(patientIds: string[], measureBundle: MeasureBundl
 
 execQueue.process(async job => {
   logger.info(`exec-worker-${process.pid}: Execution Job Received!`);
-  const measureBundle = await getMeasureBundle(job.data.measureId, job.data.periodStart, job.data.periodEnd);
+  const measureBundle = await getMeasureBundle(job.data.measureUrl, job.data.periodStart, job.data.periodEnd);
   const patients = await resolvePatients(job.data.patientIds, measureBundle);
 
   let res;

@@ -7,6 +7,7 @@
       "resource": {
         "resourceType": "Measure",
         "id": "testMeasure2",
+        "url": "http://example.com/testMeasure2",
         "library": ["Library/testLibrary"],
         "useContext": [
           {

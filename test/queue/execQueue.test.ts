@@ -16,25 +16,25 @@ describe('execQueue', () => {
       expect(calc._jobs.length).toEqual(4);
       expect(calc._jobs[0]).toEqual({
         patientIds: ['pat0', 'pat1'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[1]).toEqual({
         patientIds: ['pat2', 'pat3'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[2]).toEqual({
         patientIds: ['pat4', 'pat5'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[3]).toEqual({
         patientIds: ['pat6', 'pat7'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
@@ -50,25 +50,25 @@ describe('execQueue', () => {
       expect(calc._jobs.length).toEqual(4);
       expect(calc._jobs[0]).toEqual({
         patientIds: ['pat0', 'pat1'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[1]).toEqual({
         patientIds: ['pat2', 'pat3'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[2]).toEqual({
         patientIds: ['pat4', 'pat5'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });
       expect(calc._jobs[3]).toEqual({
         patientIds: ['pat6'],
-        measureId: 'test-measure',
+        measureUrl: 'http://example.com/test-measure',
         periodStart: '2019-01-01',
         periodEnd: '2019-12-31'
       });

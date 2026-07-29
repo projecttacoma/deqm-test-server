@@ -141,43 +141,44 @@ This operation calculates measure(s) for a given patient or set of patients. Cur
 
 Required parameters include:
 
+- `measureUrl`: canonical URL of the. measure to be evaluated
 - `periodStart`: start of the measurement period
 - `periodEnd`: end of the measurement period
-- `subject`: subject is required for an `individual` `reportType` and is the subject for which a measure will be calculated
-- `measureId`: Required if the measure ID is not specified in the URL. May also be a list of measure IDs if provided in a Parameters object.
 
 Optional parameters include:
 
-- `practitioner`: practitioner for which the measure will be calculated
+- `reportType`: `individual` (`subject` for backwards compatibility) or `summary` (`population` for backwards compatibility) report type (`subject-list` not yet supported)
+- `subject`: Patient or Group reference for which a measure will be calculated
+- `subjectGroup`: Group resource for which a measure will be calculated
+- `reporter`: reference to practitioner for which the measure will be calculated (only practitioner reference currently supported)
 
-Currently, `measureIdentifier`, `measureUrl`, `measure`, `measureResource` and `lastReceivedOn` parameters are not supported by the test server. The `subject-list` `reportType` is not supported by the test server - only `subject` and `population` `reportTypes` are supported at this time,
-which will generate `individual` and `summary` `MeasureReport`s respectively.
+Currently, `reporter` (for PractitionerRole and Organization references) parameters are not supported by the test server. Optional parameters `reporterResource`, `location`, `parameters`, `manifest`, `lastReceivedOn`, `excludeEvaluatedResources`, `stratifier`, and `supplementalData` are not supported by the test server. 
 
-To use, first POST a measure bundle into your database, then send a GET request to `http://localhost:3000/4_0_1/Measure/<your-measure-id>/$evaluate` (for a single measure) or `http://localhost:3000/4_0_1/Measure/$evaluate` when specifying measures with the required parameters. Example `Parameters` object for `$evaluate`:
+To use, first POST a measure bundle into your database, then send a GET or POST request to `http://localhost:3000/4_0_1/Measure/$evaluate`. Example `Parameters` object for POST `$evaluate`:
 
 ```json
 {
   "resourceType": "Parameters",
   "parameter": [
     {
-      "name": "measureId",
-      "valueString": "BreastCancerScreeningsFHIR"
+      "name": "measureUrl",
+      "valueCanonical": "http://ecqi.healthit.gov/ecqms/Measure/BreastCancerScreeningsFHIR"
     },
     {
-      "name": "measureId",
-      "valueString": "CervicalCancerScreeningFHIR"
+      "name": "measureUrl",
+      "valueCanonical": "http://ecqi.healthit.gov/ecqms/Measure/CervicalCancerScreeningFHIR"
     },
     {
       "name": "periodEnd",
-      "valueString": "2022-12-31"
+      "valueDate": "2022-12-31"
     },
     {
       "name": "periodStart",
-      "valueString": "2022-01-01"
+      "valueDate": "2022-01-01"
     },
     {
       "name": "reportType",
-      "valueString": "population"
+      "valueCode": "summary"
     }
   ]
 }
@@ -192,7 +193,7 @@ This operation will execute in a multi-process manner by chunking up the patient
 | `SCALED_EXEC_MAX_JOBSIZE` | Maximum patients to put in each worker job.                                 | 15            |
 | `SCALED_EXEC_STRATEGY`    | Patient source strategy to use for scaled calculation (`mongo` or `bundle`) | bundle        |
 
-This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-evaluate.html) for more information.
+This operation returns a Parameters object with 0..\* Bundles, each of which must contain at least one MeasureReport. Each bundle contains MeasureReports associated with exactly one measure. Check out the [$evaluate operation spec](https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-evaluate.html) for more information. Note that the current implementation assumes 1 Bundle returned for a summary report, but further clarification on this is requested in ticket here: https://jira.hl7.org/browse/FHIR-57893.
 
 #### `$care-gaps`
 

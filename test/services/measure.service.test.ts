@@ -136,6 +136,19 @@ const resetMeasureData = async () => {
   await testSetup(dataToImport);
 };
 
+// Checks a bundle for a Patient entry with the given id
+const patientBundleMatcher = patientId =>
+  expect.objectContaining({
+    entry: expect.arrayContaining([
+      expect.objectContaining({
+        resource: expect.objectContaining({
+          resourceType: 'Patient',
+          id: patientId
+        })
+      })
+    ])
+  });
+
 describe('measure.service', () => {
   beforeAll(async () => {
     const config = buildConfig();
@@ -334,7 +347,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -353,11 +366,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          reportType: 'population'
+          reportType: 'population',
+          measureUrl: testMeasure.url
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -377,7 +391,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -413,12 +427,12 @@ describe('measure.service', () => {
               valueString: 'population'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure2'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure2'
             }
           ]
         })
@@ -434,7 +448,8 @@ describe('measure.service', () => {
                 _id: expect.anything(),
                 id: 'testMeasure',
                 library: ['Library/testLibrary'],
-                resourceType: 'Measure'
+                resourceType: 'Measure',
+                url: 'http://example.com/testMeasure'
               }
             },
             {
@@ -465,6 +480,7 @@ describe('measure.service', () => {
                 id: 'testMeasure2',
                 library: ['Library/testLibrary'],
                 resourceType: 'Measure',
+                url: 'http://example.com/testMeasure2',
                 useContext: expect.anything()
               }
             },
@@ -499,7 +515,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -518,11 +534,12 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup'
         })
         .expect(200);
@@ -581,8 +598,8 @@ describe('measure.service', () => {
               valueString: 'population'
             },
             {
-              name: 'measureId',
-              valueString: 'testMeasure'
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure'
             },
             {
               name: 'subjectGroup',
@@ -603,24 +620,183 @@ describe('measure.service', () => {
           ]
         })
         .expect(200);
-      const patientBundleMatcher = expect.objectContaining({
-        entry: expect.arrayContaining([
-          expect.objectContaining({
-            resource: expect.objectContaining({
-              resourceType: 'Patient',
-              id: expect.stringMatching(/testPatient/)
-            })
-          })
-        ])
-      });
-      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher], {
+
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher('testPatient')], {
         measurementPeriodStart: '01-01-2020',
         measurementPeriodEnd: '01-01-2021',
         reportType: 'summary'
       });
     });
 
-    test('$evaluate should default to reportType population when not set and no subject provided', async () => {
+    test('$evaluate returns 200 when subjectGroup is provided and reportType is set to individual', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'individual'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+
+      await supertest(server.app)
+        .post('/4_0_1/Measure/$evaluate')
+        .set('Accept', 'application/json+fhir')
+        .set('content-type', 'application/json+fhir')
+        .send({
+          resourceType: 'Parameters',
+          parameter: [
+            {
+              name: 'periodStart',
+              valueString: '01-01-2020'
+            },
+            {
+              name: 'periodEnd',
+              valueString: '01-01-2021'
+            },
+            {
+              name: 'reportType',
+              valueString: 'individual'
+            },
+            {
+              name: 'measureUrl',
+              valueCanonical: 'http://example.com/testMeasure'
+            },
+            {
+              name: 'subjectGroup',
+              resource: testGroup
+            }
+          ]
+        })
+        .expect(200);
+
+      expect(mrSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.arrayContaining([patientBundleMatcher('testPatient'), patientBundleMatcher('testPatient2')]),
+        {
+          measurementPeriodStart: '01-01-2020',
+          measurementPeriodEnd: '01-01-2021',
+          reportType: 'individual'
+        }
+      );
+    });
+
+    test('$evaluate returns 200 when a Patient subject is provided and reportType is set to summary', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'summary'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+
+      await supertest(server.app)
+        .get('/4_0_1/Measure/$evaluate')
+        .query({
+          periodStart: '01-01-2020',
+          periodEnd: '01-01-2021',
+          reportType: 'summary',
+          subject: 'Patient/testPatient',
+          measureUrl: 'http://example.com/testMeasure'
+        })
+        .expect(200);
+
+      expect(mrSpy).toHaveBeenCalledWith(expect.anything(), [patientBundleMatcher('testPatient')], {
+        measurementPeriodStart: '01-01-2020',
+        measurementPeriodEnd: '01-01-2021',
+        reportType: 'summary'
+      });
+    });
+
+    test('$evaluate returns 200 for individual reportType without subject or subjectGroup', async () => {
+      const { Calculator } = require('fqm-execution');
+      const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
+        return {
+          results: [
+            {
+              resourceType: 'MeasureReport',
+              period: {},
+              measure: '',
+              status: 'complete',
+              type: 'individual'
+            }
+          ],
+          debugOutput: {}
+        };
+      });
+      jest.spyOn(Calculator, 'calculateDataRequirements').mockImplementation(() => {
+        return {
+          results: {
+            resourceType: 'Library',
+            type: {
+              coding: [{ code: 'module-definition', system: 'http://terminology.hl7.org/CodeSystem/library-type' }]
+            },
+            status: 'draft',
+            dataRequirement: []
+          }
+        };
+      });
+
+      await supertest(server.app)
+        .get('/4_0_1/Measure/$evaluate')
+        .query({
+          periodStart: '01-01-2020',
+          periodEnd: '01-01-2021',
+          reportType: 'individual',
+          measureUrl: 'http://example.com/testMeasure'
+        })
+        .expect(200);
+
+      expect(mrSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.arrayContaining([patientBundleMatcher('testPatient'), patientBundleMatcher('testPatient2')]),
+        {
+          measurementPeriodStart: '01-01-2020',
+          measurementPeriodEnd: '01-01-2021',
+          reportType: 'individual'
+        }
+      );
+    });
+
+    test('$evaluate should default to reportType summary when not set and no subject provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -651,10 +827,11 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
-          periodEnd: '01-01-2021'
+          periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure'
         })
         .expect(200);
 
@@ -665,7 +842,7 @@ describe('measure.service', () => {
       });
     });
 
-    test('$evaluate should default to reportType subject when not set and subject is provided', async () => {
+    test('$evaluate should default to reportType individual when not set and subject is provided', async () => {
       const { Calculator } = require('fqm-execution');
       const mrSpy = jest.spyOn(Calculator, 'calculateMeasureReports').mockImplementation(() => {
         return {
@@ -696,11 +873,12 @@ describe('measure.service', () => {
       });
 
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          subject: 'testPatient'
+          subject: 'Patient/testPatient',
+          measureUrl: 'http://example.com/testMeasure'
         })
         .expect(200);
 
@@ -740,13 +918,14 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'subject',
-          subject: 'testPatient',
-          practitioner: 'Practitioner/testPractitioner'
+          subject: 'Patient/testPatient',
+          measureUrl: 'http://example.com/testMeasure',
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -766,7 +945,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -785,13 +964,14 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
-          practitioner: 'Practitioner/testPractitioner'
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -811,7 +991,7 @@ describe('measure.service', () => {
               period: {},
               measure: '',
               status: 'complete',
-              type: 'individual'
+              type: 'summary'
             }
           ],
           debugOutput: {}
@@ -830,12 +1010,13 @@ describe('measure.service', () => {
         };
       });
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
           reportType: 'population',
-          practitioner: 'Practitioner/testPractitioner'
+          measureUrl: 'http://example.com/testMeasure',
+          reporter: 'Practitioner/testPractitioner'
         })
         .expect(200);
       expect(mrSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
@@ -847,56 +1028,59 @@ describe('measure.service', () => {
 
     test('$evaluate returns 400 when practitioner is not referenced by Patient subject, individual report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'subject',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          subject: 'testPatient',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          measureUrl: 'http://example.com/testMeasure',
+          subject: 'Patient/testPatient',
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject, testPatient, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
 
     test('$evaluate returns 400 when practitioner is not referenced by any patients in Group subject, population report type', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
+          measureUrl: 'http://example.com/testMeasure',
           subject: 'Group/testGroup',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject with id, testGroup, does not reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
 
     test('$evaluate returns 400 when practitioner is not referenced by any patients, population report type, no subject', async () => {
       await supertest(server.app)
-        .get('/4_0_1/Measure/testMeasure/$evaluate')
+        .get('/4_0_1/Measure/$evaluate')
         .query({
           reportType: 'population',
           periodStart: '01-01-2020',
           periodEnd: '01-01-2021',
-          practitioner: 'Practitioner/BAD_REFERENCE'
+          measureUrl: 'http://example.com/testMeasure',
+          reporter: 'Practitioner/BAD_REFERENCE'
         })
         .expect(400)
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `No Patient resources reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -958,7 +1142,7 @@ describe('measure.service', () => {
         ],
         status: 400,
         code: 'BadRequest',
-        detailsText: 'Only one of subject or subjectGroup may be specified for $collect-data.'
+        detailsText: 'Only one of subject or subjectGroup may be specified.'
       },
       {
         name: 'invalid subjectGroup resource',
