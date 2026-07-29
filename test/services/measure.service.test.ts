@@ -1041,7 +1041,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -1061,7 +1061,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });
@@ -1080,7 +1080,7 @@ describe('measure.service', () => {
         .then(response => {
           expect(response.body.issue[0].code).toEqual('BadRequest');
           expect(response.body.issue[0].details.text).toEqual(
-            `The given subject has no patients that reference the given practitioner, Practitioner/BAD_REFERENCE`
+            `No provided subject patient(s) reference the given practitioner, Practitioner/BAD_REFERENCE`
           );
         });
     });

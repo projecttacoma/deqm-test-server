@@ -277,9 +277,7 @@ const evaluateMeasureForPopulation = async (query, subjectIds) => {
   if (query.reporter) {
     const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
     if (patients.length === 0) {
-      throw new BadRequestError(
-        `The given subject has no patients that reference the given practitioner, ${query.reporter}`
-      );
+      throw new BadRequestError(`No provided subject patient(s) reference the given practitioner, ${query.reporter}`);
     } else {
       patientIds = patients.map(p => p.id);
     }
@@ -341,9 +339,7 @@ const evaluateMeasureForIndividual = async (query, subjectIds) => {
   if (query.reporter) {
     const patients = await filterPatientByPractitionerFromIds(subjectIds, query.reporter);
     if (patients.length === 0) {
-      throw new BadRequestError(
-        `The given subject has no patients that reference the given practitioner, ${query.reporter}`
-      );
+      throw new BadRequestError(`No provided subject patient(s) reference the given practitioner, ${query.reporter}`);
     } else {
       patientIds = patients.map(p => p.id);
     }
