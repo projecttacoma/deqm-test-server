@@ -35,6 +35,34 @@ function paramPresent(parameters: QueryObject, param: string) {
 }
 
 /**
+ * Checks that the parameters input to kickoff-submit are valid. Throws an error
+ * for missing parameters, the use of unsupported parameters, and repeated parameters
+ * @param {Object} query query from http request object
+ */
+export function validateKickoffSubmitParams(query: QueryObject) {
+  const recognizedParameters = ['report', 'receiverEndpoint'];
+
+  const unrecognizedParams = Object.keys(query).filter(param => !recognizedParameters.includes(param));
+  if (unrecognizedParams.length > 0) {
+    throw new BadRequestError(
+      `The following parameters are unrecognized by the server: ${unrecognizedParams.join(', ')}.`
+    );
+  }
+
+  const missingRequiredParams = recognizedParameters.filter(param => !paramPresent(query, param));
+  if (missingRequiredParams.length > 0) {
+    throw new BadRequestError(`The following required parameters are missing: ${missingRequiredParams.join(', ')}.`);
+  }
+
+  const repeatedSingleCardinalityParams = recognizedParameters.filter(param => Array.isArray(query[param]));
+  if (repeatedSingleCardinalityParams.length > 0) {
+    throw new BadRequestError(
+      `The following parameters can only be provided once: ${repeatedSingleCardinalityParams.join(', ')}.`
+    );
+  }
+}
+
+/**
  * Checks that the parameters input to $evaluate are valid. Throws an error
  * for missing parameters, the use of unsupported parameters, and the use of unsupported
  * report types.
