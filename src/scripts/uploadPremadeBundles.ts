@@ -5,7 +5,7 @@ const mongoUtil = require('../database/connection');
 const { createResource, updateResource } = require('../database/dbOperations');
 const { v4: uuidv4 } = require('uuid');
 
-const ecqmContentR4Path = path.resolve(path.join(__dirname, '../../ecqm-content-r4-2021/bundles/measure/'));
+const dqmContentQicorePath = path.resolve(path.join(__dirname, '../../dqm-content-qicore-2025/bundles/measure/'));
 
 // files containing EXM bundles of interest from specified directory
 const bundleFiles = [];
@@ -111,7 +111,7 @@ const addTestResources = async () => {
  * Uploads all the resources from the specified directory into the
  * database.
  *
- * TODO: Currently configured for ecqm-content-r4-2021 measure bundles,
+ * TODO: Currently configured for dqm-content-qicore-2025 measure bundles,
  * but may want to expand to other measure bundle providers in the future.
  */
 async function main() {
@@ -139,17 +139,17 @@ async function main() {
       throw new Error('Provided directory not found.');
     }
 
-    // otherwise load from ecqm-content-r4-2021
+    // otherwise load from dqm-content-qicore-2025
   } else {
     try {
       if (!searchPattern) {
         searchPattern = /^[A-Z].*-bundle.json$/;
       }
-      console.log(`Finding bundles in ecqm-content-r4-2021 repo at ${ecqmContentR4Path}.`);
-      getEcqmBundleFiles(ecqmContentR4Path, searchPattern);
+      console.log(`Finding bundles in dqm-content-qicore-2025 repo at ${dqmContentQicorePath}.`);
+      getEcqmBundleFiles(dqmContentQicorePath, searchPattern);
     } catch {
       throw new Error(
-        'ecqm-content-r4-2021 directory not found. Git clone the ecqm-content-r4-2021 repo into the root directory and run script again'
+        'dqm-content-qicore-2025 directory not found. Git clone the dqm-content-qicore-2025 repo into the root directory and run script again'
       );
     }
   }
