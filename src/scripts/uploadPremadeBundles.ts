@@ -17,13 +17,13 @@ const bundleFiles = [];
  * @param {string} searchPattern - regex to match potential measure bundle files against
  * @returns {Array} array of string paths that represent the bundle files of interest
  */
-const getEcqmBundleFiles = (directory, searchPattern) => {
+const getMeasureBundleFiles = (directory, searchPattern) => {
   const fileNameRegExp = new RegExp(searchPattern);
   const filesInDirectory = fs.readdirSync(directory);
   filesInDirectory.forEach(file => {
     const absolute = path.join(directory, file);
     if (fs.statSync(absolute).isDirectory()) {
-      getEcqmBundleFiles(absolute, searchPattern);
+      getMeasureBundleFiles(absolute, searchPattern);
     } else if (fileNameRegExp.test(file)) {
       bundleFiles.push(absolute);
     }
@@ -54,6 +54,7 @@ const getBundleFiles = (directory, searchPattern) => {
   });
 };
 
+// Note: c0d1f27d-249b-4d74-a493-a4796fb8e833 is a denominator patient and 321abfa0-2c0e-4885-8b5b-20208512e605 is a numerator patient
 const addTestResources = async () => {
   await createResource(
     {
@@ -64,12 +65,12 @@ const addTestResources = async () => {
       member: [
         {
           entity: {
-            reference: 'Patient/denom-EXM124'
+            reference: 'Patient/c0d1f27d-249b-4d74-a493-a4796fb8e833'
           }
         },
         {
           entity: {
-            reference: 'Patient/numer-EXM124'
+            reference: 'Patient/321abfa0-2c0e-4885-8b5b-20208512e605'
           }
         }
       ]
@@ -92,10 +93,10 @@ const addTestResources = async () => {
   );
 
   await updateResource(
-    'denom-EXM124',
+    'c0d1f27d-249b-4d74-a493-a4796fb8e833',
     {
       resourceType: 'Patient',
-      id: 'denom-EXM124',
+      id: 'c0d1f27d-249b-4d74-a493-a4796fb8e833',
       managingOrganization: {
         reference: 'Organization/1'
       },
@@ -146,7 +147,7 @@ async function main() {
         searchPattern = /^[A-Z].*-bundle.json$/;
       }
       console.log(`Finding bundles in dqm-content-qicore-2025 repo at ${dqmContentQicorePath}.`);
-      getEcqmBundleFiles(dqmContentQicorePath, searchPattern);
+      getMeasureBundleFiles(dqmContentQicorePath, searchPattern);
     } catch {
       throw new Error(
         'dqm-content-qicore-2025 directory not found. Git clone the dqm-content-qicore-2025 repo into the root directory and run script again'
