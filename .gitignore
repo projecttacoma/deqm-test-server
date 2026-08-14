@@ -3,6 +3,7 @@ build
 .vscode/
 connectathon
 ecqm-content-r4-2021
+dqm-content-qicore-2025
 coverage
 docker_ssl_setup.sh
 tmp
