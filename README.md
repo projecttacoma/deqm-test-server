@@ -20,6 +20,7 @@ Test server for executing FHIR-based Electronic Clinical Quality Measures (eCQMs
       - [`$data-requirements`](#data-requirements)
       - [`$collect-data`](#collect-data)
       - [`$submit-data`](#submit-data)
+      - [`kickoff-submit` convenience endpoint](#kickoff-submit-convenience-endpoint)
       - [`Patient/$everything`](#patienteverything)
     - [Bulk Import](#bulk-import)
   - [License](#license)
@@ -263,6 +264,46 @@ See the [DEQM $collect-data operation spec](https://hl7.org/fhir/uv/deqm/2026May
 This operation takes 1..\* bundles. Each transaction bundle should be for a single subject and contain 1..\* `MeasureReport`(s), one for each measure, along with a set of required data with which to calculate the measures. The server adds new documents to the database for each contained FHIR object. To use, send a valid FHIR parameters object in a POST request to `http://localhost:3000/4_0_1/Measure/$submit-data`.
 
 Check out the [deqm $submit-data operation spec](https://build.fhir.org/ig/HL7/davinci-deqm/OperationDefinition-submit-data.html) for more information.
+
+#### `kickoff-submit` convenience endpoint
+
+`POST http://localhost:3000/4_0_1/kickoff-submit` is a convenience endpoint provided by this test server; it is **not** part of a FHIR specification. It sends a data exchange `MeasureReport` and the resources named in its `evaluatedResource` field to a receiving FHIR server.
+
+The request body is a FHIR `Parameters` resource with these embedded resource parameters:
+
+- `report`: the data exchange `MeasureReport` to submit
+- `receiverEndpoint`: an `Endpoint` whose `address` is the receiving server's FHIR base URL
+
+Each `evaluatedResource.reference` must be a local relative reference in `ResourceType/id` form and identify a resource already stored by this server. The endpoint resolves those resources, creates a transaction `Bundle` containing the report and resolved resources, and POSTs it to `receiverEndpoint.address`. Every entry uses a `PUT` request so its existing FHIR id is retained. The receiving server's response status and body are returned to the caller.
+
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "report",
+      "resource": {
+        "resourceType": "MeasureReport",
+        "id": "report-1",
+        "status": "complete",
+        "type": "data-collection",
+        "measure": "http://example.org/fhir/Measure/example",
+        "period": { "start": "2026-01-01", "end": "2026-12-31" },
+        "evaluatedResource": [{ "reference": "Patient/patient-1" }]
+      }
+    },
+    {
+      "name": "receiverEndpoint",
+      "resource": {
+        "resourceType": "Endpoint",
+        "status": "active",
+        "connectionType": { "code": "hl7-fhir-rest" },
+        "address": "https://receiver.example.org/fhir"
+      }
+    }
+  ]
+}
+```
 
 #### `Patient/$everything`
 
