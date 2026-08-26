@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperations';
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
+import { generateJWT, getAccessToken } from './client';
 
 const { uploadResourcesFromBundle } = require('../services/bundle.service');
 
@@ -104,10 +105,41 @@ export async function pullResourceReferences(
   );
   const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 
+  // We need to see if the dataEndpoint is the Epic FHIR Sandbox and if so, we want to authenticate with it
+  // store client_id, aud, etc. in environment variables for now, but they will eventually go in the schema file
+  const client_id = process.env.CLIENT_ID;
+  const token_endpoint_url = process.env.TOKEN_ENDPOINT_URL;
+
+  if (!client_id) {
+    throw new Error('CLIENT_ID is not configured');
+  }
+
+  if (!token_endpoint_url) {
+    throw new Error('TOKEN_ENDPOINT_URL is not configured');
+  }
+
+  // generate the signed JWT first
+  // this is seemingly being properly generated at the moment, you can
+  // run the client.ts file on its own to print it out
+  const jwt = await generateJWT(client_id, token_endpoint_url);
+
+  // get the bearer token
+  // this is not working right now, started to debug but didn't have time
+  const accessToken = await getAccessToken(token_endpoint_url, jwt);
+
+  console.log(accessToken);
+
   // Track an array of references for the resources returned from each query
   const resourceReferenceArrays = await Promise.all(
     queries.map(async query => {
-      const bundle = await axios.get(query).then(response => response.data);
+      const response = await axios.get(query, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/fhir+json'
+        }
+      });
+
+      const bundle = response.data;
       if (bundle.entry) {
         const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
           e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
