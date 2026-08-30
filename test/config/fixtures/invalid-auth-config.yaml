@@ -1,0 +1,4 @@
+servers:
+  - type: jwt
+    url: http://jwt.example.com/fhir
+    clientId: jwt-client-id-101
