@@ -9,3 +9,4 @@ docker_ssl_setup.sh
 tmp
 .DS_Store
 extAuthConfig.yaml
+.env

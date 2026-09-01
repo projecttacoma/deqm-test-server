@@ -4,6 +4,7 @@ import jose from 'node-jose';
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { v4 } from 'uuid';
+import { getExtAuthConfig } from '../config/extAuthConfig';
 
 const privateKeyFile = process.env.JWT_PRIVATE_KEY_FILE;
 
@@ -39,8 +40,9 @@ export default class TokenManager {
 
     console.log(`using fhirBaseUrl ${fhirBaseUrl}`);
 
-    // TODO, get our client ID, etc, from config
-    const { clientId, customScopes, customEndpoint } = deleteme();
+    const authConfig = await getExtAuthConfig(fhirBaseUrl);
+    const { clientId, authUrl: customEndpoint } = authConfig?.type === 'jwt' ? authConfig : {};
+    const customScopes = null;
 
     // TODO, if unknown server return null
     if (clientId == null) {
@@ -74,15 +76,6 @@ export default class TokenManager {
   }
 }
 
-function deleteme() {
-  return {
-    clientId:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InJlZ2lzdHJhdGlvbi10b2tlbiJ9.eyJqd2tzX3VybCI6Imh0dHA6Ly8xMC4xNS4yNTIuNzMvaW5mZXJuby8ud2VsbC1rbm93bi9qd2tzLmpzb24iLCJhY2Nlc3NUb2tlbnNFeHBpcmVJbiI6MTUsImlhdCI6MTU5NzQxMzE5NX0.q4v4Msc74kN506KTZ0q_minyapJw0gwlT6M_uiL73S4',
-    customScopes: null,
-    customEndpoint: null
-  };
-}
-
 /**
  * Get the token_endpoint from the .well-known/smart-configuration
  *
@@ -90,6 +83,7 @@ function deleteme() {
  * @returns token_endpoint
  */
 async function getTokenEndpoint(url: string) {
+  // Attempt checking at the `.well-known/smart-configuration`
   try {
     const response = await axios.get(`${url}/.well-known/smart-configuration`);
     return response.data.token_endpoint;
@@ -97,15 +91,22 @@ async function getTokenEndpoint(url: string) {
     try {
       // sometimes the smart-config is in a non-standard place,
       // so let's try the server capability statement
-      const response = await axios.get(`${url}/metadata`);
+      const response = (await axios.get(`${url}/metadata`)) as { data: fhir4.CapabilityStatement };
 
       const rest = response.data.rest;
-      const serverRest = rest.find((r: object) => r.mode === 'server');
-      const extensions = serverRest.security.extension;
-      const oauth = extensions.find(
-        (e: object) => e.url === 'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris'
-      );
-      return oauth.extension.find((e: object) => e.url === 'token').valueUri;
+      if (rest) {
+        const serverRest = rest.find(r => r.mode === 'server');
+        const extensions = serverRest?.security?.extension;
+        const oauth = extensions?.find(
+          e => e.url === 'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris'
+        );
+        if (oauth?.extension) {
+          const tokenUrl = oauth.extension.find(e => e.url === 'token')?.valueUri;
+          if (tokenUrl) {
+            return tokenUrl;
+          }
+        }
+      }
     } catch {
       // not sure what to do if both fail?
       // for now throw the first error since that's where things are supposed to be
@@ -175,7 +176,8 @@ async function getPrivateKey() {
     // it's a JWK
     const keys = JSON.parse(keyFileText);
     const keyAsJson = keys.keys.find(
-      (k: object) => SUPPORTED_ALGORITHMS.includes(k['alg']) && k['key_ops'].includes('sign')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (k: any) => SUPPORTED_ALGORITHMS.includes(k['alg']) && k['key_ops'].includes('sign')
     );
     return await jose.JWK.asKey(keyAsJson);
   }
