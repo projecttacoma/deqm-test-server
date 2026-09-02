@@ -17,14 +17,26 @@ type TokenState = {
   grantedScope?: string;
 };
 
+type TokenResponse = {
+  access_token: string;
+  expires_in: number;
+};
+
 // if a token expires in this many ms or sooner, don't use it, fetch a new one
 const TOKEN_EXP_BUFFER_MS = 1000;
 
 const TOKEN_MAP = new Map<string, TokenState>();
+// A $collect-data invocation may issue multiple endpoint queries at once. Keep
+// one in-flight authentication request per FHIR base URL so those queries share
+// its result instead of each obtaining a token.
+const TOKEN_REQUESTS = new Map<string, Promise<TokenState | null>>();
 
 export default class TokenManager {
-  static invalidate(fhirBaseUrl: string) {
-    TOKEN_MAP.delete(fhirBaseUrl);
+  static invalidate(fhirBaseUrl: string, rejectedBearerToken?: string) {
+    const currentToken = TOKEN_MAP.get(fhirBaseUrl);
+    if (rejectedBearerToken == null || currentToken?.bearerToken === rejectedBearerToken) {
+      TOKEN_MAP.delete(fhirBaseUrl);
+    }
   }
 
   static async getToken(fhirBaseUrl: string, force = false): Promise<TokenState | null> {
@@ -38,8 +50,22 @@ export default class TokenManager {
       this.invalidate(fhirBaseUrl);
     }
 
-    console.log(`using fhirBaseUrl ${fhirBaseUrl}`);
+    const pendingRequest = TOKEN_REQUESTS.get(fhirBaseUrl);
+    if (pendingRequest) {
+      return pendingRequest;
+    }
 
+    const tokenRequest = this.acquireToken(fhirBaseUrl);
+    TOKEN_REQUESTS.set(fhirBaseUrl, tokenRequest);
+
+    try {
+      return await tokenRequest;
+    } finally {
+      TOKEN_REQUESTS.delete(fhirBaseUrl);
+    }
+  }
+
+  private static async acquireToken(fhirBaseUrl: string): Promise<TokenState | null> {
     const authConfig = await getExtAuthConfig(fhirBaseUrl);
     const { clientId, authUrl: customEndpoint } = authConfig?.type === 'jwt' ? authConfig : {};
     const customScopes = null;
@@ -64,7 +90,7 @@ export default class TokenManager {
     console.log(rawToken);
 
     const tokenState = {
-      bearerToken: rawToken.access_token,
+      bearerToken: formatBearerToken(rawToken.access_token),
       // expires_in is time until expiration in seconds, Date.now() is in milliseconds
       expiresAtMs: Date.now() + rawToken.expires_in * 1000,
       tokenEndpoint
@@ -74,6 +100,10 @@ export default class TokenManager {
 
     return tokenState;
   }
+}
+
+function formatBearerToken(accessToken: string): string {
+  return /^Bearer\s/i.test(accessToken) ? accessToken : `Bearer ${accessToken}`;
 }
 
 /**
@@ -115,7 +145,7 @@ async function getTokenEndpoint(url: string) {
   }
 }
 
-async function getAccessToken(url: string, jwt: string, customScopes: string | null) {
+async function getAccessToken(url: string, jwt: string, customScopes: string | null): Promise<TokenResponse> {
   const props = {
     scope: customScopes ?? 'system/*.rs',
     grant_type: 'client_credentials',
@@ -129,12 +159,15 @@ async function getAccessToken(url: string, jwt: string, customScopes: string | n
     }
   };
 
-  const response = await axios
-    .post(url, new URLSearchParams(props), headers)
-    .then(response => response.data)
-    .catch(err => `Error obtaining access token from ${url}\n${err.message}`);
+  const response = await axios.post<TokenResponse>(url, new URLSearchParams(props), headers);
+  if (typeof response.data.access_token !== 'string' || !response.data.access_token) {
+    throw new Error(`Token endpoint ${url} did not return an access_token.`);
+  }
+  if (typeof response.data.expires_in !== 'number' || response.data.expires_in <= 0) {
+    throw new Error(`Token endpoint ${url} did not return a valid expires_in value.`);
+  }
 
-  return response;
+  return response.data;
 }
 
 /**

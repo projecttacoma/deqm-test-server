@@ -32,13 +32,13 @@ export default class FHIRClient {
   }
 
   private async request<T>(config: AxiosRequestConfig, retried = false): Promise<T> {
-    try {
-      const token = await TokenManager.getToken(this.baseUrl);
+    const token = await TokenManager.getToken(this.baseUrl);
 
+    try {
       const headers = { ...config.headers };
       if (token) {
         headers['Authorization'] = token.bearerToken;
-        console.log(`making request using bearer token ${token.bearerToken}`);
+        // console.log(`making request using bearer token ${token.bearerToken}`);
       } else {
         console.log('making request without bearer token');
       }
@@ -52,7 +52,7 @@ export default class FHIRClient {
     } catch (error) {
       if (!retried && axios.isAxiosError(error) && error.response?.status === 401) {
         // try again once if we got an error 401, maybe the token just expired
-        TokenManager.invalidate(this.baseUrl);
+        TokenManager.invalidate(this.baseUrl, token?.bearerToken);
         return this.request<T>(config, true);
       }
       throw error;
