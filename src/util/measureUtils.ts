@@ -93,7 +93,7 @@ export async function pullResourceReferences(
   dataEndpoint: fhir4.Endpoint,
   baseVersion: string
 ): Promise<fhir4.Reference[]> {
-  const queries2 = _.uniq(
+  const queries = _.uniq(
     patientDR.results.dataRequirement?.flatMap(dr => {
       return (
         dr.extension
@@ -103,11 +103,6 @@ export async function pullResourceReferences(
     }) ?? []
   );
 
-  // change this to queries and the above to queries2 for testing with the sandbox
-  const queries = [
-    'Condition?patient=Patient/erXuFYUfucBZaryVksYEcMg3&code=69878008',
-    'Procedure?patient=Patient/erXuFYUfucBZaryVksYEcMg3&code=69878008'
-  ];
   const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 
   const fhirClient = new FHIRClient(dataEndpoint.address);

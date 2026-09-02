@@ -114,35 +114,8 @@ function formatBearerToken(accessToken: string): string {
  */
 async function getTokenEndpoint(url: string) {
   // Attempt checking at the `.well-known/smart-configuration`
-  try {
-    const response = await axios.get(`${url}/.well-known/smart-configuration`);
-    return response.data.token_endpoint;
-  } catch (ex) {
-    try {
-      // sometimes the smart-config is in a non-standard place,
-      // so let's try the server capability statement
-      const response = (await axios.get(`${url}/metadata`)) as { data: fhir4.CapabilityStatement };
-
-      const rest = response.data.rest;
-      if (rest) {
-        const serverRest = rest.find(r => r.mode === 'server');
-        const extensions = serverRest?.security?.extension;
-        const oauth = extensions?.find(
-          e => e.url === 'http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris'
-        );
-        if (oauth?.extension) {
-          const tokenUrl = oauth.extension.find(e => e.url === 'token')?.valueUri;
-          if (tokenUrl) {
-            return tokenUrl;
-          }
-        }
-      }
-    } catch {
-      // not sure what to do if both fail?
-      // for now throw the first error since that's where things are supposed to be
-      throw ex;
-    }
-  }
+  const response = await axios.get(`${url}/.well-known/smart-configuration`);
+  return response.data.token_endpoint;
 }
 
 async function getAccessToken(url: string, jwt: string, customScopes: string | null): Promise<TokenResponse> {
