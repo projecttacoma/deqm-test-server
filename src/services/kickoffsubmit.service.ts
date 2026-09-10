@@ -5,6 +5,7 @@ import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/e
 import logger from '../server/logger';
 import { gatherParams, validateKickoffSubmitParams } from '../util/operationValidationUtils';
 import { v4 as uuidv4 } from 'uuid';
+import FHIRClient from '../util/fhirClient';
 
 /**
  * Parse a relative FHIR reference used to identify a stored resource.
@@ -52,6 +53,9 @@ export async function kickoffSubmit(req: any, res: any) {
     })
   );
 
+  // rather than a POST request with the bundle, we want to wrap the Bundle in a Parameters resource and send it to the
+  // receiver as the request body of a $submit-data operation
+
   const resources = [report, ...evaluatedResources];
   const transactionBundle: fhir4.Bundle = {
     resourceType: 'Bundle',
@@ -66,16 +70,38 @@ export async function kickoffSubmit(req: any, res: any) {
     }))
   };
 
+  const submitDataParametersRequestBody: fhir4.Parameters = {
+    resourceType: 'Parameters',
+    parameter: [{ name: 'bundle', resource: transactionBundle }]
+  };
+
+  // create the FhirClient from the receiverEndpoint
+  const fhirClient = new FHIRClient(receiverEndpoint.address);
+
   try {
-    const response = await axios.post(receiverEndpoint.address, transactionBundle, {
-      headers: {
-        Accept: 'application/fhir+json',
-        'Content-Type': 'application/fhir+json'
+    // experiment - call POST $submit-data with FhirClient POST request with
+    // submitDataParametersRequestBody in the request body
+    console.log(JSON.stringify(submitDataParametersRequestBody, null, 2));
+    const response = await fhirClient.post<fhir4.Bundle>(
+      receiverEndpoint.address.concat('/Measure/$submit-data'),
+      submitDataParametersRequestBody,
+      {
+        headers: {
+          Accept: 'application/fhir+json',
+          'Content-Type': 'application/fhir+json'
+        }
       }
-    });
+    );
+
+    // const response2 = await axios.post(receiverEndpoint.address, transactionBundle, {
+    //   headers: {
+    //     Accept: 'application/fhir+json',
+    //     'Content-Type': 'application/fhir+json'
+    //   }
+    // });
     logger.info(`Successfully submitted transaction Bundle to ${receiverEndpoint.address}`);
-    res.status(response.status);
-    return response.data;
+    // res.status(response.status);
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new InternalError(`Unable to submit transaction Bundle to ${receiverEndpoint.address}: ${message}`);

@@ -121,7 +121,7 @@ async function getTokenEndpoint(url: string) {
 
 async function getAccessToken(url: string, jwt: string, customScopes: string | null): Promise<TokenResponse> {
   const props = {
-    scope: customScopes ?? 'system/*.rs',
+    scope: customScopes ?? 'openid system/*.cruds',
     grant_type: 'client_credentials',
     client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     client_assertion: jwt
@@ -158,10 +158,12 @@ async function generateJWT(client_id: string, aud: string) {
     jti: v4()
   };
 
+  const alg = 'RS384';
+
   return jose.JWS.createSign(
     {
       format: 'compact',
-      fields: { alg: key.alg, kid: key.kid }
+      fields: { alg: alg, kid: 'deqm-test-server' }
     },
     key
   )
