@@ -88,7 +88,7 @@ export default class TokenManager {
     // get the bearer token
     const rawToken = await getAccessToken(tokenEndpoint, jwt.toString(), customScopes);
 
-    logger.debug(rawToken);
+    logger.debug(`got token: ${rawToken.access_token}`);
 
     const tokenState = {
       bearerToken: formatBearerToken(rawToken.access_token),

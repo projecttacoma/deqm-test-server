@@ -39,10 +39,9 @@ export default class FHIRClient {
       const headers = { ...config.headers };
       if (token) {
         headers['Authorization'] = token.bearerToken;
-        logger.debug(`making request using bearer token ${token.bearerToken}`);
-      } else {
-        logger.debug('making request without bearer token');
       }
+
+      logger.debug(`External FHIR Request: ${config.method} ${config.url}`);
 
       const response = await this.http.request<T>({
         ...config,
@@ -57,7 +56,18 @@ export default class FHIRClient {
         return this.request<T>(config, true);
       }
       logger.error(`Error with External FHIR Request`, error);
-      throw error;
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error with External FHIR Request to ${config.method} ${config.url}: ${error} \n${JSON.stringify(error.response?.data)}`,
+          {
+            cause: error
+          }
+        );
+      } else {
+        throw new Error(`Error with External FHIR Request to ${config.method} ${config.url}: ${error}`, {
+          cause: error
+        });
+      }
     }
   }
 }

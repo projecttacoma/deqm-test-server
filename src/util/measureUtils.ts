@@ -108,44 +108,44 @@ export async function pullResourceReferences(
   const fhirClient = new FHIRClient(dataEndpoint.address);
 
   // Track an array of references for the resources returned from each query
-  const resourceReferenceArrays = await Promise.all(
-    queries.map(async query => {
-      const bundle = await fhirClient.get<fhir4.Bundle>(query, {
-        headers: {
-          Accept: 'application/fhir+json'
-        }
-      });
+  const resourceReferences: fhir4.Reference[] = [];
 
-      if (bundle.entry) {
-        const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
-          e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
-        );
-        //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
-        const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
-        // Get new ids
-        const references = originalReferences
-          .map((refString: string | null, i: number): fhir4.Reference | null => {
-            if (!refString) return null;
-            // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
-            const newRef =
-              results[i].resource?.resourceType && results[i].resource?.id
-                ? `${results[i].resource.resourceType}/${results[i].resource.id}`
-                : undefined;
-            return {
-              reference: refString,
-              identifier: {
-                system: serverUrl,
-                value: newRef
-              }
-            };
-          })
-          .filter((r): r is fhir4.Reference => r !== null);
-        return references;
+  for (const query of queries) {
+    const bundle = await fhirClient.get<fhir4.Bundle>(query, {
+      headers: {
+        Accept: 'application/fhir+json'
       }
-      return [];
-    })
-  );
-  return _.uniqBy(resourceReferenceArrays.flat(), r => JSON.stringify(r));
+    });
+
+    if (bundle.entry) {
+      const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
+        e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
+      );
+      //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
+      const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
+      // Get new ids
+      const references = originalReferences
+        .map((refString: string | null, i: number): fhir4.Reference | null => {
+          if (!refString) return null;
+          // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
+          const newRef =
+            results[i].resource?.resourceType && results[i].resource?.id
+              ? `${results[i].resource.resourceType}/${results[i].resource.id}`
+              : undefined;
+          return {
+            reference: refString,
+            identifier: {
+              system: serverUrl,
+              value: newRef
+            }
+          };
+        })
+        .filter((r): r is fhir4.Reference => r !== null);
+      resourceReferences.push(...references);
+    }
+  }
+
+  return resourceReferences;
 }
 
 /**
