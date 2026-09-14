@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import TokenManager from './tokenManager';
+import logger from '../server/logger';
 
 // SMART-aware client for outgoing FHIR interactions
 export default class FHIRClient {
@@ -38,9 +39,9 @@ export default class FHIRClient {
       const headers = { ...config.headers };
       if (token) {
         headers['Authorization'] = token.bearerToken;
-        // console.log(`making request using bearer token ${token.bearerToken}`);
+        logger.debug(`making request using bearer token ${token.bearerToken}`);
       } else {
-        console.log('making request without bearer token');
+        logger.debug('making request without bearer token');
       }
 
       const response = await this.http.request<T>({
@@ -55,6 +56,7 @@ export default class FHIRClient {
         TokenManager.invalidate(this.baseUrl, token?.bearerToken);
         return this.request<T>(config, true);
       }
+      logger.error(`Error with External FHIR Request`, error);
       throw error;
     }
   }

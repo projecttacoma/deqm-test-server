@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { v4 } from 'uuid';
 import { getExtAuthConfig } from '../config/extAuthConfig';
+import logger from '../server/logger';
 
 const privateKeyFile = process.env.JWT_PRIVATE_KEY_FILE;
 
@@ -77,17 +78,17 @@ export default class TokenManager {
 
     const tokenEndpoint = customEndpoint ?? (await getTokenEndpoint(fhirBaseUrl));
 
-    console.log(`using tokenEndpoint ${tokenEndpoint}`);
+    logger.debug(`using tokenEndpoint ${tokenEndpoint}`);
 
     // generate the signed JWT first
     const jwt = await generateJWT(clientId, tokenEndpoint);
 
-    console.log(`constructed JWT ${jwt}`);
+    logger.debug(`constructed JWT ${jwt}`);
 
     // get the bearer token
     const rawToken = await getAccessToken(tokenEndpoint, jwt.toString(), customScopes);
 
-    console.log(rawToken);
+    logger.debug(rawToken);
 
     const tokenState = {
       bearerToken: formatBearerToken(rawToken.access_token),
