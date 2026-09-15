@@ -91,7 +91,8 @@ export function getPatientIdsFromGroup(group: fhir4.Group): string[] {
 export async function pullResourceReferences(
   patientDR: DRCalculationOutput,
   dataEndpoint: fhir4.Endpoint,
-  baseVersion: string
+  baseVersion: string,
+  patientId: string
 ): Promise<fhir4.Reference[]> {
   const queries = _.uniq(
     patientDR.results.dataRequirement?.flatMap(dr => {
@@ -102,6 +103,9 @@ export async function pullResourceReferences(
       );
     }) ?? []
   );
+
+  // add Patient query when the Patient is on the dataEndpoint
+  queries.push(`${dataEndpoint.address}/Patient?_id=${patientId}`);
 
   const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 

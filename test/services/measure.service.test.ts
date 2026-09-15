@@ -1234,16 +1234,27 @@ describe('measure.service', () => {
                 status: 'active',
                 beneficiary: { reference: 'Patient/testPatient' }
               }
-            : {
-                resourceType: 'Encounter',
-                id: 'collectDataEncounter',
-                status: 'finished',
-                class: {
-                  system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
-                  code: 'AMB'
-                },
-                subject: { reference: 'Patient/testPatient' }
-              };
+            : url.includes('Encounter')
+              ? {
+                  resourceType: 'Encounter',
+                  id: 'collectDataEncounter',
+                  status: 'finished',
+                  class: {
+                    system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+                    code: 'AMB'
+                  },
+                  subject: { reference: 'Patient/testPatient' }
+                }
+              : {
+                  resourceType: 'Patient',
+                  id: 'testPatient',
+                  managingOrganization: {
+                    reference: 'Organization/testOrganization'
+                  },
+                  generalPractitioner: {
+                    reference: 'Practitioner/testPractitioner'
+                  }
+                };
         return Promise.resolve({ data: { resourceType: 'Bundle', type: 'searchset', entry: [{ resource }] } });
       });
 
@@ -1294,6 +1305,11 @@ describe('measure.service', () => {
                 url: 'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient'
               })
             );
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Patient?_id=testPatient'
+              })
+            );
 
             expect(response.body.resourceType).toEqual('Parameters');
             expect(response.body.parameter).toHaveLength(1);
@@ -1327,6 +1343,13 @@ describe('measure.service', () => {
                 identifier: {
                   system: 'deqm-test-server.example.com/4_0_1',
                   value: 'Encounter/collectDataEncounter'
+                }
+              },
+              {
+                reference: 'Patient/testPatient',
+                identifier: {
+                  system: 'deqm-test-server.example.com/4_0_1',
+                  value: 'Patient/testPatient'
                 }
               }
             ]);
@@ -1397,7 +1420,7 @@ describe('measure.service', () => {
               `${collectDataMeasure.url}|${collectDataMeasure.version}`,
               `${collectDataMeasure2.url}|${collectDataMeasure2.version}`
             ]);
-            expect(fhirClientAxios.request).toHaveBeenCalledTimes(12);
+            expect(fhirClientAxios.request).toHaveBeenCalledTimes(16);
             expect(fhirClientAxios.request).toHaveBeenCalledWith(
               expect.objectContaining({
                 url: 'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient2'
@@ -1473,7 +1496,7 @@ describe('measure.service', () => {
             expect(response.body.parameter[1].resource.entry[0].resource.subject.reference).toEqual(
               'Patient/testPatient2'
             );
-            expect(fhirClientAxios.request).toHaveBeenCalledTimes(6);
+            expect(fhirClientAxios.request).toHaveBeenCalledTimes(8);
             expect(fhirClientAxios.request).toHaveBeenCalledWith(
               expect.objectContaining({
                 url: 'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient2'
