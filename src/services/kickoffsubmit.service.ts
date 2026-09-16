@@ -36,6 +36,18 @@ export async function kickoffSubmit(req: any, res: any) {
   const report = query.report as fhir4.MeasureReport;
   const receiverEndpoint = query.receiverEndpoint as fhir4.Endpoint;
 
+  // we want to do some updating of the measure report in order for it to be STU5 conformant for $submit-data
+  report.extension = [
+    {
+      url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
+      valueCode: 'snapshot'
+    }
+  ];
+
+  report.meta = {
+    profile: ['http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm']
+  };
+
   const evaluatedResources = await Promise.all(
     (report.evaluatedResource ?? []).map(async evaluatedResource => {
       if (!evaluatedResource.reference) {
@@ -56,7 +68,14 @@ export async function kickoffSubmit(req: any, res: any) {
   // rather than a POST request with the bundle, we want to wrap the Bundle in a Parameters resource and send it to the
   // receiver as the request body of a $submit-data operation
 
+  // We also want to add the reporter
   const resources = [report, ...evaluatedResources];
+  if (report.reporter?.reference) {
+    const { resourceType, id } = parseResourceReference(report.reporter?.reference);
+    const reporterResource = await findResourceById(id, resourceType);
+    resources.push(reporterResource as unknown as fhir4.FhirResource);
+  }
+
   const transactionBundle: fhir4.Bundle = {
     resourceType: 'Bundle',
     id: uuidv4(),
