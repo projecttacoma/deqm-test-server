@@ -178,7 +178,7 @@ const collectData = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     useExpandedCodeQueries: true
   };
-  const patientIds = await getPatientIds(subject, subjectGroup);
+  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
   const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
   const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
 

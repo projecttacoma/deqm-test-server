@@ -98,9 +98,14 @@ const mockCollectDataRequirements = () => {
     .mockImplementation(() => JSON.parse(JSON.stringify(dataRequirementsOutput)));
 };
 
-// Mock with flexible patient information, but always return Encounter for simplicity
+// Return Group resources for group reads and Encounters with flexible patient information otherwise.
 const mockCollectDataEndpointResponses = () => {
   fhirClientAxios.request.mockImplementation(({ url: query }) => {
+    const groupId = query.match(/Group\/([^/?#]+)(?:\?.*)?$/)?.[1];
+    if (groupId) {
+      return Promise.resolve({ data: { ...testGroup, id: groupId, actual: true } });
+    }
+
     const patientId = query.match(/Patient\/([^&]+)/)?.[1] ?? 'unknown';
     return Promise.resolve({
       data: {
@@ -1420,7 +1425,10 @@ describe('measure.service', () => {
               `${collectDataMeasure.url}|${collectDataMeasure.version}`,
               `${collectDataMeasure2.url}|${collectDataMeasure2.version}`
             ]);
-            expect(fhirClientAxios.request).toHaveBeenCalledTimes(16);
+            expect(fhirClientAxios.request).toHaveBeenCalledTimes(17);
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({ url: 'http://example-data-server.org/fhir/Group/testGroup' })
+            );
             expect(fhirClientAxios.request).toHaveBeenCalledWith(
               expect.objectContaining({
                 url: 'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient2'

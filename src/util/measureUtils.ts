@@ -40,18 +40,32 @@ export async function patientSpecificDataRequirements(
  * @param {Object} subjectGroup FHIR Group that defines a set of patients as the subject
  * @returns {Promise<string[]>} Patient ids.
  */
-export async function getPatientIds(subject: string, subjectGroup: fhir4.Group): Promise<string[]> {
+export async function getPatientIds(
+  subject: string,
+  subjectGroup: fhir4.Group,
+  dataEndpoint?: fhir4.Endpoint
+): Promise<string[]> {
   if (subject) {
     const [resourceType, id] = subject.split('/');
     if (resourceType === 'Patient' && id) {
       return [id];
     }
     if (resourceType === 'Group' && id) {
-      const group = (await findResourceById(id, 'Group')) as unknown as fhir4.Group;
-      if (!group) {
-        throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
+      if (dataEndpoint) {
+        const fhirClient = new FHIRClient(dataEndpoint.address);
+        const group = await fhirClient.get<fhir4.Group>(`${dataEndpoint.address}/Group/${id}`, {
+          headers: {
+            Accept: 'application/fhir+json'
+          }
+        });
+        return getPatientIdsFromGroup(group);
+      } else {
+        const group = (await findResourceById(id, 'Group')) as unknown as fhir4.Group;
+        if (!group) {
+          throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
+        }
+        return getPatientIdsFromGroup(group);
       }
-      return getPatientIdsFromGroup(group);
     }
   } else if (subjectGroup) {
     return getPatientIdsFromGroup(subjectGroup);
