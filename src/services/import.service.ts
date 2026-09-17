@@ -38,8 +38,7 @@ async function bulkImport(req: any, res: any) {
   }
   const parameters = req.body as fhir4.Parameters;
   const submitter = parameters.parameter?.find(p => p.name === 'submitter')?.valueIdentifier as
-    | fhir4.Identifier
-    | undefined;
+    fhir4.Identifier | undefined;
   const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
   const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
   const baseUrl = parameters.parameter?.find(p => p.name === 'fhirBaseUrl')?.valueString;

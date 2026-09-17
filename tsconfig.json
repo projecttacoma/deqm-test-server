@@ -16,7 +16,7 @@
     "declaration": true,
     "sourceMap": true,
     "moduleResolution": "nodenext",
-    "types": ["node", "fhir"]
+    "types": ["node", "fhir", "jest"]
   },
   "ts-node": {
     "files": true

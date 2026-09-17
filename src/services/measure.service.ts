@@ -178,7 +178,7 @@ const collectData = async (args, { req }) => {
     measurementPeriodEnd: periodEnd,
     useExpandedCodeQueries: true
   };
-  const patientIds = await getPatientIds(subject, subjectGroup);
+  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
   const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
   const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
 
@@ -187,7 +187,7 @@ const collectData = async (args, { req }) => {
       const measureReportEntries = await Promise.all(
         measureBundles.map(async measureBundle => {
           const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
-          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion);
+          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion, patientId);
           const measureReport = createDataExchangeMeasureReport(
             measureBundle,
             { start: periodStart, end: periodEnd },

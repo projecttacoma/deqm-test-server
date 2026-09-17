@@ -7,9 +7,6 @@ RUN chmod +x ./docker_ssl_setup.sh; exit 0
 RUN ./docker_ssl_setup.sh; exit 0
 ENV NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
 
-# Force install of older npm due to bug https://github.com/npm/cli/issues/9133
-RUN npm install --global npm@'<11.12.0'
-
 # We're using this because root user can't run any post-install scripts
 USER node
 WORKDIR /home/node/app
