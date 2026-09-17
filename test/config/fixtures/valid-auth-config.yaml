@@ -1,0 +1,13 @@
+servers:
+  - url: http://jwt.example.com/fhir
+    authUrl: http://auth.example.com/token
+    type: 'jwt'
+    clientId: 'jwt-client-id-101'
+  - url: http://secret.example.com/fhir
+    authUrl: http://auth.example.com/token
+    type: 'secret'
+    clientId: 'secret-client-id-102'
+    clientSecret: 'asdfasasfasd'
+  - url: http://bearer.example.com/fhir
+    type: 'token'
+    token: 'asdasdas12312312312312'

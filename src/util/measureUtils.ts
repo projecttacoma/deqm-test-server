@@ -1,9 +1,9 @@
-import axios from 'axios';
 import { CalculationOptions, Calculator, DRCalculationOutput } from 'fqm-execution';
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperations';
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
+import FHIRClient from './fhirClient';
 
 const { uploadResourcesFromBundle } = require('../services/bundle.service');
 
@@ -40,18 +40,32 @@ export async function patientSpecificDataRequirements(
  * @param {Object} subjectGroup FHIR Group that defines a set of patients as the subject
  * @returns {Promise<string[]>} Patient ids.
  */
-export async function getPatientIds(subject: string, subjectGroup: fhir4.Group): Promise<string[]> {
+export async function getPatientIds(
+  subject: string,
+  subjectGroup: fhir4.Group,
+  dataEndpoint?: fhir4.Endpoint
+): Promise<string[]> {
   if (subject) {
     const [resourceType, id] = subject.split('/');
     if (resourceType === 'Patient' && id) {
       return [id];
     }
     if (resourceType === 'Group' && id) {
-      const group = (await findResourceById(id, 'Group')) as unknown as fhir4.Group;
-      if (!group) {
-        throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
+      if (dataEndpoint) {
+        const fhirClient = new FHIRClient(dataEndpoint.address);
+        const group = await fhirClient.get<fhir4.Group>(`${dataEndpoint.address}/Group/${id}`, {
+          headers: {
+            Accept: 'application/fhir+json'
+          }
+        });
+        return getPatientIdsFromGroup(group);
+      } else {
+        const group = (await findResourceById(id, 'Group')) as unknown as fhir4.Group;
+        if (!group) {
+          throw new ResourceNotFoundError(`No resource found in collection: Group, with: id ${id}.`);
+        }
+        return getPatientIdsFromGroup(group);
       }
-      return getPatientIdsFromGroup(group);
     }
   } else if (subjectGroup) {
     return getPatientIdsFromGroup(subjectGroup);
@@ -91,7 +105,8 @@ export function getPatientIdsFromGroup(group: fhir4.Group): string[] {
 export async function pullResourceReferences(
   patientDR: DRCalculationOutput,
   dataEndpoint: fhir4.Endpoint,
-  baseVersion: string
+  baseVersion: string,
+  patientId: string
 ): Promise<fhir4.Reference[]> {
   const queries = _.uniq(
     patientDR.results.dataRequirement?.flatMap(dr => {
@@ -102,42 +117,53 @@ export async function pullResourceReferences(
       );
     }) ?? []
   );
+
+  // add Patient query when the Patient is on the dataEndpoint
+  queries.push(`${dataEndpoint.address}/Patient?_id=${patientId}`);
+
   const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
 
+  const fhirClient = new FHIRClient(dataEndpoint.address);
+
   // Track an array of references for the resources returned from each query
-  const resourceReferenceArrays = await Promise.all(
-    queries.map(async query => {
-      const bundle = await axios.get(query).then(response => response.data);
-      if (bundle.entry) {
-        const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
-          e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
-        );
-        //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
-        const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
-        // Get new ids
-        const references = originalReferences
-          .map((refString: string, i: number) => {
-            if (!refString) return null;
-            // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
-            const newRef =
-              results[i].resource?.resourceType && results[i].resource?.id
-                ? `${results[i].resource.resourceType}/${results[i].resource.id}`
-                : null;
-            return {
-              reference: refString,
-              identifier: {
-                system: serverUrl,
-                value: newRef
-              }
-            };
-          })
-          .filter(Boolean);
-        return references;
+  const resourceReferences: fhir4.Reference[] = [];
+
+  for (const query of queries) {
+    const bundle = await fhirClient.get<fhir4.Bundle>(query, {
+      headers: {
+        Accept: 'application/fhir+json'
       }
-      return [];
-    })
-  );
-  return _.uniqBy(resourceReferenceArrays.flat(), r => JSON.stringify(r));
+    });
+
+    if (bundle.entry) {
+      const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
+        e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
+      );
+      //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
+      const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
+      // Get new ids
+      const references = originalReferences
+        .map((refString: string | null, i: number): fhir4.Reference | null => {
+          if (!refString) return null;
+          // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
+          const newRef =
+            results[i].resource?.resourceType && results[i].resource?.id
+              ? `${results[i].resource.resourceType}/${results[i].resource.id}`
+              : undefined;
+          return {
+            reference: refString,
+            identifier: {
+              system: serverUrl,
+              value: newRef
+            }
+          };
+        })
+        .filter((r): r is fhir4.Reference => r !== null);
+      resourceReferences.push(...references);
+    }
+  }
+
+  return resourceReferences;
 }
 
 /**
@@ -174,8 +200,7 @@ export function createDataExchangeMeasureReport(
         valueCode: 'snapshot'
       }
     ],
-    evaluatedResource: resourceReferences,
-    contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
+    evaluatedResource: resourceReferences
   };
 }
 
