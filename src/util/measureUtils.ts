@@ -200,8 +200,7 @@ export function createDataExchangeMeasureReport(
         valueCode: 'snapshot'
       }
     ],
-    evaluatedResource: resourceReferences,
-    contained: [{ resourceType: 'Organization', id: 'deqm-test-server' }]
+    evaluatedResource: resourceReferences
   };
 }
 
