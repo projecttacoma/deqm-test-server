@@ -27,6 +27,11 @@ const dataRequirementsOutput = require('../fixtures/testDataRequirementsOutput.j
 import axios from 'axios';
 jest.mock('axios');
 
+// $collect-data uses FHIRClient, which creates an Axios instance and invokes
+// instance.request rather than the top-level axios.get function.
+const fhirClientAxios = { request: jest.fn() };
+axios.create.mockReturnValue(fhirClientAxios);
+
 let server;
 const collectDataMeasure = {
   ...testMeasure,
@@ -93,9 +98,14 @@ const mockCollectDataRequirements = () => {
     .mockImplementation(() => JSON.parse(JSON.stringify(dataRequirementsOutput)));
 };
 
-// Mock with flexible patient information, but always return Encounter for simplicity
+// Return Group resources for group reads and Encounters with flexible patient information otherwise.
 const mockCollectDataEndpointResponses = () => {
-  axios.get.mockImplementation(query => {
+  fhirClientAxios.request.mockImplementation(({ url: query }) => {
+    const groupId = query.match(/Group\/([^/?#]+)(?:\?.*)?$/)?.[1];
+    if (groupId) {
+      return Promise.resolve({ data: { ...testGroup, id: groupId, actual: true } });
+    }
+
     const patientId = query.match(/Patient\/([^&]+)/)?.[1] ?? 'unknown';
     return Promise.resolve({
       data: {
@@ -1214,46 +1224,23 @@ describe('measure.service', () => {
       await createTestResource(collectDataMeasure, 'Measure');
 
       mockCollectDataRequirements();
-      axios.get
-        .mockResolvedValueOnce({
-          data: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              {
-                resource: {
-                  resourceType: 'Coverage',
-                  id: 'collectDataPolicyHolderCoverage',
-                  status: 'active',
-                  beneficiary: { reference: 'Patient/testPatient' }
-                }
+      fhirClientAxios.request.mockImplementation(({ url }) => {
+        const resource = url.includes('policy-holder')
+          ? {
+              resourceType: 'Coverage',
+              id: 'collectDataPolicyHolderCoverage',
+              status: 'active',
+              beneficiary: { reference: 'Patient/testPatient' }
+            }
+          : url.includes('subscriber')
+            ? {
+                resourceType: 'Coverage',
+                id: 'collectDataSubscriberCoverage',
+                status: 'active',
+                beneficiary: { reference: 'Patient/testPatient' }
               }
-            ]
-          }
-        })
-        .mockResolvedValueOnce({
-          data: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              {
-                resource: {
-                  resourceType: 'Coverage',
-                  id: 'collectDataSubscriberCoverage',
-                  status: 'active',
-                  beneficiary: { reference: 'Patient/testPatient' }
-                }
-              }
-            ]
-          }
-        })
-        .mockResolvedValueOnce({
-          data: {
-            resourceType: 'Bundle',
-            type: 'searchset',
-            entry: [
-              {
-                resource: {
+            : url.includes('Encounter')
+              ? {
                   resourceType: 'Encounter',
                   id: 'collectDataEncounter',
                   status: 'finished',
@@ -1263,10 +1250,18 @@ describe('measure.service', () => {
                   },
                   subject: { reference: 'Patient/testPatient' }
                 }
-              }
-            ]
-          }
-        });
+              : {
+                  resourceType: 'Patient',
+                  id: 'testPatient',
+                  managingOrganization: {
+                    reference: 'Organization/testOrganization'
+                  },
+                  generalPractitioner: {
+                    reference: 'Practitioner/testPractitioner'
+                  }
+                };
+        return Promise.resolve({ data: { resourceType: 'Bundle', type: 'searchset', entry: [{ resource }] } });
+      });
 
       try {
         await supertest(server.app)
@@ -1300,14 +1295,25 @@ describe('measure.service', () => {
           .set('content-type', 'application/json+fhir')
           .expect(200)
           .then(response => {
-            expect(axios.get).toHaveBeenCalledWith(
-              'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient'
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient'
+              })
             );
-            expect(axios.get).toHaveBeenCalledWith(
-              'http://example-data-server.org/fhir/Coverage?type=1,2,3&subscriber=Patient/testPatient'
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Coverage?type=1,2,3&subscriber=Patient/testPatient'
+              })
             );
-            expect(axios.get).toHaveBeenCalledWith(
-              'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient'
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient'
+              })
+            );
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Patient?_id=testPatient'
+              })
             );
 
             expect(response.body.resourceType).toEqual('Parameters');
@@ -1342,6 +1348,13 @@ describe('measure.service', () => {
                 identifier: {
                   system: 'deqm-test-server.example.com/4_0_1',
                   value: 'Encounter/collectDataEncounter'
+                }
+              },
+              {
+                reference: 'Patient/testPatient',
+                identifier: {
+                  system: 'deqm-test-server.example.com/4_0_1',
+                  value: 'Patient/testPatient'
                 }
               }
             ]);
@@ -1412,9 +1425,14 @@ describe('measure.service', () => {
               `${collectDataMeasure.url}|${collectDataMeasure.version}`,
               `${collectDataMeasure2.url}|${collectDataMeasure2.version}`
             ]);
-            expect(axios.get).toHaveBeenCalledTimes(12);
-            expect(axios.get).toHaveBeenCalledWith(
-              'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient2'
+            expect(fhirClientAxios.request).toHaveBeenCalledTimes(17);
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({ url: 'http://example-data-server.org/fhir/Group/testGroup' })
+            );
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Coverage?type=1,2,3&policy-holder=Patient/testPatient2'
+              })
             );
           });
       } finally {
@@ -1486,9 +1504,11 @@ describe('measure.service', () => {
             expect(response.body.parameter[1].resource.entry[0].resource.subject.reference).toEqual(
               'Patient/testPatient2'
             );
-            expect(axios.get).toHaveBeenCalledTimes(6);
-            expect(axios.get).toHaveBeenCalledWith(
-              'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient2'
+            expect(fhirClientAxios.request).toHaveBeenCalledTimes(8);
+            expect(fhirClientAxios.request).toHaveBeenCalledWith(
+              expect.objectContaining({
+                url: 'http://example-data-server.org/fhir/Encounter?type=1,2,3&date=ge2026-01-01T00:00:00.000Z&date=le2026-12-31T00:00:00.000Z&patient=Patient/testPatient2'
+              })
             );
           });
       } finally {
