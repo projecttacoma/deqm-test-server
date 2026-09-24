@@ -13,10 +13,13 @@ jest.mock('../../src/database/dbOperations', () => ({
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedFindResourceById = findResourceById as jest.MockedFunction<typeof findResourceById>;
+const fhirClientAxios = { request: jest.fn() };
+axios.create.mockReturnValue(fhirClientAxios);
 
 const report = {
   resourceType: 'MeasureReport',
   id: 'report-1',
+  reporter: { reference: 'Organization/reporter-1' },
   evaluatedResource: [{ reference: 'Patient/patient-1' }, { reference: 'Observation/observation-1' }]
 };
 
@@ -38,12 +41,14 @@ describe('kickoffSubmit', () => {
     server = initialize(config);
   });
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
-  test('submits the report and its evaluated resources as a transaction Bundle', async () => {
+  test('submits the report, evaluated resources, and reporter to $submit-data', async () => {
     mockedFindResourceById.mockImplementation(async (id, resourceType) => ({ resourceType, id }));
-    mockedAxios.post.mockResolvedValue({ status: 200, data: { resourceType: 'Bundle', type: 'transaction-response' } });
+    fhirClientAxios.request.mockResolvedValue({
+      data: { resourceType: 'Bundle', type: 'transaction-response' }
+    });
 
     await supertest(server.app)
       .post('/4_0_1/kickoff-submit')
@@ -58,25 +63,61 @@ describe('kickoffSubmit', () => {
         });
         expect(mockedFindResourceById).toHaveBeenCalledWith('patient-1', 'Patient');
         expect(mockedFindResourceById).toHaveBeenCalledWith('observation-1', 'Observation');
-        expect(mockedAxios.post).toHaveBeenCalledWith(
-          'https://receiver.example.org/fhir',
+        expect(mockedFindResourceById).toHaveBeenCalledWith('reporter-1', 'Organization');
+        expect(mockedAxios.create).toHaveBeenCalledWith({
+          baseURL: 'https://receiver.example.org/fhir',
+          headers: { Accept: 'application/fhir+json' }
+        });
+        expect(fhirClientAxios.request).toHaveBeenCalledWith(
           expect.objectContaining({
-            resourceType: 'Bundle',
-            id: expect.any(String),
-            type: 'transaction',
-            entry: [
-              { resource: report, request: { method: 'PUT', url: 'MeasureReport/report-1' } },
-              {
-                resource: { resourceType: 'Patient', id: 'patient-1' },
-                request: { method: 'PUT', url: 'Patient/patient-1' }
-              },
-              {
-                resource: { resourceType: 'Observation', id: 'observation-1' },
-                request: { method: 'PUT', url: 'Observation/observation-1' }
-              }
-            ]
-          }),
-          { headers: { Accept: 'application/fhir+json', 'Content-Type': 'application/fhir+json' } }
+            method: 'POST',
+            url: 'https://receiver.example.org/fhir/Measure/$submit-data',
+            headers: { Accept: 'application/fhir+json', 'Content-Type': 'application/fhir+json' },
+            data: {
+              resourceType: 'Parameters',
+              parameter: [
+                {
+                  name: 'bundle',
+                  resource: {
+                    resourceType: 'Bundle',
+                    id: expect.any(String),
+                    type: 'transaction',
+                    entry: [
+                      {
+                        resource: {
+                          ...report,
+                          extension: [
+                            {
+                              url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
+                              valueCode: 'snapshot'
+                            }
+                          ],
+                          meta: {
+                            profile: [
+                              'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm'
+                            ]
+                          }
+                        },
+                        request: { method: 'PUT', url: 'MeasureReport/report-1' }
+                      },
+                      {
+                        resource: { resourceType: 'Patient', id: 'patient-1' },
+                        request: { method: 'PUT', url: 'Patient/patient-1' }
+                      },
+                      {
+                        resource: { resourceType: 'Observation', id: 'observation-1' },
+                        request: { method: 'PUT', url: 'Observation/observation-1' }
+                      },
+                      {
+                        resource: { resourceType: 'Organization', id: 'reporter-1' },
+                        request: { method: 'PUT', url: 'Organization/reporter-1' }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          })
         );
       });
   });

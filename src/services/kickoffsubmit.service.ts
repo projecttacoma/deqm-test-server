@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { findResourceById } from '../database/dbOperations';
 import { checkSupportedResource } from '../util/baseUtils';
 import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
@@ -24,7 +23,7 @@ function parseResourceReference(reference: string): { resourceType: string; id: 
  * Build and send a transaction Bundle for a data exchange MeasureReport and its evaluated resources.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function kickoffSubmit(req: any, res: any) {
+export async function kickoffSubmit(req: any) {
   logger.info('Base >>> kickoff-submit');
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
 
@@ -94,13 +93,9 @@ export async function kickoffSubmit(req: any, res: any) {
     parameter: [{ name: 'bundle', resource: transactionBundle }]
   };
 
-  // create the FhirClient from the receiverEndpoint
   const fhirClient = new FHIRClient(receiverEndpoint.address);
 
   try {
-    // experiment - call POST $submit-data with FhirClient POST request with
-    // submitDataParametersRequestBody in the request body
-    console.log(JSON.stringify(submitDataParametersRequestBody, null, 2));
     const response = await fhirClient.post<fhir4.Bundle>(
       receiverEndpoint.address.concat('/Measure/$submit-data'),
       submitDataParametersRequestBody,
@@ -111,15 +106,7 @@ export async function kickoffSubmit(req: any, res: any) {
         }
       }
     );
-
-    // const response2 = await axios.post(receiverEndpoint.address, transactionBundle, {
-    //   headers: {
-    //     Accept: 'application/fhir+json',
-    //     'Content-Type': 'application/fhir+json'
-    //   }
-    // });
     logger.info(`Successfully submitted transaction Bundle to ${receiverEndpoint.address}`);
-    // res.status(response.status);
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
