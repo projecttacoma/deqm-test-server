@@ -60,7 +60,9 @@ export async function kickoffSubmit(req: any) {
   if (report.reporter?.reference) {
     const { resourceType, id } = parseResourceReference(report.reporter?.reference);
     const reporterResource = await findResourceById(id, resourceType);
-    resources.push(reporterResource as unknown as fhir4.FhirResource);
+    if (reporterResource !== null) {
+      resources.push(reporterResource as unknown as fhir4.FhirResource);
+    }
   }
 
   const transactionBundle: fhir4.Bundle = {
