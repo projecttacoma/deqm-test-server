@@ -35,18 +35,6 @@ export async function kickoffSubmit(req: any) {
   const report = query.report as fhir4.MeasureReport;
   const receiverEndpoint = query.receiverEndpoint as fhir4.Endpoint;
 
-  // we want to do some updating of the measure report in order for it to be STU5 conformant for $submit-data
-  report.extension = [
-    {
-      url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
-      valueCode: 'snapshot'
-    }
-  ];
-
-  report.meta = {
-    profile: ['http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm']
-  };
-
   const evaluatedResources = await Promise.all(
     (report.evaluatedResource ?? []).map(async evaluatedResource => {
       if (!evaluatedResource.reference) {

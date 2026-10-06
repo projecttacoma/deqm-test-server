@@ -84,20 +84,7 @@ describe('kickoffSubmit', () => {
                     type: 'transaction',
                     entry: [
                       {
-                        resource: {
-                          ...report,
-                          extension: [
-                            {
-                              url: 'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/extension-submitDataUpdateType',
-                              valueCode: 'snapshot'
-                            }
-                          ],
-                          meta: {
-                            profile: [
-                              'http://hl7.org/fhir/us/davinci-deqm/StructureDefinition/datax-measurereport-deqm'
-                            ]
-                          }
-                        },
+                        resource: report,
                         request: { method: 'PUT', url: 'MeasureReport/report-1' }
                       },
                       {
