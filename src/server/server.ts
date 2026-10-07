@@ -6,6 +6,7 @@ const configTransaction = require('../controllers/bundle.controller');
 const configBulkStatus = require('../controllers/bulkstatus.controller');
 const configClientFile = require('../controllers/clientfile.controller');
 const configResourceCount = require('../controllers/resourcecount.controller');
+const configKickoffSubmit = require('../controllers/kickoffsubmit.controller');
 import { bulkSubmitStatusController } from '../controllers/bulksubmitstatus.controller';
 const { validateFhir } = require('../util/resourceValidationUtils');
 import logger from './logger';
@@ -43,6 +44,10 @@ class DEQMServer extends Server {
     this.app.get('/:base_version/resourceCount/', configResourceCount.resourceCount);
     return this;
   }
+  enableKickoffSubmitRoute() {
+    this.app.post('/:base_version/kickoff-submit', configKickoffSubmit.kickoffSubmit);
+    return this;
+  }
 
   enableCors() {
     this.app.use(cors({ exposedHeaders: 'Location' }));
@@ -75,6 +80,7 @@ function initialize(config, app) {
     .enableImportRoute()
     .enableClientFileRoute()
     .enableResourceCountRoute()
+    .enableKickoffSubmitRoute()
     .setProfileRoutes()
     .setErrorRoutes();
 
