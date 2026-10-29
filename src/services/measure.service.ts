@@ -187,7 +187,7 @@ const collectData = async (args, { req }) => {
     const id = uuidv4();
     await addPendingCollectDataRequest(id);
     try {
-      await collectDataQueue.createJob({ clientId: id, query, baseVersion }).setId(id).save();
+      await collectDataQueue.createJob({ jobId: id, query, baseVersion }).setId(id).save();
     } catch (error) {
       await failCollectDataRequest(id, error);
       throw new InternalError('Unable to queue the collect-data request.');

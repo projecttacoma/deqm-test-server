@@ -23,22 +23,22 @@ const queue = new Queue('collect-data', {
 queue.on('error', (error: Error) => logger.error('collect-data worker error', error));
 
 queue.process(async job => {
-  const { clientId, query, baseVersion } = job.data;
+  const { jobId, query, baseVersion } = job.data;
   try {
     await client.connect();
-    await startCollectDataRequest(clientId);
+    await startCollectDataRequest(jobId);
 
     // gather the collect-data FHIR queries (from the dataRequirements), but do not execute them
     const collection: PreparedCollectData = await prepareCollectData(query);
     const queries: CollectDataQuery[] = collection.queries.map((task, index) => ({
-      id: `${clientId}-query-${index}`,
-      clientId,
+      id: `${jobId}-query-${index}`,
+      jobId,
       url: task.url,
       status: 'Pending'
     }));
 
     // save all of the FHIR queries to be executed as "Pending"
-    await saveCollectDataQueries(clientId, queries);
+    await saveCollectDataQueries(jobId, queries);
 
     for (const [index, task] of collection.queries.entries()) {
       try {
@@ -50,13 +50,13 @@ queue.process(async job => {
         throw error;
       }
     }
-    const directory = path.resolve('tmp', clientId);
+    const directory = path.resolve('tmp', jobId);
     await mkdir(directory, { recursive: true });
     await writeFile(path.join(directory, 'Parameters.json'), `${JSON.stringify(collection.parameters)}\n`);
-    await completeCollectDataRequest(clientId);
+    await completeCollectDataRequest(jobId);
   } catch (error) {
-    await failCollectDataRequest(clientId, error);
-    logger.error(`collect-data request ${clientId} failed`, error);
+    await failCollectDataRequest(jobId, error);
+    logger.error(`collect-data request ${jobId} failed`, error);
     throw error;
   }
 });

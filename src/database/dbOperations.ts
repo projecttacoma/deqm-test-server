@@ -14,7 +14,7 @@ export interface CollectDataStatus {
 
 export interface CollectDataQuery {
   id: string;
-  clientId: string;
+  jobId: string;
   url: string;
   status: 'Pending' | 'Completed' | 'Failed';
   error?: string;
