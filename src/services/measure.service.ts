@@ -1,5 +1,5 @@
 //@ts-nocheck
-const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
+const { BadRequestError, InternalError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
@@ -24,17 +24,25 @@ const {
   patientSpecificDataRequirements,
   getPatientIds,
   pullResourceReferences,
+  getResourceQueries,
+  pullResourceReferencesFromQuery,
   createDataExchangeMeasureReport,
   wrapReportsInBundlesParameters,
   basicProgramQuery,
   systemCodeProgramQuery,
   retrieveSearchTerm
 } = require('../util/measureUtils');
-const { findResourcesWithQuery } = require('../database/dbOperations');
+const {
+  findResourcesWithQuery,
+  addPendingCollectDataRequest,
+  failCollectDataRequest
+} = require('../database/dbOperations');
+import { collectDataQueue } from '../queue/collectDataQueue';
 import logger from '../server/logger';
 const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
 import _ from 'lodash';
+import type { PreparedCollectData, PreparedCollectDataQuery } from '../util/measureUtils';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -159,7 +167,7 @@ const dataRequirements = async (args, { req }) => {
  * dataEndpoint (Endpoint typed parameter) presumed to be required for this implementation, so POST support only
  * @param {Object} args the args object passed in by the user
  * @param {Object} req http request object
- * @returns {Object} Parameters resource containing one or more Bundles of data exchange MeasureReports.
+ * @returns {Object|undefined} Parameters resource, or an empty 202 response for asynchronous collection.
  */
 const collectData = async (args, { req }) => {
   logger.info('Measure >>> $collect-data');
@@ -171,6 +179,26 @@ const collectData = async (args, { req }) => {
   const query = gatherParams(req.query, req.body);
 
   validateCollectDataParams(query);
+  const respondAsync = (req.get('Prefer') || '')
+    .split(',')
+    .some(preference => preference.split(';')[0].trim().toLowerCase() === 'respond-async');
+
+  if (respondAsync) {
+    const id = uuidv4();
+    await addPendingCollectDataRequest(id);
+    try {
+      await collectDataQueue.createJob({ jobId: id, query, baseVersion }).setId(id).save();
+    } catch (error) {
+      await failCollectDataRequest(id, error);
+      throw new InternalError('Unable to queue the collect-data request.');
+    }
+    // The profile operation controller sends the response and preserves this status.
+    req.res
+      .status(202)
+      .set('Content-Location', `${process.env.BASE_URL}/${baseVersion}/collectdatastatus/${id}`)
+      .set('Retry-After', '1');
+    return;
+  }
   const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
 
   const options = {
@@ -220,6 +248,75 @@ const collectData = async (args, { req }) => {
     resourceType: 'Parameters',
     parameter: parameters
   };
+};
+
+/**
+ * Build the searches and response structure without actually executing the queries and fetching resources.
+ */
+const prepareCollectData = async (query): Promise<PreparedCollectData> => {
+  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
+  const queries: PreparedCollectDataQuery[] = [];
+
+  const options = {
+    measurementPeriodStart: periodStart,
+    measurementPeriodEnd: periodEnd,
+    useExpandedCodeQueries: true
+  };
+  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
+  const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
+  const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
+
+  const parameters = await Promise.all(
+    patientIds.map(async patientId => {
+      const measureReportEntries = await Promise.all(
+        measureBundles.map(async measureBundle => {
+          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
+          const measureReport = createDataExchangeMeasureReport(
+            measureBundle,
+            { start: periodStart, end: periodEnd },
+            { reference: `Patient/${patientId}` },
+            []
+          );
+          for (const url of getResourceQueries(patientDR, dataEndpoint, patientId)) {
+            queries.push({ url, measureReport });
+          }
+          return {
+            resource: measureReport,
+            request: {
+              method: 'PUT',
+              url: `MeasureReport/${measureReport.id}`
+            },
+            fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
+          };
+        })
+      );
+      return {
+        name: 'return',
+        resource: {
+          type: 'transaction',
+          resourceType: 'Bundle',
+          id: uuidv4(),
+          entry: measureReportEntries
+        }
+      };
+    })
+  );
+
+  return {
+    dataEndpoint,
+    queries,
+    parameters: { resourceType: 'Parameters', parameter: parameters }
+  };
+};
+
+// Each query points to the same report object included in the prepared Parameters response.
+const executeCollectionQuery = async (
+  query: PreparedCollectDataQuery,
+  dataEndpoint: fhir4.Endpoint,
+  baseVersion: string
+) => {
+  const references = await pullResourceReferencesFromQuery(query.url, dataEndpoint, baseVersion);
+  query.measureReport.evaluatedResource.push(...references);
 };
 
 /**
@@ -517,6 +614,8 @@ module.exports = {
   submitData,
   dataRequirements,
   collectData,
+  prepareCollectData,
+  executeCollectionQuery,
   evaluateMeasure,
   careGaps
 };
