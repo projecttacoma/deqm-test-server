@@ -4,11 +4,18 @@ import { Document, Filter } from 'mongodb';
 import { createManifestHash } from '../util/baseUtils';
 import { BadRequestError } from '../util/errorUtils';
 
+export enum CollectDataRequestStatus {
+  Queued = 'Queued',
+  Preparing = 'Preparing',
+  Collecting = 'Collecting',
+  Completed = 'Completed',
+  Failed = 'Failed'
+}
+
 export interface CollectDataStatus {
   id: string;
   request: string;
-  status: 'In Progress' | 'Completed' | 'Failed';
-  progress: string;
+  status: CollectDataRequestStatus;
   transactionTime: string;
   error?: string;
 }
@@ -242,8 +249,7 @@ export async function addPendingCollectDataRequest(id: string, request: string) 
   await db.collection<CollectDataStatus>('collectDataStatuses').insertOne({
     id,
     request,
-    status: 'In Progress',
-    progress: 'Queued for data collection',
+    status: CollectDataRequestStatus.Queued,
     transactionTime: new Date().toISOString()
   });
   return id;
@@ -256,7 +262,10 @@ export async function getCollectDataStatus(id: string): Promise<CollectDataStatu
 export async function startCollectDataRequest(id: string) {
   await db
     .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id }, { $set: { progress: 'Preparing FHIR queries', transactionTime: new Date().toISOString() } });
+    .updateOne(
+      { id },
+      { $set: { status: CollectDataRequestStatus.Preparing, transactionTime: new Date().toISOString() } }
+    );
 }
 
 export async function saveCollectDataQueries(clientId: string, queries: CollectDataQuery[]) {
@@ -266,7 +275,7 @@ export async function saveCollectDataQueries(clientId: string, queries: CollectD
   if (queries.length) await collection.insertMany(queries);
   await db
     .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id: clientId }, { $set: { progress: 'Collecting data' } });
+    .updateOne({ id: clientId }, { $set: { status: CollectDataRequestStatus.Collecting } });
 }
 
 export async function completeCollectDataQuery(id: string) {
@@ -296,13 +305,16 @@ export async function getCollectDataQueryCounts(clientId: string) {
 export async function completeCollectDataRequest(id: string) {
   await db
     .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id }, { $set: { status: 'Completed', progress: 'Completed' } });
+    .updateOne({ id }, { $set: { status: CollectDataRequestStatus.Completed } });
 }
 
 export async function failCollectDataRequest(id: string, error: unknown) {
-  await db
-    .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id }, { $set: { status: 'Failed', error: error instanceof Error ? error.message : String(error) } });
+  await db.collection<CollectDataStatus>('collectDataStatuses').updateOne(
+    { id },
+    {
+      $set: { status: CollectDataRequestStatus.Failed, error: error instanceof Error ? error.message : String(error) }
+    }
+  );
 }
 
 /**

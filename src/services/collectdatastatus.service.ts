@@ -1,14 +1,19 @@
 import type { Request, Response } from 'express';
-import { getCollectDataStatus, getCollectDataQueryCounts } from '../database/dbOperations';
+import { CollectDataRequestStatus, getCollectDataStatus, getCollectDataQueryCounts } from '../database/dbOperations';
 import { NotFoundError } from '../util/errorUtils';
 
 export async function checkCollectDataStatus(req: Request, res: Response) {
   const status = await getCollectDataStatus(req.params.client_id);
   if (!status) throw new NotFoundError('Collect-data request not found.');
   res.set('Cache-Control', 'no-store');
-  if (status.status === 'In Progress') {
-    let progress = status.progress;
-    if (status.progress === 'Collecting data') {
+  if (
+    status.status === CollectDataRequestStatus.Queued ||
+    status.status === CollectDataRequestStatus.Preparing ||
+    status.status === CollectDataRequestStatus.Collecting
+  ) {
+    let progress =
+      status.status === CollectDataRequestStatus.Queued ? 'Queued for data collection' : 'Preparing FHIR queries';
+    if (status.status === CollectDataRequestStatus.Collecting) {
       const { completed, total } = await getCollectDataQueryCounts(status.id);
       progress =
         completed === total
@@ -18,7 +23,7 @@ export async function checkCollectDataStatus(req: Request, res: Response) {
     res.status(202).set('X-Progress', progress).set('Retry-After', '1');
     return;
   }
-  if (status.status === 'Failed') {
+  if (status.status === CollectDataRequestStatus.Failed) {
     res.status(500).type('application/fhir+json');
     return {
       resourceType: 'OperationOutcome',
