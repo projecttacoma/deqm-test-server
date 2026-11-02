@@ -6,6 +6,7 @@ import { BadRequestError } from '../util/errorUtils';
 
 export interface CollectDataStatus {
   id: string;
+  request: string;
   status: 'In Progress' | 'Completed' | 'Failed';
   progress: string;
   transactionTime: string;
@@ -237,9 +238,10 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
 /**
  * Creates a status record before queueing an asynchronous collect-data request.
  */
-export async function addPendingCollectDataRequest(id: string) {
+export async function addPendingCollectDataRequest(id: string, request: string) {
   await db.collection<CollectDataStatus>('collectDataStatuses').insertOne({
     id,
+    request,
     status: 'In Progress',
     progress: 'Queued for data collection',
     transactionTime: new Date().toISOString()

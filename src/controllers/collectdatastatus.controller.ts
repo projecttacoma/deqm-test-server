@@ -1,9 +1,8 @@
-//@ts-nocheck
-const service = require('../services/collectdatastatus.service');
+import type { Request, Response, NextFunction } from 'express';
+import { checkCollectDataStatus } from '../services/collectdatastatus.service';
 
-module.exports.collectDataStatus = (req, res, next) => {
-  return service
-    .checkCollectDataStatus(req, res)
+module.exports.collectDataStatus = (req: Request, res: Response, next: NextFunction) => {
+  return checkCollectDataStatus(req, res)
     .then(result => res.json(result))
     .catch(err => next(err));
 };

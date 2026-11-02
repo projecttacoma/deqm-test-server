@@ -1,8 +1,8 @@
-//@ts-nocheck
+import type { Request, Response } from 'express';
 import { getCollectDataStatus, getCollectDataQueryCounts } from '../database/dbOperations';
 import { NotFoundError } from '../util/errorUtils';
 
-export async function checkCollectDataStatus(req, res) {
+export async function checkCollectDataStatus(req: Request, res: Response) {
   const status = await getCollectDataStatus(req.params.client_id);
   if (!status) throw new NotFoundError('Collect-data request not found.');
   res.set('Cache-Control', 'no-store');

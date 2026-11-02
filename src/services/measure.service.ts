@@ -185,7 +185,7 @@ const collectData = async (args, { req }) => {
 
   if (respondAsync) {
     const id = uuidv4();
-    await addPendingCollectDataRequest(id);
+    await addPendingCollectDataRequest(id, `${process.env.BASE_URL}${req.originalUrl}`);
     try {
       await collectDataQueue.createJob({ jobId: id, query, baseVersion }).setId(id).save();
     } catch (error) {
