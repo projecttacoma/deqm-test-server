@@ -106,7 +106,15 @@ export function getPatientIdsFromGroup(group: fhir4.Group): string[] {
   });
 }
 
-/** Generate the existing patient/measure searches, including the Patient query. */
+/**
+ * Builds search URLs from patient-specific cqfm-fhirQueryPattern extensions
+ * and appends a Patient search for the supplied patient ID.
+ *
+ * @param patientDR Patient-specific data requirements.
+ * @param dataEndpoint Endpoint whose address prefixes each search.
+ * @param patientId Patient ID to include in the Patient search.
+ * @returns Deduplicated requirement searches followed by the Patient search.
+ */
 export function getResourceQueries(
   patientDR: DRCalculationOutput,
   dataEndpoint: fhir4.Endpoint,
@@ -127,6 +135,16 @@ export function getResourceQueries(
   return queries;
 }
 
+/**
+ * Executes patient-specific FHIR searches and stores the returned resources locally.
+ *
+ * @param patientDR Patient-specific data requirements used to build searches.
+ * @param dataEndpoint Endpoint from which to retrieve resources.
+ * @param baseVersion FHIR version identifying the local storage destination.
+ * @param patientId Patient ID to include in the Patient search.
+ * @returns References containing the original resource identities and identifiers
+ * for their locally stored counterparts.
+ */
 export async function pullResourceReferences(
   patientDR: DRCalculationOutput,
   dataEndpoint: fhir4.Endpoint,
@@ -140,7 +158,16 @@ export async function pullResourceReferences(
   return references;
 }
 
-/** Fetch one search, store the resources, and return their references. */
+/**
+ * Executes a FHIR search and stores resources from the returned Bundle locally.
+ *
+ * @param query FHIR search URL to execute.
+ * @param dataEndpoint Endpoint from which to retrieve resources.
+ * @param baseVersion FHIR version identifying the local storage destination.
+ * @returns References containing the original resource identities and identifiers
+ * for their locally stored counterparts. Returns an empty array for a Bundle
+ * without entries.
+ */
 export async function pullResourceReferencesFromQuery(
   query: string,
   dataEndpoint: fhir4.Endpoint,
