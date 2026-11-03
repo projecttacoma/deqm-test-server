@@ -10,7 +10,7 @@ export async function checkCancelled(jobId: string) {
 
 export async function setCancelled(jobId: string) {
   await createConnection();
-  redisClient.set(`job:${jobId}:canceled`, '1');
+  await redisClient.set(`job:${jobId}:canceled`, '1');
 }
 
 export async function closeRedisConnection() {

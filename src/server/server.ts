@@ -56,6 +56,7 @@ class DEQMServer extends Server {
   }
   enableCollectDataStatusRoute() {
     this.app.get('/:base_version/collectdatastatus/:client_id', configCollectDataStatus.collectDataStatus);
+    this.app.delete('/:base_version/collectdatastatus/:client_id', configCollectDataStatus.cancelCollectData);
     return this;
   }
 }

@@ -268,14 +268,14 @@ export async function startCollectDataRequest(id: string) {
     );
 }
 
-export async function saveCollectDataQueries(clientId: string, queries: CollectDataQuery[]) {
+export async function saveCollectDataQueries(jobId: string, queries: CollectDataQuery[]) {
   const collection = db.collection<CollectDataQuery>('collectDataQueries');
   // Restarted requests regenerate their queries and start progress again.
-  await collection.deleteMany({ clientId });
+  await collection.deleteMany({ jobId });
   if (queries.length) await collection.insertMany(queries);
   await db
     .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id: clientId }, { $set: { status: CollectDataRequestStatus.Collecting } });
+    .updateOne({ id: jobId }, { $set: { status: CollectDataRequestStatus.Collecting } });
 }
 
 export async function completeCollectDataQuery(id: string) {
@@ -288,11 +288,11 @@ export async function failCollectDataQuery(id: string, error: unknown) {
     .updateOne({ id }, { $set: { status: 'Failed', error: error instanceof Error ? error.message : String(error) } });
 }
 
-export async function getCollectDataQueryCounts(clientId: string) {
+export async function getCollectDataQueryCounts(jobId: string) {
   const counts = await db
     .collection<CollectDataQuery>('collectDataQueries')
     .aggregate<{ _id: string; count: number }>([
-      { $match: { clientId } },
+      { $match: { jobId } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ])
     .toArray();

@@ -17,7 +17,7 @@ async function getClientFile(req, res) {
   const filePath = `tmp/${clientId}/${fileName}`;
   if (fs.existsSync(filePath)) {
     res.status(200);
-    res.set('Content-Type', 'application/ndjson+fhir');
+    res.set('Content-Type', 'application/fhir+ndjson');
     return path.resolve(`./tmp/${clientId}/${fileName}`);
   } else {
     throw new NotFoundError(`The following file was not found: ${clientId}/${fileName}`);
