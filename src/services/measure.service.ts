@@ -1,5 +1,10 @@
 //@ts-nocheck
-const { BadRequestError, InternalError, ResourceNotFoundError } = require('../util/errorUtils');
+const {
+  BadRequestError,
+  InternalError,
+  ResourceNotFoundError,
+  ServiceUnavailableError
+} = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
@@ -184,6 +189,12 @@ const collectData = async (args, { req }) => {
     .some(preference => preference.split(';')[0].trim().toLowerCase() === 'respond-async');
 
   if (respondAsync) {
+    const workerCount = Number(process.env.COLLECT_DATA_WORKERS);
+    if (!Number.isSafeInteger(workerCount) || workerCount <= 0) {
+      throw new ServiceUnavailableError(
+        'Asynchronous data collection is disabled. Set COLLECT_DATA_WORKERS to a positive integer to enable it.'
+      );
+    }
     const id = uuidv4();
     await addPendingCollectDataRequest(id, `${process.env.BASE_URL}${req.originalUrl}`);
     try {
