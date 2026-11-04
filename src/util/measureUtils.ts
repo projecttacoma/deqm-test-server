@@ -225,7 +225,7 @@ export function createDataExchangeMeasureReport(
     },
     extension: [
       {
-        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType"',
+        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType',
         valueCode: 'snapshot'
       }
     ],
