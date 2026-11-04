@@ -65,6 +65,13 @@ export class InternalError extends CustomServerError {
   }
 }
 
+/** Indicates that the requested service is currently unavailable. */
+export class ServiceUnavailableError extends CustomServerError {
+  constructor(message: string) {
+    super(message, 503, 'transient');
+  }
+}
+
 /**
  * Error class that throws ServerError with status code 422 and code UnprocessableEntity
  */

@@ -4,6 +4,30 @@ import { Document, Filter } from 'mongodb';
 import { createManifestHash } from '../util/baseUtils';
 import { BadRequestError } from '../util/errorUtils';
 
+export enum CollectDataRequestStatus {
+  Queued = 'Queued',
+  Preparing = 'Preparing',
+  Collecting = 'Collecting',
+  Completed = 'Completed',
+  Failed = 'Failed'
+}
+
+export interface CollectDataStatus {
+  id: string;
+  request: string;
+  status: CollectDataRequestStatus;
+  transactionTime: string;
+  error?: string;
+}
+
+export interface CollectDataQuery {
+  id: string;
+  jobId: string;
+  url: string;
+  status: 'Pending' | 'Completed' | 'Failed';
+  error?: string;
+}
+
 // Created from bulk export output manifest description:
 // https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
 
@@ -216,6 +240,81 @@ export async function findResourcesWithAggregation(query: Document[], resourceTy
   const collection = db.collection(resourceType);
   logger.debug(`Running aggregation query on ${resourceType}s with query: ${JSON.stringify(query)}`);
   return (await collection.aggregate(query)).toArray();
+}
+
+/**
+ * Creates a status record before queueing an asynchronous collect-data request.
+ */
+export async function addPendingCollectDataRequest(id: string, request: string) {
+  await db.collection<CollectDataStatus>('collectDataStatuses').insertOne({
+    id,
+    request,
+    status: CollectDataRequestStatus.Queued,
+    transactionTime: new Date().toISOString()
+  });
+  return id;
+}
+
+export async function getCollectDataStatus(id: string): Promise<CollectDataStatus | null> {
+  return db.collection<CollectDataStatus>('collectDataStatuses').findOne({ id });
+}
+
+export async function startCollectDataRequest(id: string) {
+  await db
+    .collection<CollectDataStatus>('collectDataStatuses')
+    .updateOne(
+      { id },
+      { $set: { status: CollectDataRequestStatus.Preparing, transactionTime: new Date().toISOString() } }
+    );
+}
+
+export async function saveCollectDataQueries(jobId: string, queries: CollectDataQuery[]) {
+  const collection = db.collection<CollectDataQuery>('collectDataQueries');
+  // Restarted requests regenerate their queries and start progress again.
+  await collection.deleteMany({ jobId });
+  if (queries.length) await collection.insertMany(queries);
+  await db
+    .collection<CollectDataStatus>('collectDataStatuses')
+    .updateOne({ id: jobId }, { $set: { status: CollectDataRequestStatus.Collecting } });
+}
+
+export async function completeCollectDataQuery(id: string) {
+  await db.collection<CollectDataQuery>('collectDataQueries').updateOne({ id }, { $set: { status: 'Completed' } });
+}
+
+export async function failCollectDataQuery(id: string, error: unknown) {
+  await db
+    .collection<CollectDataQuery>('collectDataQueries')
+    .updateOne({ id }, { $set: { status: 'Failed', error: error instanceof Error ? error.message : String(error) } });
+}
+
+export async function getCollectDataQueryCounts(jobId: string) {
+  const counts = await db
+    .collection<CollectDataQuery>('collectDataQueries')
+    .aggregate<{ _id: string; count: number }>([
+      { $match: { jobId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ])
+    .toArray();
+  return {
+    total: counts.reduce((total, row) => total + row.count, 0),
+    completed: counts.find(row => row._id === 'Completed')?.count ?? 0
+  };
+}
+
+export async function completeCollectDataRequest(id: string) {
+  await db
+    .collection<CollectDataStatus>('collectDataStatuses')
+    .updateOne({ id }, { $set: { status: CollectDataRequestStatus.Completed } });
+}
+
+export async function failCollectDataRequest(id: string, error: unknown) {
+  await db.collection<CollectDataStatus>('collectDataStatuses').updateOne(
+    { id },
+    {
+      $set: { status: CollectDataRequestStatus.Failed, error: error instanceof Error ? error.message : String(error) }
+    }
+  );
 }
 
 /**
