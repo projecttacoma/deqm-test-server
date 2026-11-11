@@ -3,6 +3,7 @@ import logger from '../server/logger';
 import { Document, Filter } from 'mongodb';
 import { createManifestHash } from '../util/baseUtils';
 import { BadRequestError } from '../util/errorUtils';
+import type { CollectDataOutputFile } from '../services/collectData/types';
 
 export enum CollectDataRequestStatus {
   Queued = 'Queued',
@@ -17,6 +18,7 @@ export interface CollectDataStatus {
   request: string;
   status: CollectDataRequestStatus;
   transactionTime: string;
+  output?: CollectDataOutputFile[];
   error?: string;
 }
 
@@ -302,10 +304,10 @@ export async function getCollectDataQueryCounts(jobId: string) {
   };
 }
 
-export async function completeCollectDataRequest(id: string) {
+export async function completeCollectDataRequest(id: string, output: CollectDataOutputFile[]) {
   await db
     .collection<CollectDataStatus>('collectDataStatuses')
-    .updateOne({ id }, { $set: { status: CollectDataRequestStatus.Completed } });
+    .updateOne({ id }, { $set: { status: CollectDataRequestStatus.Completed, output } });
 }
 
 export async function failCollectDataRequest(id: string, error: unknown) {

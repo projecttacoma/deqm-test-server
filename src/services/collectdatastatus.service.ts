@@ -3,6 +3,7 @@ import { CollectDataRequestStatus, getCollectDataStatus, getCollectDataQueryCoun
 import { NotFoundError } from '../util/errorUtils';
 import { checkCancelled, setCancelled } from '../server/redisClient';
 import { collectDataQueue } from '../queue/collectDataQueue';
+import { buildCollectDataManifest } from './collectData/result';
 
 export async function checkCollectDataStatus(req: Request, res: Response) {
   const status = await getCollectDataStatus(req.params.client_id);
@@ -33,15 +34,8 @@ export async function checkCollectDataStatus(req: Request, res: Response) {
     };
   }
   const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
-  return {
-    transactionTime: status.transactionTime,
-    request: status.request,
-    requiresAccessToken: false,
-    output: [
-      { type: 'Parameters', url: `${baseUrl}/${req.params.base_version}/file/${status.id}/Parameters.json`, count: 1 }
-    ],
-    error: []
-  };
+  // Completion manifest construction moved to collectData/result.ts alongside file publication.
+  return buildCollectDataManifest(status, baseUrl, req.params.base_version);
 }
 
 /** Flags collection for cancellation and removes any queued work. */

@@ -5,20 +5,7 @@ import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperat
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
 import FHIRClient from './fhirClient';
 
-const { uploadResourcesFromBundle } = require('../services/bundle.service');
-
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
-
-export interface PreparedCollectDataQuery {
-  url: string;
-  measureReport: fhir4.MeasureReport;
-}
-
-export interface PreparedCollectData {
-  dataEndpoint: fhir4.Endpoint;
-  parameters: fhir4.Parameters;
-  queries: PreparedCollectDataQuery[];
-}
 
 function populatePatientIdContext(dataRequirements: DRCalculationOutput, patientId: string): DRCalculationOutput {
   dataRequirements.results.dataRequirement?.forEach(dataRequirement => {
@@ -32,8 +19,7 @@ function populatePatientIdContext(dataRequirements: DRCalculationOutput, patient
 }
 
 /**
- * To be used in a future $collect-data workflow, this function takes a measure bundle ID
- * and a patient ID and returns the results of calculateDataRequirements with the patient
+ * Calculates requirements for a measure bundle and patient, with the patient
  * ID injected into the cqfm FHIR queries in the output
  */
 export async function patientSpecificDataRequirements(
@@ -52,8 +38,8 @@ export async function patientSpecificDataRequirements(
  * @returns {Promise<string[]>} Patient ids.
  */
 export async function getPatientIds(
-  subject: string,
-  subjectGroup: fhir4.Group,
+  subject?: string,
+  subjectGroup?: fhir4.Group,
   dataEndpoint?: fhir4.Endpoint
 ): Promise<string[]> {
   if (subject) {
@@ -135,65 +121,8 @@ export function getResourceQueries(
   return queries;
 }
 
-/**
- * Executes patient-specific FHIR searches and stores the returned resources locally.
- *
- * @param patientDR Patient-specific data requirements used to build searches.
- * @param dataEndpoint Endpoint from which to retrieve resources.
- * @param baseVersion FHIR version identifying the local storage destination.
- * @param patientId Patient ID to include in the Patient search.
- * @returns References containing the original resource identities and identifiers
- * for their locally stored counterparts.
- */
-export async function pullResourceReferences(
-  patientDR: DRCalculationOutput,
-  dataEndpoint: fhir4.Endpoint,
-  baseVersion: string,
-  patientId: string
-): Promise<fhir4.Reference[]> {
-  const references: fhir4.Reference[] = [];
-  for (const query of getResourceQueries(patientDR, dataEndpoint, patientId)) {
-    references.push(...(await pullResourceReferencesFromQuery(query, dataEndpoint, baseVersion)));
-  }
-  return references;
-}
-
-/**
- * Executes a FHIR search and stores resources from the returned Bundle locally.
- *
- * @param query FHIR search URL to execute.
- * @param dataEndpoint Endpoint from which to retrieve resources.
- * @param baseVersion FHIR version identifying the local storage destination.
- * @returns References containing the original resource identities and identifiers
- * for their locally stored counterparts. Returns an empty array for a Bundle
- * without entries.
- */
-export async function pullResourceReferencesFromQuery(
-  query: string,
-  dataEndpoint: fhir4.Endpoint,
-  baseVersion: string
-): Promise<fhir4.Reference[]> {
-  const fhirClient = new FHIRClient(dataEndpoint.address);
-  const bundle = await fhirClient.get<fhir4.Bundle>(query, { headers: { Accept: 'application/fhir+json' } });
-  if (!bundle.entry) return [];
-  const originalReferences = bundle.entry.map(entry =>
-    entry.resource?.resourceType && entry.resource?.id ? `${entry.resource.resourceType}/${entry.resource.id}` : null
-  );
-  const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
-  return originalReferences
-    .map((reference, index): fhir4.Reference | null => {
-      if (!reference) return null;
-      const resource = results[index].resource;
-      return {
-        reference,
-        identifier: {
-          system: `${process.env.BASE_URL}/${baseVersion}`,
-          value: resource?.resourceType && resource?.id ? `${resource.resourceType}/${resource.id}` : undefined
-        }
-      };
-    })
-    .filter((reference): reference is fhir4.Reference => reference !== null);
-}
+// Former pullResourceReferences/pullResourceReferencesFromQuery implementations were split
+// into services/collectData/retrieval/search.ts (fetching) and resources.ts (storage/reference mapping).
 
 /**
  * Build a DEQM data exchange MeasureReport for the resources collected for a patient/measure pair.
