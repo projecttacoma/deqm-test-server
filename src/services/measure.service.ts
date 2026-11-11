@@ -47,7 +47,12 @@ import logger from '../server/logger';
 const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
 import _ from 'lodash';
-import type { PreparedCollectData, PreparedCollectDataQuery } from '../util/measureUtils';
+import {
+  checkCapabilityStatementForExport,
+  type PreparedCollectData,
+  type PreparedCollectDataQuery
+} from '../util/measureUtils';
+import { bulkQueries } from 'fqm-bulk-utils';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -266,7 +271,8 @@ const collectData = async (args, { req }) => {
  */
 const prepareCollectData = async (query): Promise<PreparedCollectData> => {
   const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
-  const queries: PreparedCollectDataQuery[] = [];
+
+  const exportSupported = await checkCapabilityStatementForExport(dataEndpoint);
 
   const options = {
     measurementPeriodStart: periodStart,
@@ -277,20 +283,61 @@ const prepareCollectData = async (query): Promise<PreparedCollectData> => {
   const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
   const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
 
+  const queries: PreparedCollectDataQuery[] = [];
+
+  const bulkQueryStrings = exportSupported ? await Promise.all(measureBundles.map(mb => bulkQueries(mb))) : [];
+
   const parameters = await Promise.all(
     patientIds.map(async patientId => {
       const measureReportEntries = await Promise.all(
-        measureBundles.map(async measureBundle => {
-          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
+        measureBundles.map(async (measureBundle, measureIndex) => {
           const measureReport = createDataExchangeMeasureReport(
             measureBundle,
             { start: periodStart, end: periodEnd },
             { reference: `Patient/${patientId}` },
             []
           );
-          for (const url of getResourceQueries(patientDR, dataEndpoint, patientId)) {
-            queries.push({ url, measureReport });
+
+          if (exportSupported) {
+            const exportParameters: fhir4.ParametersParameter[] = [
+              {
+                name: 'patient',
+                valueReference: {
+                  reference: `Patient/${patientId}`
+                }
+              }
+            ];
+
+            const searchParams = new URLSearchParams(bulkQueryStrings[measureIndex]);
+
+            for (const [name, value] of searchParams) {
+              exportParameters.push({
+                name,
+                valueString: value
+              });
+            }
+
+            queries.push({
+              kind: 'export',
+              url: `${dataEndpoint.address.replace(/\/+$/, '')}/Patient/$export`,
+              body: {
+                resourceType: 'Parameters',
+                parameter: exportParameters
+              },
+              measureReport
+            });
+          } else {
+            const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
+
+            for (const url of getResourceQueries(patientDR, dataEndpoint, patientId)) {
+              queries.push({
+                kind: 'search',
+                url,
+                measureReport
+              });
+            }
           }
+
           return {
             resource: measureReport,
             request: {

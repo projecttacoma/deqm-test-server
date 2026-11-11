@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import TokenManager from './tokenManager';
 import logger from '../server/logger';
 
@@ -16,11 +16,25 @@ export default class FHIRClient {
   }
 
   async get<T>(path: string, config: AxiosRequestConfig = {}): Promise<T> {
-    return this.request<T>({ ...config, method: 'GET', url: path });
+    const response = await this.getResponse<T>(path, config);
+    return response.data;
   }
 
   async post<T>(path: string, body: unknown, config: AxiosRequestConfig = {}): Promise<T> {
-    return this.request<T>({
+    const response = await this.postResponse<T>(path, body, config);
+    return response.data;
+  }
+
+  async getResponse<T>(path: string, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+    return this.requestResponse<T>({
+      ...config,
+      method: 'GET',
+      url: path
+    });
+  }
+
+  async postResponse<T>(path: string, body: unknown, config: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+    return this.requestResponse<T>({
       ...config,
       method: 'POST',
       url: path,
@@ -32,11 +46,12 @@ export default class FHIRClient {
     });
   }
 
-  private async request<T>(config: AxiosRequestConfig, retried = false): Promise<T> {
+  private async requestResponse<T>(config: AxiosRequestConfig, retried = false): Promise<AxiosResponse<T>> {
     const token = await TokenManager.getToken(this.baseUrl);
 
     try {
       const headers = { ...config.headers };
+
       if (token) {
         headers['Authorization'] = token.bearerToken;
       }
@@ -48,26 +63,23 @@ export default class FHIRClient {
         headers
       });
 
-      return response.data;
+      return response;
     } catch (error) {
       if (!retried && axios.isAxiosError(error) && error.response?.status === 401) {
-        // try again once if we got an error 401, maybe the token just expired
         TokenManager.invalidate(this.baseUrl, token?.bearerToken);
-        return this.request<T>(config, true);
+        return this.requestResponse<T>(config, true);
       }
-      logger.error(`Error with External FHIR Request`, error);
+
+      logger.error('Error with External FHIR Request', error);
+
       if (axios.isAxiosError(error)) {
         throw new Error(
-          `Error with External FHIR Request to ${config.method} ${config.url}: ${error} \n${JSON.stringify(error.response?.data)}`,
-          {
-            cause: error
-          }
+          `Error with External FHIR Request to ${config.method} ${config.url}: ${error}\n${JSON.stringify(error.response?.data)}`,
+          { cause: error }
         );
-      } else {
-        throw new Error(`Error with External FHIR Request to ${config.method} ${config.url}: ${error}`, {
-          cause: error
-        });
       }
+
+      throw new Error(`Error with External FHIR Request to ${config.method} ${config.url}: ${error}`, { cause: error });
     }
   }
 }

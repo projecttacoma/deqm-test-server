@@ -4,20 +4,36 @@ import { v4 as uuidv4 } from 'uuid';
 import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperations';
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
 import FHIRClient from './fhirClient';
+import { setTimeout as delay } from 'node:timers/promises';
+import axios from 'axios';
 
 const { uploadResourcesFromBundle } = require('../services/bundle.service');
 
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
 
-export interface PreparedCollectDataQuery {
-  url: string;
-  measureReport: fhir4.MeasureReport;
-}
+export type PreparedCollectDataQuery =
+  | {
+      kind: 'search';
+      url: string;
+      measureReport: fhir4.MeasureReport;
+    }
+  | {
+      kind: 'export';
+      url: string;
+      body: fhir4.Parameters;
+      measureReport: fhir4.MeasureReport;
+    };
 
 export interface PreparedCollectData {
   dataEndpoint: fhir4.Endpoint;
   parameters: fhir4.Parameters;
   queries: PreparedCollectDataQuery[];
+}
+
+interface CollectionExportManifest {
+  requiresAccessToken: boolean;
+  output: Array<{ type: string; url: string }>;
+  error: Array<{ type: string; url: string }>;
 }
 
 function populatePatientIdContext(dataRequirements: DRCalculationOutput, patientId: string): DRCalculationOutput {
@@ -156,6 +172,208 @@ export async function pullResourceReferences(
     references.push(...(await pullResourceReferencesFromQuery(query, dataEndpoint, baseVersion)));
   }
   return references;
+}
+
+/**
+ *
+ */
+export async function checkCapabilityStatementForExport(dataEndpoint: fhir4.Endpoint) {
+  const fhirClient = new FHIRClient(dataEndpoint.address);
+  const capabilityStatement = await fhirClient.get<fhir4.CapabilityStatement>('/metadata', {
+    headers: { Accept: 'application/fhir+json' }
+  });
+  if (capabilityStatement.rest?.find(entry => entry.operation?.find(oper => oper.name == 'export'))) {
+    return true;
+  }
+  return false;
+}
+
+export async function pullResourceReferencesFromExport(
+  url: string,
+  body: fhir4.Parameters,
+  dataEndpoint: fhir4.Endpoint,
+  baseVersion: string,
+  isCancelled: () => Promise<boolean>
+): Promise<fhir4.Reference[]> {
+  const fhirClient = new FHIRClient(dataEndpoint.address);
+  const references = new Map<string, fhir4.Reference>();
+
+  const checkActive = async () => {
+    if (await isCancelled()) {
+      throw new Error('Collect-data request canceled.');
+    }
+  };
+
+  const waitBeforePolling = async (milliseconds: number) => {
+    const nextPoll = Date.now() + milliseconds;
+
+    while (Date.now() < nextPoll) {
+      await checkActive();
+      await delay(Math.min(1000, nextPoll - Date.now()));
+    }
+
+    await checkActive();
+  };
+
+  const retryDelay = (value: unknown): number => {
+    if (typeof value !== 'string') return 1000;
+
+    const seconds = Number(value);
+
+    if (value.trim() !== '' && Number.isFinite(seconds) && seconds >= 0) {
+      return Math.max(1000, seconds * 1000);
+    }
+
+    const date = Date.parse(value);
+    return Number.isNaN(date) ? 1000 : Math.max(1000, date - Date.now());
+  };
+
+  await checkActive();
+
+  // 1. Start the export
+  const kickoff = await fhirClient.postResponse<unknown>(url, body, {
+    headers: { Accept: 'application/fhir+json', Prefer: 'respond-async' }
+  });
+
+  const contentLocation = kickoff.headers['content-location'];
+
+  if (kickoff.status != 202 || typeof contentLocation !== 'string') {
+    throw new Error('Export kickoff must return 202 with a Content-Location header');
+  }
+
+  const pollingUrl = new URL(contentLocation, url).href;
+
+  // 2. Poll until the server returns a completed manifest
+  let manifest: CollectionExportManifest;
+  let nextDelay = retryDelay(kickoff.headers['retry-after']);
+
+  while (true) {
+    // await waitBeforePolliing(nextDelay);
+
+    const response = await fhirClient.getResponse<unknown>(pollingUrl, {
+      headers: { Accept: 'application/json' }
+    });
+
+    if (response.status === 202) {
+      nextDelay = retryDelay(response.headers['retry-after']);
+      continue;
+    }
+
+    if (response.status !== 200) {
+      throw new Error(`Unexpected export status: ${response.status}`);
+    }
+
+    manifest = response.data as CollectionExportManifest;
+    if (
+      !manifest ||
+      typeof manifest.requiresAccessToken !== 'boolean' ||
+      !Array.isArray(manifest.output) ||
+      !Array.isArray(manifest.error) ||
+      [...manifest.output, ...manifest.error].some(
+        file => !file || typeof file.type !== 'string' || typeof file.url !== 'string'
+      )
+    ) {
+      throw new Error('Invalid bulk export manifest.');
+    }
+    break;
+  }
+
+  // do not report partial exports as success
+  if (manifest.error.length > 0) {
+    throw new Error(`Export returned ${manifest.error.length} error/message file(s).`);
+  }
+
+  // 3. Download and import each output file/
+  for (const output of manifest.output) {
+    await checkActive();
+
+    const fileUrl = new URL(output.url, pollingUrl).href;
+    const downloadConfig = {
+      responseType: 'text' as const,
+      headers: { Accept: 'application/fhir+ndjson' }
+    };
+
+    let text: string;
+
+    if (manifest.requiresAccessToken) {
+      const response = await fhirClient.getResponse<string>(fileUrl, {
+        responseType: 'text',
+        headers: { Accept: 'application/fhir+ndjson' }
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Unexpected file download status: ${response.status}`);
+      }
+
+      text = response.data;
+    } else {
+      const response = await axios.get<string>(fileUrl, {
+        responseType: 'text',
+        headers: { Accept: 'application/fhir+ndjson' }
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Unexpected file download status: ${response.status}`);
+      }
+
+      text = response.data;
+    }
+
+    const resources: fhir4.FhirResource[] = [];
+
+    for (const [index, line] of text.split(/\r?\n/).entries()) {
+      if (!line.trim()) continue;
+
+      let resource: fhir4.FhirResource;
+
+      try {
+        resource = JSON.parse(line);
+      } catch {
+        throw new Error(`Invalid NDJSON on line ${index + 1}.`);
+      }
+
+      resources.push(resource);
+    }
+
+    // Codex suggests batches instead of uploading the entire file at once
+    for (let offset = 0; offset < resources.length; offset += 100) {
+      await checkActive();
+
+      const batch = resources.slice(offset, offset + 100);
+
+      // Save identities before uploadResourcesFromBundle rewrites resources
+      const originals = batch.map(resource => `${resource.resourceType}/${resource.id}`);
+
+      const entries = batch.map(resource => ({
+        resource,
+        request: {
+          method: 'PUT',
+          url: `${resource.resourceType}/${resource.id}`
+        }
+      }));
+
+      const results = await uploadResourcesFromBundle(entries, baseVersion);
+
+      for (const [index, original] of originals.entries()) {
+        const result = results[index];
+        const stored = result?.resource;
+
+        if (![200, 201].includes(result?.status) || !stored?.resourceType || !stored?.id) {
+          throw new Error(`Failed to import exported resources ${original}.`);
+        }
+
+        references.set(original, {
+          reference: original,
+          identifier: {
+            system: `${process.env.BASE_URL}/${baseVersion}`,
+            value: `${stored.resourceType}/${stored.id}`
+          }
+        });
+      }
+    }
+  }
+  await checkActive();
+  return [...references.values()];
 }
 
 /**
