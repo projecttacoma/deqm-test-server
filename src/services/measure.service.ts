@@ -167,7 +167,7 @@ const collectData = async (args, { req }) => {
   if (respondAsync) {
     return enqueueAsyncCollectData(query, req, req.res);
   }
-  return performCollectData(query, { baseVersion, performAsync: false });
+  return performCollectData(query, { baseVersion, respondAsync: false });
 };
 
 /**

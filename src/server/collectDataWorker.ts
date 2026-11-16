@@ -10,9 +10,7 @@ const queue = new Queue('collect-data', {
 });
 queue.on('error', (error: Error) => logger.error('collect-data worker error', error));
 
-queue.process(job => {
-  executeCollectDataJob(job.data);
-});
+queue.process(job => executeCollectDataJob(job.data));
 
 let stopping = false;
 async function shutdown() {
