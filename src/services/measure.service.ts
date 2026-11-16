@@ -28,7 +28,6 @@ const {
   retrieveSearchTerm
 } = require('../util/measureUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
-import { collectDataQueue } from '../queue/collectDataQueue';
 import logger from '../server/logger';
 const { ScaledCalculation } = require('../queue/execQueue');
 import _ from 'lodash';

@@ -5,8 +5,6 @@ import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperat
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
 import FHIRClient from './fhirClient';
 
-const { uploadResourcesFromBundle } = require('../services/bundle.service');
-
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
 
 function populatePatientIdContext(dataRequirements: DRCalculationOutput, patientId: string): DRCalculationOutput {
