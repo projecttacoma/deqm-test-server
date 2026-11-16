@@ -5,8 +5,6 @@ import { findResourceById, findResourceIdsWithQuery } from '../database/dbOperat
 import { BadRequestError, ResourceNotFoundError } from './errorUtils';
 import FHIRClient from './fhirClient';
 
-const { uploadResourcesFromBundle } = require('../services/bundle.service');
-
 const PATIENT_ID_CONTEXT_TOKEN = '{{context.patientId}}';
 
 function populatePatientIdContext(dataRequirements: DRCalculationOutput, patientId: string): DRCalculationOutput {
@@ -41,8 +39,8 @@ export async function patientSpecificDataRequirements(
  * @returns {Promise<string[]>} Patient ids.
  */
 export async function getPatientIds(
-  subject: string,
-  subjectGroup: fhir4.Group,
+  subject?: string,
+  subjectGroup?: fhir4.Group,
   dataEndpoint?: fhir4.Endpoint
 ): Promise<string[]> {
   if (subject) {
@@ -96,74 +94,32 @@ export function getPatientIdsFromGroup(group: fhir4.Group): string[] {
 }
 
 /**
- * Pulls data for a set of patient-specific data requirements from the provided Endpoint and stores returned resources.
- * @param {Object} patientDR patient-specific data requirements
- * @param {Object} dataEndpoint FHIR Endpoint resource
- * @param {string} baseVersion FHIR base version
- * @returns {Promise<Object[]>} Resource Reference object created from the results of Endpoint queries.
+ * Builds search URLs from patient-specific cqfm-fhirQueryPattern extensions
+ * and appends a Patient search for the supplied patient ID.
+ *
+ * @param patientDR Patient-specific data requirements.
+ * @param dataEndpoint Endpoint whose address prefixes each search.
+ * @param patientId Patient ID to include in the Patient search.
+ * @returns Deduplicated requirement searches followed by the Patient search.
  */
-export async function pullResourceReferences(
+export function getResourceQueries(
   patientDR: DRCalculationOutput,
   dataEndpoint: fhir4.Endpoint,
-  baseVersion: string,
   patientId: string
-): Promise<fhir4.Reference[]> {
+): string[] {
   const queries = _.uniq(
-    patientDR.results.dataRequirement?.flatMap(dr => {
-      return (
+    patientDR.results.dataRequirement?.flatMap(
+      dr =>
         dr.extension
-          ?.filter(e => e.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern')
-          .map(e => `${dataEndpoint.address}${e.valueString}`) ?? []
-      );
-    }) ?? []
+          ?.filter(
+            extension =>
+              extension.url === 'http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/cqfm-fhirQueryPattern'
+          )
+          .map(extension => `${dataEndpoint.address}${extension.valueString}`) ?? []
+    ) ?? []
   );
-
-  // add Patient query when the Patient is on the dataEndpoint
   queries.push(`${dataEndpoint.address}/Patient?_id=${patientId}`);
-
-  const serverUrl = `${process.env.BASE_URL}/${baseVersion}`;
-
-  const fhirClient = new FHIRClient(dataEndpoint.address);
-
-  // Track an array of references for the resources returned from each query
-  const resourceReferences: fhir4.Reference[] = [];
-
-  for (const query of queries) {
-    const bundle = await fhirClient.get<fhir4.Bundle>(query, {
-      headers: {
-        Accept: 'application/fhir+json'
-      }
-    });
-
-    if (bundle.entry) {
-      const originalReferences = bundle.entry?.map((e: fhir4.BundleEntry) =>
-        e.resource?.resourceType && e.resource?.id ? `${e.resource.resourceType}/${e.resource.id}` : null
-      );
-      //TODO: ideally do a POST-based transaction bundle implementation (currently PUT), which may replace references with new ids
-      const results = await uploadResourcesFromBundle(bundle.entry, baseVersion);
-      // Get new ids
-      const references = originalReferences
-        .map((refString: string | null, i: number): fhir4.Reference | null => {
-          if (!refString) return null;
-          // Note: newRef may be an operation outcome if there are issues uploading the resource. Leaving this behavior as is for now.
-          const newRef =
-            results[i].resource?.resourceType && results[i].resource?.id
-              ? `${results[i].resource.resourceType}/${results[i].resource.id}`
-              : undefined;
-          return {
-            reference: refString,
-            identifier: {
-              system: serverUrl,
-              value: newRef
-            }
-          };
-        })
-        .filter((r): r is fhir4.Reference => r !== null);
-      resourceReferences.push(...references);
-    }
-  }
-
-  return resourceReferences;
+  return queries;
 }
 
 /**
@@ -196,7 +152,7 @@ export function createDataExchangeMeasureReport(
     },
     extension: [
       {
-        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType"',
+        url: 'http://hl7.org/fhir/uv/deqm/StructureDefinition/deqm-submitDataUpdateType',
         valueCode: 'snapshot'
       }
     ],

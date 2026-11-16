@@ -21,10 +21,7 @@ const {
   filterPatientByPractitionerFromIds
 } = require('../util/patientUtils');
 const {
-  patientSpecificDataRequirements,
   getPatientIds,
-  pullResourceReferences,
-  createDataExchangeMeasureReport,
   wrapReportsInBundlesParameters,
   basicProgramQuery,
   systemCodeProgramQuery,
@@ -32,9 +29,9 @@ const {
 } = require('../util/measureUtils');
 const { findResourcesWithQuery } = require('../database/dbOperations');
 import logger from '../server/logger';
-const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
 import _ from 'lodash';
+import { performCollectData, enqueueAsyncCollectData } from '../operations/collectData';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -153,14 +150,6 @@ const dataRequirements = async (args, { req }) => {
   return results;
 };
 
-/**
- * Initiate a collect data request (supports invited pull workflow only) according to
- * https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html
- * dataEndpoint (Endpoint typed parameter) presumed to be required for this implementation, so POST support only
- * @param {Object} args the args object passed in by the user
- * @param {Object} req http request object
- * @returns {Object} Parameters resource containing one or more Bundles of data exchange MeasureReports.
- */
 const collectData = async (args, { req }) => {
   logger.info('Measure >>> $collect-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
@@ -171,55 +160,14 @@ const collectData = async (args, { req }) => {
   const query = gatherParams(req.query, req.body);
 
   validateCollectDataParams(query);
-  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
+  const respondAsync = (req.get('Prefer') || '')
+    .split(',')
+    .some(preference => preference.split(';')[0].trim().toLowerCase() === 'respond-async');
 
-  const options = {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd,
-    useExpandedCodeQueries: true
-  };
-  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
-  const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
-  const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
-
-  const parameters = await Promise.all(
-    patientIds.map(async patientId => {
-      const measureReportEntries = await Promise.all(
-        measureBundles.map(async measureBundle => {
-          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
-          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion, patientId);
-          const measureReport = createDataExchangeMeasureReport(
-            measureBundle,
-            { start: periodStart, end: periodEnd },
-            { reference: `Patient/${patientId}` },
-            resourceReferences
-          );
-          return {
-            resource: measureReport,
-            request: {
-              method: 'PUT',
-              url: `MeasureReport/${measureReport.id}`
-            },
-            fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
-          };
-        })
-      );
-      return {
-        name: 'return',
-        resource: {
-          type: 'transaction',
-          resourceType: 'Bundle',
-          id: uuidv4(),
-          entry: measureReportEntries
-        }
-      };
-    })
-  );
-
-  return {
-    resourceType: 'Parameters',
-    parameter: parameters
-  };
+  if (respondAsync) {
+    return enqueueAsyncCollectData(query, req, req.res);
+  }
+  return performCollectData(query, { baseVersion, respondAsync: false });
 };
 
 /**
