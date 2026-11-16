@@ -1,10 +1,5 @@
 //@ts-nocheck
-const {
-  BadRequestError,
-  InternalError,
-  ResourceNotFoundError,
-  ServiceUnavailableError
-} = require('../util/errorUtils');
+const { BadRequestError, ResourceNotFoundError } = require('../util/errorUtils');
 const { Calculator } = require('fqm-execution');
 const { baseCreate, baseSearchById, baseRemove, baseUpdate, baseSearch } = require('./base.service');
 const { handleSubmitDataBundles } = require('./bundle.service');
@@ -26,28 +21,18 @@ const {
   filterPatientByPractitionerFromIds
 } = require('../util/patientUtils');
 const {
-  patientSpecificDataRequirements,
   getPatientIds,
-  pullResourceReferences,
-  getResourceQueries,
-  pullResourceReferencesFromQuery,
-  createDataExchangeMeasureReport,
   wrapReportsInBundlesParameters,
   basicProgramQuery,
   systemCodeProgramQuery,
   retrieveSearchTerm
 } = require('../util/measureUtils');
-const {
-  findResourcesWithQuery,
-  addPendingCollectDataRequest,
-  failCollectDataRequest
-} = require('../database/dbOperations');
+const { findResourcesWithQuery } = require('../database/dbOperations');
 import { collectDataQueue } from '../queue/collectDataQueue';
 import logger from '../server/logger';
-const { v4: uuidv4 } = require('uuid');
 const { ScaledCalculation } = require('../queue/execQueue');
 import _ from 'lodash';
-import type { PreparedCollectData, PreparedCollectDataQuery } from '../util/measureUtils';
+import { performCollectData, enqueueAsyncCollectData } from '../operations/collectData';
 
 /**
  * resulting function of sending a POST request to {BASE_URL}/4_0_1/Measure
@@ -166,14 +151,6 @@ const dataRequirements = async (args, { req }) => {
   return results;
 };
 
-/**
- * Initiate a collect data request (supports invited pull workflow only) according to
- * https://hl7.org/fhir/uv/deqm/2026May/en/OperationDefinition-collect-data.html
- * dataEndpoint (Endpoint typed parameter) presumed to be required for this implementation, so POST support only
- * @param {Object} args the args object passed in by the user
- * @param {Object} req http request object
- * @returns {Object|undefined} Parameters resource, or an empty 202 response for asynchronous collection.
- */
 const collectData = async (args, { req }) => {
   logger.info('Measure >>> $collect-data');
   logger.debug(`Request headers: ${JSON.stringify(req.header)}`);
@@ -189,145 +166,9 @@ const collectData = async (args, { req }) => {
     .some(preference => preference.split(';')[0].trim().toLowerCase() === 'respond-async');
 
   if (respondAsync) {
-    const workerCount = Number(process.env.COLLECT_DATA_WORKERS);
-    if (!Number.isSafeInteger(workerCount) || workerCount <= 0) {
-      throw new ServiceUnavailableError(
-        'Asynchronous data collection is disabled. Set COLLECT_DATA_WORKERS to a positive integer to enable it.'
-      );
-    }
-    const id = uuidv4();
-    await addPendingCollectDataRequest(id, `${process.env.BASE_URL}${req.originalUrl}`);
-    try {
-      await collectDataQueue.createJob({ jobId: id, query, baseVersion }).setId(id).save();
-    } catch (error) {
-      await failCollectDataRequest(id, error);
-      throw new InternalError('Unable to queue the collect-data request.');
-    }
-    // The profile operation controller sends the response and preserves this status.
-    req.res
-      .status(202)
-      .set('Content-Location', `${process.env.BASE_URL}/${baseVersion}/collectdatastatus/${id}`)
-      .set('Retry-After', '1');
-    return;
+    return enqueueAsyncCollectData(query, req, req.res);
   }
-  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
-
-  const options = {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd,
-    useExpandedCodeQueries: true
-  };
-  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
-  const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
-  const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
-
-  const parameters = await Promise.all(
-    patientIds.map(async patientId => {
-      const measureReportEntries = await Promise.all(
-        measureBundles.map(async measureBundle => {
-          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
-          const resourceReferences = await pullResourceReferences(patientDR, dataEndpoint, baseVersion, patientId);
-          const measureReport = createDataExchangeMeasureReport(
-            measureBundle,
-            { start: periodStart, end: periodEnd },
-            { reference: `Patient/${patientId}` },
-            resourceReferences
-          );
-          return {
-            resource: measureReport,
-            request: {
-              method: 'PUT',
-              url: `MeasureReport/${measureReport.id}`
-            },
-            fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
-          };
-        })
-      );
-      return {
-        name: 'return',
-        resource: {
-          type: 'transaction',
-          resourceType: 'Bundle',
-          id: uuidv4(),
-          entry: measureReportEntries
-        }
-      };
-    })
-  );
-
-  return {
-    resourceType: 'Parameters',
-    parameter: parameters
-  };
-};
-
-/**
- * Build the searches and response structure without actually executing the queries and fetching resources.
- */
-const prepareCollectData = async (query): Promise<PreparedCollectData> => {
-  const { measureUrl, periodStart, periodEnd, subject, subjectGroup, dataEndpoint } = query;
-  const queries: PreparedCollectDataQuery[] = [];
-
-  const options = {
-    measurementPeriodStart: periodStart,
-    measurementPeriodEnd: periodEnd,
-    useExpandedCodeQueries: true
-  };
-  const patientIds = await getPatientIds(subject, subjectGroup, dataEndpoint);
-  const measureUrls = Array.isArray(measureUrl) ? measureUrl : [measureUrl];
-  const measureBundles = await Promise.all(measureUrls.map(async url => getMeasureBundleFromUrl(url)));
-
-  const parameters = await Promise.all(
-    patientIds.map(async patientId => {
-      const measureReportEntries = await Promise.all(
-        measureBundles.map(async measureBundle => {
-          const patientDR = await patientSpecificDataRequirements(measureBundle, patientId, options);
-          const measureReport = createDataExchangeMeasureReport(
-            measureBundle,
-            { start: periodStart, end: periodEnd },
-            { reference: `Patient/${patientId}` },
-            []
-          );
-          for (const url of getResourceQueries(patientDR, dataEndpoint, patientId)) {
-            queries.push({ url, measureReport });
-          }
-          return {
-            resource: measureReport,
-            request: {
-              method: 'PUT',
-              url: `MeasureReport/${measureReport.id}`
-            },
-            fullUrl: measureReport.fullUrl ?? `urn:uuid:${measureReport.id}`
-          };
-        })
-      );
-      return {
-        name: 'return',
-        resource: {
-          type: 'transaction',
-          resourceType: 'Bundle',
-          id: uuidv4(),
-          entry: measureReportEntries
-        }
-      };
-    })
-  );
-
-  return {
-    dataEndpoint,
-    queries,
-    parameters: { resourceType: 'Parameters', parameter: parameters }
-  };
-};
-
-// Each query points to the same report object included in the prepared Parameters response.
-const executeCollectionQuery = async (
-  query: PreparedCollectDataQuery,
-  dataEndpoint: fhir4.Endpoint,
-  baseVersion: string
-) => {
-  const references = await pullResourceReferencesFromQuery(query.url, dataEndpoint, baseVersion);
-  query.measureReport.evaluatedResource.push(...references);
+  return performCollectData(query, { baseVersion, performAsync: false });
 };
 
 /**
@@ -625,8 +466,6 @@ module.exports = {
   submitData,
   dataRequirements,
   collectData,
-  prepareCollectData,
-  executeCollectionQuery,
   evaluateMeasure,
   careGaps
 };
