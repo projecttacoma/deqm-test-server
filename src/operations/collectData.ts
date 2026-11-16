@@ -99,6 +99,25 @@ async function checkCollectionCancelled(options: CollectDataOptions): Promise<vo
 }
 
 /**
+ * Run the shared collection pipeline for inline requests and background jobs.
+ * @param input Validated collection scope, measures, period, and data endpoint.
+ * @param options Execution mode, FHIR version, cancellation check, and progress callback.
+ * @returns Parameters containing the collected data exchange MeasureReports.
+ */
+export async function performCollectData(
+  input: CollectDataInput,
+  options: CollectDataOptions
+): Promise<fhir4.Parameters> {
+  await checkCollectionCancelled(options);
+  await options.onProgress?.({ phase: 'preparing' });
+  const plan = await prepareCollectionPlan(input);
+  await checkCollectionCancelled(options);
+  const resourceReferences = await performPlainFHIRQueries(plan, options);
+  await checkCollectionCancelled(options);
+  return buildCollectDataParameters(plan, resourceReferences);
+}
+
+/**
  * Queue a collect-data request and configure its HTTP 202 response and polling headers.
  * @param query Validated collect-data inputs.
  * @param req Incoming request identifying the FHIR version and operation URL.
@@ -181,25 +200,6 @@ async function recordCollectDataProgress(jobId: string, progress: CollectDataPro
 }
 
 /**
- * Run the shared collection pipeline for inline requests and background jobs.
- * @param input Validated collection scope, measures, period, and data endpoint.
- * @param options Execution mode, FHIR version, cancellation check, and progress callback.
- * @returns Parameters containing the collected data exchange MeasureReports.
- */
-export async function performCollectData(
-  input: CollectDataInput,
-  options: CollectDataOptions
-): Promise<fhir4.Parameters> {
-  await checkCollectionCancelled(options);
-  await options.onProgress?.({ phase: 'preparing' });
-  const plan = await prepareCollectionPlan(input);
-  await checkCollectionCancelled(options);
-  const resourceReferences = await performPlainFHIRQueries(plan, options);
-  await checkCollectionCancelled(options);
-  return buildCollectDataParameters(plan, resourceReferences);
-}
-
-/**
  * Calculate patient-specific requirements, execute FHIR searches, and store their resources.
  * Background searches run sequentially; inline searches run concurrently across targets.
  * @param plan Resolved patients and their measure targets.
@@ -247,7 +247,8 @@ async function performPlainFHIRQueries(
   const executeQuery = async (query: CollectionQuery) => {
     await checkCollectionCancelled(options);
     try {
-      const entries = await fetchCollectionQuery(query.url, plan.input.dataEndpoint);
+      const client = new FHIRClient(plan.input.dataEndpoint.address);
+      const entries = await fetchCollectionQuery(query.url, client);
       const references = await storeCollectedResources(entries, options.baseVersion);
       const targetResourceReferences = resourceReferences.get(query.targetId) ?? [];
       targetResourceReferences.push(...references);
@@ -306,8 +307,7 @@ async function storeCollectedResources(entries: fhir4.BundleEntry[], baseVersion
  * @param dataEndpoint Endpoint used to initialize the FHIR client.
  * @returns Response Bundle entries, or an empty array when none are present.
  */
-async function fetchCollectionQuery(url: string, dataEndpoint: fhir4.Endpoint): Promise<fhir4.BundleEntry[]> {
-  const client = new FHIRClient(dataEndpoint.address);
+async function fetchCollectionQuery(url: string, client: FHIRClient): Promise<fhir4.BundleEntry[]> {
   const bundle = await client.get<fhir4.Bundle>(url, { headers: { Accept: 'application/fhir+json' } });
   return bundle.entry ?? [];
 }
