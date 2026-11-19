@@ -3,7 +3,7 @@
   "parameter": [
     {
       "name": "manifestUrl",
-      "valueString": "http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773"
+      "valueUrl": "http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773"
     },
     {
       "name": "submitter",
@@ -17,7 +17,7 @@
     },
     {
       "name": "fhirBaseUrl",
-      "valueString": "http://www.exampleFHIRServer.com"
+      "valueUrl": "http://www.exampleFHIRServer.com"
     }
   ]
 }

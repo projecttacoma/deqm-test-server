@@ -1,7 +1,7 @@
 import {
   ExportManifest,
   getBulkImportStatuses,
-  getBulkSubmissionStatus,
+  getBulkSubmissionStatusById,
   getNdjsonFileStatus
 } from '../database/dbOperations';
 import logger from '../server/logger';
@@ -16,29 +16,32 @@ export async function checkBulkStatus(req: any, res: any) {
 
   const bulkStatuses = await getBulkImportStatuses(clientId);
 
-  // Note: This approach allows dashes in the submission id but not in the submitter value
-  const [submitterValue, submissionId] = [
-    clientId.slice(0, clientId.indexOf('-')),
-    clientId.slice(clientId.indexOf('-') + 1)
-  ];
-  const submissionStatus = await getBulkSubmissionStatus(submitterValue, submissionId);
+  const submissionStatus = await getBulkSubmissionStatusById(clientId);
 
   if (!bulkStatuses || bulkStatuses.length === 0) {
-    throw new NotFoundError(`Could not find any import manifests for submission with id: ${clientId}`);
+    if (!submissionStatus) {
+      throw new NotFoundError(`Could not find any import manifests for submission with id: ${clientId}`);
+    }
+
+    res.status(202);
+    res.set('Retry-After', '1');
+    res.set('X-Progress', 'Waiting to retrieve submission manifest');
+    return;
   }
 
-  // For submission to finish, it must be marked as complete/aborted and no outstanding in progress imports
+  // For submission to finish, it must be marked as completed/stopped and no outstanding in progress imports
   if (
-    (submissionStatus?.status === 'complete' || submissionStatus?.status === 'aborted') &&
+    (submissionStatus?.status === 'completed' || submissionStatus?.status === 'stopped') &&
     !bulkStatuses.some(bs => bs.status === 'In Progress')
   ) {
     // We need to build the export manifest with a TS type that we define since it is not a
     // FHIR resource. See https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
     const exportManifest: ExportManifest = {
+      submissionId: submissionStatus.submissionId,
       transactionTime: new Date() as unknown as string,
       request: `${req.protocol}://${req.hostname}${req.originalUrl}`,
       requiresAccessToken: false,
-      extension: { submissionId: submissionId },
+      extension: { submissionId: submissionStatus.submissionId },
       output: [],
       error: []
     };

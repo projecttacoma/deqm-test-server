@@ -13,7 +13,7 @@
     },
     {
       "name": "fhirBaseUrl",
-      "valueString": "http://www.exampleFHIRServer.com"
+      "valueUrl": "http://www.exampleFHIRServer.com"
     }
   ]
 }

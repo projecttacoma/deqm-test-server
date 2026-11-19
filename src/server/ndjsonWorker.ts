@@ -15,6 +15,7 @@ const mongoUtil = require('../database/connection');
 const { checkSupportedResource } = require('../util/baseUtils');
 import logger from './logger';
 import { checkCancelled } from '../server/redisClient';
+import FHIRClient from '../util/fhirClient';
 
 logger.info(`ndjson-worker-${process.pid}: ndjson Worker Started!`);
 const ndjsonWorker = new Queue('ndjson', {
@@ -30,14 +31,20 @@ const ndjsonWorker = new Queue('ndjson', {
  * @param {string} url location of data
  * @returns {string} data retrieved
  */
-const retrieveNDJSONFromLocation = async url => {
-  const data = (await axios.get(url)).data;
-  // If there is only one resource here, it comes out an object, not a string,
-  // so force it to string here
-  if (typeof data === 'object') {
-    return JSON.stringify(data);
+const retrieveNDJSONFromLocation = async (url, providerBaseUrl, requiresAccessToken) => {
+  const config = {
+    responseType: 'text',
+    transformResponse: [data => data],
+    headers: {
+      Accept: 'application/fhir+ndjson'
+    }
+  };
+
+  if (requiresAccessToken) {
+    return new FHIRClient(providerBaseUrl).get(url, config);
   }
-  return data;
+
+  return (await axios.get(url, config)).data;
 };
 
 const rollBackInsertions = async (manifestId, fileUrl) => {
@@ -50,7 +57,7 @@ ndjsonWorker.process(async job => {
     logger.warn('Ndjson job canceled before start');
     return;
   }
-  const { fileUrl, clientId, resourceCount } = job.data;
+  const { fileUrl, clientId, resourceCount, providerBaseUrl, requiresAccessToken } = job.data;
 
   const fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
   logger.info(`ndjson-worker-${process.pid}: processing ${fileName}`);
@@ -59,7 +66,7 @@ ndjsonWorker.process(async job => {
 
   let ndjsonResources;
   try {
-    ndjsonResources = await retrieveNDJSONFromLocation(fileUrl);
+    ndjsonResources = await retrieveNDJSONFromLocation(fileUrl, providerBaseUrl, requiresAccessToken);
   } catch (e) {
     const outcome = [`ndjson retrieval of ${fileUrl} failed with message: ${e.message}`];
 
@@ -89,6 +96,7 @@ ndjsonWorker.process(async job => {
     // if line is empty skip
     if (resourceStr === '') {
       insertions.push(null);
+      continue;
     }
 
     // if this is the first non empty line then mark that we found it

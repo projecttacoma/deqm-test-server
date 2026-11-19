@@ -1,24 +1,7 @@
-import {
-  addPendingBulkImportRequest,
-  cancelBulkImport,
-  createBulkSubmissionStatus,
-  failBulkImportRequest,
-  getBulkImportStatus,
-  getBulkSubmissionStatus,
-  updateSubmissionStatus,
-  getNdjsonFileStatus
-} from '../database/dbOperations';
-import { createManifestHash } from '../util/baseUtils';
-import axios from 'axios';
+import { createBulkSubmissionStatus, getBulkSubmissionStatus, updateSubmissionStatus } from '../database/dbOperations';
 import { importQueue } from '../queue/importQueue';
-import { AxiosError } from 'axios';
 import logger from '../server/logger';
-import { ExportManifest, pushImportJob } from '../database/dbOperations';
-import { BadRequestError, InternalError, ResourceNotFoundError } from '../util/errorUtils';
-import ndjsonQueue from '../queue/ndjsonProcessQueue';
-import { deleteQueue } from '../queue/deleteQueue';
-import { setCancelled } from '../server/redisClient';
-import { Job } from 'bee-queue';
+import { BadRequestError } from '../util/errorUtils';
 
 /**
  * Executes an import of all the resources on the passed in server.
@@ -40,10 +23,10 @@ async function bulkImport(req: any, res: any) {
   const submitter = parameters.parameter?.find(p => p.name === 'submitter')?.valueIdentifier as
     fhir4.Identifier | undefined;
   const submissionId = parameters.parameter?.find(p => p.name === 'submissionId')?.valueString;
-  const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueString;
-  const baseUrl = parameters.parameter?.find(p => p.name === 'fhirBaseUrl')?.valueString;
+  const manifestUrl = parameters.parameter?.find(p => p.name === 'manifestUrl')?.valueUrl;
+  const baseUrl = parameters.parameter?.find(p => p.name === 'fhirBaseUrl')?.valueUrl;
   const submissionStatus = parameters.parameter?.find(p => p.name === 'submissionStatus')?.valueCoding;
-  const replacesManifestUrl = parameters.parameter?.find(p => p.name === 'replacesManifestUrl')?.valueString;
+  const replacesManifestUrl = parameters.parameter?.find(p => p.name === 'replacesManifestUrl')?.valueUrl;
   if (!submitter?.value) {
     throw new BadRequestError('Request must include a submitter parameter with a value.');
   }
@@ -51,7 +34,7 @@ async function bulkImport(req: any, res: any) {
     throw new BadRequestError('Request must include a submissionId parameter.');
   }
   if (!manifestUrl) {
-    if (submissionStatus?.code && (submissionStatus.code === 'complete' || submissionStatus.code === 'aborted')) {
+    if (submissionStatus?.code && (submissionStatus.code === 'completed' || submissionStatus.code === 'stopped')) {
       await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
 
       // exit early because there is no manifest to process
@@ -66,145 +49,33 @@ async function bulkImport(req: any, res: any) {
   }
 
   let bulkSubmissionStatus = await getBulkSubmissionStatus(submitter.value, submissionId);
-  if (bulkSubmissionStatus?.status === 'aborted' || bulkSubmissionStatus?.status === 'complete') {
+  if (bulkSubmissionStatus?.status === 'stopped' || bulkSubmissionStatus?.status === 'completed') {
     throw new BadRequestError(
       `Request applies a submission update to existing ${bulkSubmissionStatus?.status} submission`
     );
   }
   if (!bulkSubmissionStatus) {
     bulkSubmissionStatus = await createBulkSubmissionStatus(submitter, submissionId, submissionStatus);
-  } else if (submissionStatus?.code === 'complete' || submissionStatus?.code === 'aborted') {
+  } else if (submissionStatus?.code === 'completed' || submissionStatus?.code === 'stopped') {
     // Update submission status to prevent any further incoming requests
     await updateSubmissionStatus(submitter, submissionId, submissionStatus.code);
   }
 
-  let manifest: ExportManifest;
-  try {
-    manifest = (await axios.get(manifestUrl))?.data;
-  } catch (e) {
-    if (axios.isAxiosError(e)) {
-      const error = e as AxiosError;
-      throw new ResourceNotFoundError(
-        `Was unable to resolve manifest url ${manifestUrl}. Received error: ${error.message}`
-      );
-    } else if (e instanceof Error) {
-      // Unexpected error
-      throw new InternalError(
-        `Unexpected failed retrieval of manifest at ${manifestUrl} with error message: ${e.message}`
-      );
-    } else {
-      throw e;
-    }
-  }
+  const job = importQueue.createJob({
+    submissionClientId: bulkSubmissionStatus.id,
+    manifestUrl,
+    providerBaseUrl: baseUrl,
+    replacesManifestUrl
+  });
 
-  // handle manifest url replacement
-  if (replacesManifestUrl) {
-    const manifestId = createManifestHash(bulkSubmissionStatus.id, replacesManifestUrl);
-    const existingBulkImportRequest = await getBulkImportStatus(manifestId);
-    if (!existingBulkImportRequest) {
-      throw new BadRequestError(`Unable to find status for manifest specified for replacement: ${replacesManifestUrl}`);
-    } else {
-      // Update import status
-      const jobInformation = await cancelBulkImport(manifestId);
-      // stop jobs
-      await stopJobs(jobInformation);
-    }
-  }
+  job.retries(30);
+  job.backoff('fixed', 1000);
 
-  const manifestEntry = await addPendingBulkImportRequest(manifest, bulkSubmissionStatus.id, manifestUrl, baseUrl);
-  try {
-    const inputUrls = manifest.output.map(o => o.url);
+  const createdJob = await job.save();
 
-    const jobData = {
-      manifestEntry,
-      inputUrls
-    };
-    const createdJob = await importQueue.createJob(jobData).save();
-    await pushImportJob(manifestEntry, createdJob.id);
-    logger.debug(`Created job with id ${createdJob.id}`);
-  } catch (e) {
-    if (e instanceof Error) {
-      // This creates a failed status -> should we return a 500 here instead/as well?
-      await failBulkImportRequest(manifestEntry, e);
-      throw new InternalError(
-        `Failed job creation for clientEntry ${submitter.value}-${submissionId} using manifest url ${manifestUrl} with error message: ${e.message}`
-      );
-    } else {
-      throw e;
-    }
-  }
+  logger.debug(`Queued manifest retrieval job ${createdJob.id} for ${manifestUrl}`);
 
   res.status(200);
   return;
 }
-async function stopJobs(jobInformation: { importJobIds: string[]; ndjsonJobIds: string[] }) {
-  const { importJobIds, ndjsonJobIds } = jobInformation;
-
-  // Prevent the creation of new ndjson jobs
-  await Promise.all(
-    importJobIds.map(async jobId => {
-      await setCancelled(jobId); //set store cancelled flag for active job
-      const job = await importQueue.getJob(jobId);
-      if (job) {
-        await job.remove();
-        logger.info(`Import job ${jobId} was removed.`);
-      } else {
-        logger.info(`Import job ${jobId} not found in the queue (already removed).`);
-      }
-    })
-  );
-
-  // TODO: handle paging - page size seems to default to 100
-  const jobPromises = [
-    ndjsonQueue.getJobs('waiting'),
-    ndjsonQueue.getJobs('delayed'),
-    ndjsonQueue.getJobs('failed'),
-    ndjsonQueue.getJobs('succeeded'),
-    ndjsonQueue.getJobs('active')
-  ];
-
-  Promise.all(jobPromises).then((results: Job<NDJSONJobDataType>[][]) => {
-    const waitingIds = results[0];
-    const delayedIds = results[1];
-    const failedIds = results[2];
-    const succeededIds = results[3];
-    const activeIds = results[4];
-
-    waitingIds
-      .concat(delayedIds)
-      .filter(job => ndjsonJobIds.includes(job.id))
-      .map(async job => {
-        await job.remove();
-        logger.info(`Ndjson job ${job.id} was cancelled before processing.`);
-      });
-
-    failedIds
-      .concat(succeededIds)
-      .filter(job => ndjsonJobIds.includes(job.id))
-      .map(async job => {
-        // Then discard data using delete queue
-        const ndjsonStatus = await getNdjsonFileStatus(job.data.clientId, job.data.fileUrl);
-        const jobData = {
-          ndjsonStatus: ndjsonStatus
-        };
-        const deleteJob = await deleteQueue.createJob(jobData).save();
-        logger.info(`Created delete job with id ${deleteJob.id}`);
-        logger.info(`Ndjson job ${job.id} was cancelled after processing.`);
-      });
-
-    activeIds
-      .filter(job => ndjsonJobIds.includes(job.id))
-      .map(async job => {
-        await setCancelled(job.id); //set store cancelled flag
-        logger.info(`Ndjson job ${job.id} was cancelled during processing.`);
-      });
-  });
-}
-
-interface NDJSONJobDataType {
-  fileUrl: string;
-  clientId: string;
-  resourceCount: number;
-}
-
 module.exports = { bulkImport };

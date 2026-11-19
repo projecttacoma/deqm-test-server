@@ -6,6 +6,15 @@ import * as fs from 'node:fs/promises';
 import { v4 } from 'uuid';
 import { getExtAuthConfig } from '../config/extAuthConfig';
 import logger from '../server/logger';
+import 'node-jose';
+
+declare module 'node-jose' {
+  namespace JWK {
+    interface Key {
+      algorithms(mode?: string): string[];
+    }
+  }
+}
 
 const privateKeyFile = process.env.JWT_PRIVATE_KEY_FILE;
 
@@ -68,8 +77,7 @@ export default class TokenManager {
 
   private static async acquireToken(fhirBaseUrl: string): Promise<TokenState | null> {
     const authConfig = await getExtAuthConfig(fhirBaseUrl);
-    const { clientId, authUrl: customEndpoint } = authConfig?.type === 'jwt' ? authConfig : {};
-    const customScopes = null;
+    const { clientId, authUrl: customEndpoint, customScopes } = authConfig?.type === 'jwt' ? authConfig : {};
 
     // TODO, if unknown server return null
     if (clientId == null) {
@@ -78,17 +86,17 @@ export default class TokenManager {
 
     const tokenEndpoint = customEndpoint ?? (await getTokenEndpoint(fhirBaseUrl));
 
-    logger.debug(`using tokenEndpoint ${tokenEndpoint}`);
+    logger.info(`using tokenEndpoint ${tokenEndpoint}`);
 
     // generate the signed JWT first
     const jwt = await generateJWT(clientId, tokenEndpoint);
 
-    logger.debug(`constructed JWT ${jwt}`);
+    logger.info(`constructed JWT ${jwt}`);
 
     // get the bearer token
     const rawToken = await getAccessToken(tokenEndpoint, jwt.toString(), customScopes);
 
-    logger.debug(`got token: ${rawToken.access_token}`);
+    logger.info(`got token: ${rawToken.access_token}`);
 
     const tokenState = {
       bearerToken: formatBearerToken(rawToken.access_token),
@@ -119,7 +127,7 @@ async function getTokenEndpoint(url: string) {
   return response.data.token_endpoint;
 }
 
-async function getAccessToken(url: string, jwt: string, customScopes: string | null): Promise<TokenResponse> {
+async function getAccessToken(url: string, jwt: string, customScopes?: string): Promise<TokenResponse> {
   const props = {
     scope: customScopes ?? 'system/*.rs',
     grant_type: 'client_credentials',
@@ -144,6 +152,23 @@ async function getAccessToken(url: string, jwt: string, customScopes: string | n
   return response.data;
 }
 
+function getSigningAlgorithm(key: jose.JWK.Key) {
+  // PEM files do not carry an algorithm;
+  // fallback to a SMART baseline algorithm based on the key type.
+  const defaults: Record<string, string | undefined> = {
+    RSA: 'RS384',
+    EC: 'ES384'
+  };
+
+  const algorithm = key.alg || defaults[key.kty];
+
+  if (!algorithm || !SUPPORTED_ALGORITHMS.includes(algorithm) || !key.algorithms('sign').includes(algorithm)) {
+    throw new Error('Private key does not support RS384 or ES384 signing');
+  }
+
+  return algorithm;
+}
+
 /**
  * Generate a signed JWT used for authenticating
  */
@@ -161,7 +186,7 @@ async function generateJWT(client_id: string, aud: string) {
   return jose.JWS.createSign(
     {
       format: 'compact',
-      fields: { alg: key.alg, kid: key.kid }
+      fields: { alg: getSigningAlgorithm(key), kid: key.kid, typ: 'JWT' }
     },
     key
   )
@@ -180,12 +205,19 @@ async function getPrivateKey() {
   const keyFileText = await fs.readFile(privateKeyFile, 'utf8');
 
   if (keyFileText.trimStart().startsWith('{')) {
-    // it's a JWK
+    // Expected format: a JWKS object ({ "keys": [...] }) containing a private key with:
+    // - alg: "RS384" or "ES384"
+    // - key_ops: ["sign"] (required by this loader for now, note this is optional in JWK spec)
+    // - the private key material needed for signing
     const keys = JSON.parse(keyFileText);
     const keyAsJson = keys.keys.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (k: any) => SUPPORTED_ALGORITHMS.includes(k['alg']) && k['key_ops'].includes('sign')
+      (k: any) => SUPPORTED_ALGORITHMS.includes(k['alg']) && k['key_ops']?.includes('sign')
     );
+    if (!keyAsJson) {
+      throw new Error(
+        'No supported signing key found in JWT_PRIVATE_KEY_FILE. Expected a private signing key with "alg" RS384 or ES384 and "key_ops" containing "sign"'
+      );
+    }
     return await jose.JWK.asKey(keyAsJson);
   }
 

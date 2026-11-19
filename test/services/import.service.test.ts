@@ -6,91 +6,72 @@ const paramOneInput = require('../fixtures/fhir-resources/parameters/paramOneInp
 const paramStatus = require('../fixtures/fhir-resources/parameters/paramStatus.json');
 const paramNoInput = require('../fixtures/fhir-resources/parameters/paramNoInput.json');
 const paramPastComplete = require('../fixtures/fhir-resources/parameters/paramPastComplete.json');
-const paramReplaceFail = require('../fixtures/fhir-resources/parameters/paramReplaceFail.json');
 const paramReplace = require('../fixtures/fhir-resources/parameters/paramReplace.json');
-const paramInputForReplace = require('../fixtures/fhir-resources/parameters/paramInputForReplace.json');
 const { SINGLE_AGENT_PROVENANCE } = require('../fixtures/provenanceFixtures');
 const { client } = require('../../src/database/connection');
 const { cleanUpDb, cleanUpTest } = require('../populateTestData');
-const mockManifest = {
-  transactionTime: '2025-10-29T13:03:52.312Z',
-  requiresAccessToken: false,
-  request: 'http://www.exampleFHIRServer.com/fhir/$export',
-  output: [
-    {
-      type: 'Patient',
-      url: 'http://www.exampleFHIRServer.com/output/patient_file_1.ndjson'
-    },
-    {
-      type: 'Observation',
-      url: 'http://www.exampleFHIRServer.com/output/observation_file_1.ndjson'
-    }
-  ]
-};
 
-import axios from 'axios';
-jest.mock('axios');
+jest.mock('../../src/queue/importQueue', () => ({
+  importQueue: {
+    createJob: jest.fn(),
+    close: jest.fn().mockResolvedValue(undefined)
+  }
+}));
+
+const { importQueue } = require('../../src/queue/importQueue');
 
 let server;
+let job;
 
 describe('Testing $bulk-submit', () => {
   beforeEach(async () => {
+    job = {
+      retries: jest.fn(),
+      backoff: jest.fn(),
+      save: jest.fn().mockResolvedValue({ id: 'test-import-job' })
+    };
+    importQueue.createJob.mockReturnValue(job);
+
     const config = buildConfig();
     server = initialize(config);
     await client.connect();
-    axios.get.mockResolvedValue({ data: mockManifest });
   });
 
-  it('Returns 200 on Valid Request with one input', async () => {
+  it('Returns 200 and queues manifest retrieval for a valid request', async () => {
     await supertest(server.app)
       .post('/4_0_1/$bulk-submit')
       .send(paramOneInput)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(() => {
-        expect(axios.get).toHaveBeenCalledTimes(1);
-        expect(axios.get).toHaveBeenCalledWith(
-          'http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773'
-        );
-      });
+      .expect(200);
+
+    expect(importQueue.createJob).toHaveBeenCalledTimes(1);
+    expect(importQueue.createJob).toHaveBeenCalledWith({
+      submissionClientId: 'ExampleSubmitterValue-Submission1',
+      manifestUrl: 'http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773',
+      providerBaseUrl: 'http://www.exampleFHIRServer.com',
+      replacesManifestUrl: undefined
+    });
+    expect(job.save).toHaveBeenCalledTimes(1);
   });
 
-  it('Returns 200 on manifest replacement', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/$bulk-submit')
-      .send(paramInputForReplace)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(() => {
-        expect(axios.get).toHaveBeenCalledTimes(1);
-        expect(axios.get).toHaveBeenCalledWith('http://www.exampleFHIRServer.com/bulkstatus/toReplace');
-      });
-
+  it('Returns 200 and queues manifest replacement', async () => {
     await supertest(server.app)
       .post('/4_0_1/$bulk-submit')
       .send(paramReplace)
       .set('Accept', 'application/json+fhir')
       .set('content-type', 'application/json+fhir')
       .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(200)
-      .then(() => {
-        expect(axios.get).toHaveBeenCalledTimes(2);
-        expect(axios.get).toHaveBeenCalledWith('http://www.exampleFHIRServer.com/bulkstatus/updated');
-      });
-  });
-
-  it('Returns 400 on manifest to replace not found', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/$bulk-submit')
-      .send(paramReplaceFail)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(400);
+      .expect(200);
+    expect(importQueue.createJob).toHaveBeenCalledTimes(1);
+    expect(importQueue.createJob).toHaveBeenCalledWith({
+      submissionClientId: 'ExampleSubmitterValue-Submission1',
+      manifestUrl: 'http://www.exampleFHIRServer.com/bulkstatus/updated',
+      providerBaseUrl: 'http://www.exampleFHIRServer.com',
+      replacesManifestUrl: 'http://www.exampleFHIRServer.com/bulkstatus/toReplace'
+    });
+    expect(job.save).toHaveBeenCalledTimes(1);
   });
 
   it('Returns 200 on submission status update', async () => {
@@ -119,30 +100,6 @@ describe('Testing $bulk-submit', () => {
       });
   });
 
-  it('Returns 400 on a repeat manifestUrl', async () => {
-    await supertest(server.app)
-      .post('/4_0_1/$bulk-submit')
-      .send(paramOneInput)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE));
-
-    // resend the exact same submitter/submissionId/manifest
-    await supertest(server.app)
-      .post('/4_0_1/$bulk-submit')
-      .send(paramOneInput)
-      .set('Accept', 'application/json+fhir')
-      .set('content-type', 'application/json+fhir')
-      .set('x-provenance', JSON.stringify(SINGLE_AGENT_PROVENANCE))
-      .expect(400)
-      .then(response => {
-        expect(response.body.resourceType).toEqual('OperationOutcome');
-        expect(response.body.issue[0].details.text).toEqual(
-          'Found an existing match for the passed clientId ExampleSubmitterValue-Submission1 and manifest url http://www.exampleFHIRServer.com/bulkstatus/5b19c9e9-06c3-4a53-a5c7-c73366173773'
-        );
-      });
-  });
-
   it('Returns 400 for updating an already complete submission', async () => {
     await supertest(server.app)
       .post('/4_0_1/$bulk-submit')
@@ -162,7 +119,7 @@ describe('Testing $bulk-submit', () => {
       .then(response => {
         expect(response.body.resourceType).toEqual('OperationOutcome');
         expect(response.body.issue[0].details.text).toEqual(
-          'Request applies a submission update to existing complete submission'
+          'Request applies a submission update to existing completed submission'
         );
       });
   });
