@@ -34,6 +34,7 @@ export interface CollectDataQuery {
 // https://build.fhir.org/ig/HL7/bulk-data/export.html#response---output-manifest
 
 export interface ExportManifest {
+  submissionId: string;
   transactionTime: string;
   request?: string;
   requiresAccessToken: boolean;
@@ -76,6 +77,7 @@ export interface BulkImportStatus {
 
 export interface BulkSubmissionStatus {
   id: string;
+  submissionId: string;
   status: string;
 }
 
@@ -83,15 +85,21 @@ export interface BulkSubmissionStatus {
 export async function updateSubmissionStatus(
   submitter: fhir4.Identifier,
   submissionId: string,
-  code: 'complete' | 'aborted'
+  code: 'completed' | 'stopped'
 ) {
   const id = `${submitter.value}-${submissionId}`;
   logger.debug(`Updating status to "${code}" for ${id}`);
   const collection = db.collection('bulkSubmissionStatuses');
-  const update = {
-    status: code
-  };
-  await collection.findOneAndUpdate({ id: id }, { $set: update }, { upsert: true });
+  await collection.findOneAndUpdate(
+    { id },
+    {
+      $set: {
+        submissionId,
+        status: code
+      }
+    },
+    { upsert: true }
+  );
 }
 
 // Gets existing submission status
@@ -113,11 +121,16 @@ export async function createBulkSubmissionStatus(
 ): Promise<BulkSubmissionStatus> {
   const data: BulkSubmissionStatus = {
     id: `${submitter.value}-${submissionId}`,
+    submissionId,
     status: submissionStatus?.code ?? 'in-progress'
   };
+
   const collection = db.collection('bulkSubmissionStatuses');
+
   logger.debug(`Inserting bulkSubmissionStatus ${data.id} into database`);
+
   await collection.insertOne(data as Document);
+
   return data;
 }
 
@@ -511,6 +524,10 @@ export async function deleteAllNdjsonSuccessfulResources(manifestId: string, fil
       }
     }
   );
+}
+
+export async function getBulkSubmissionStatusById(id: string): Promise<BulkSubmissionStatus | undefined> {
+  return (await db.collection('bulkSubmissionStatuses').findOne({ id })) as unknown as BulkSubmissionStatus | undefined;
 }
 
 /**

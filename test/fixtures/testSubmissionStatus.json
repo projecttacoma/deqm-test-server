@@ -1,35 +1,35 @@
 [
   {
     "id": "submitter-PENDING_REQUEST",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-PENDING_REQUEST_WITH_FILE_COUNT",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-PENDING_REQUEST_WITH_RESOURCE_COUNT",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-ALMOST_COMPLETE_PENDING_REQUEST",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-COMPLETED_REQUEST",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_ERRORS",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-ERROR_REQUEST",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-COMPLETED_REQUEST_WITH_RESOURCE_COUNT",
-    "status": "complete"
+    "status": "completed"
   },
   {
     "id": "submitter-IN_PROGRESS",

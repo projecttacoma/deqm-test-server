@@ -5,7 +5,7 @@
       "name": "submissionStatus",
       "valueCoding": {
         "system": "http://hl7.org/fhir/uv/bulkdata/ValueSet/submission-status",
-        "code": "complete"
+        "code": "completed"
       }
     },
     {

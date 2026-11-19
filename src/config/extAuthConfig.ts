@@ -8,7 +8,8 @@ export const JwtAuthConfigSchema = z.object({
   type: z.literal('jwt'),
   url: z.string(),
   authUrl: z.string(),
-  clientId: z.string()
+  clientId: z.string(),
+  customScopes: z.string().optional()
 });
 
 export const SecretAuthConfigSchema = z.object({
@@ -53,8 +54,25 @@ async function loadAuthConfig(): Promise<Array<ExtAuthConfig>> {
   }
 }
 
+/**
+ * Look up a server's external authentication configuration by FHIR base URL.
+ * AUTH_CONFIG_FILE points to a YAML file containing a servers array.
+ * @param {string} url the FHIR base URL
+ * @returns {Promise<Object|undefined>} the matching configuration, if present
+ */
 export async function getExtAuthConfig(url: string): Promise<ExtAuthConfig | undefined> {
   logger.info(`Finding auth config for "${url}`);
   const config = await loadAuthConfig();
-  return config.find(config => config.url === url);
+  return config.find(config => urlsMatch(config.url, url));
+}
+
+/**
+ * Helper function to check if 2 URLs match.
+ * Currently this only ignores trailing slashes but more can be added if useful.
+ * @param {string} url1
+ * @param {string} url2
+ * @returns {boolean} true if URLs match, false otherwise
+ */
+function urlsMatch(url1: string, url2: string) {
+  return url1.replace(/\/+$/, '') === url2.replace(/\/+$/, '');
 }
