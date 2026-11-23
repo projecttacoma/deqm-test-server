@@ -298,7 +298,7 @@ async function storeCollectedResources(entries: fhir4.BundleEntry[], baseVersion
         }
       };
     })
-    .filter((reference): reference is fhir4.Reference => reference !== null);
+    .filter(reference => reference !== null);
 }
 
 /**
