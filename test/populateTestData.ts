@@ -6,6 +6,7 @@ const testNdjsonStatuses = require('./fixtures/testNdjsonStatus.json');
 const testOperationOutcome = require('./fixtures/fhir-resources/testOperationOutcome.json');
 import { importQueue } from '../src/queue/importQueue';
 import { deleteQueue } from '../src/queue/deleteQueue';
+import { collectDataQueue } from '../src/queue/collectDataQueue';
 const { execQueue } = require('../src/queue/execQueue');
 import ndjsonQueue from '../src/queue/ndjsonProcessQueue';
 import { closeRedisConnection } from '../src/server/redisClient';
@@ -37,6 +38,7 @@ async function cleanUpTest() {
   await ndjsonQueue.close();
   await execQueue.close();
   await deleteQueue.close();
+  await collectDataQueue.close();
   await closeRedisConnection();
 }
 
