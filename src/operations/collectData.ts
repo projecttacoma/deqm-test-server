@@ -261,17 +261,14 @@ async function performPlainFHIRQueries(
     }
   };
 
-  if (options.respondAsync) {
-    for (const query of queries) await executeQuery(query);
-  } else {
-    await Promise.all(
-      plan.subjects.flatMap(subject =>
-        subject.targets.map(async target => {
-          for (const query of queries.filter(query => query.targetId === target.id)) await executeQuery(query);
-        })
-      )
-    );
-  }
+  await Promise.all(
+    plan.subjects.flatMap(subject =>
+      subject.targets.map(async target => {
+        for (const query of queries.filter(query => query.targetId === target.id)) await executeQuery(query);
+      })
+    )
+  );
+
   return resourceReferences;
 }
 
